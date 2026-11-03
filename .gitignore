@@ -1,0 +1,9 @@
+bin/
+obj/
+publish/
+coverage/
+*.user
+.DS_Store
+.vs/
+.idea/
+artifacts/

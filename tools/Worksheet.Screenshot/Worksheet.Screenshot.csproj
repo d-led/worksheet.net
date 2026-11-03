@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Worksheet.Screenshot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Headless" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Skia" Version="12.1.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Worksheet.Desktop\Worksheet.Desktop.csproj" />
+    <ProjectReference Include="..\..\src\Worksheet.Storage\Worksheet.Storage.csproj" />
+  </ItemGroup>
+
+</Project>

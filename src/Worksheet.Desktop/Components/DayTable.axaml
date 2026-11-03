@@ -1,0 +1,119 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Worksheet.Desktop.ViewModels"
+             x:Class="Worksheet.Desktop.Components.DayTable"
+             x:DataType="vm:DayViewModel">
+
+  <!--
+    The day as it reads on a clock: when a block started, when it ended. The length is derived and
+    never shown as a column, and the holes between blocks sit in the same list so a day is one
+    continuous picture. A row is two short fields high; ten of them fit without scrolling. On a
+    frozen day every row is shown and none of them can be changed.
+  -->
+  <Grid RowDefinitions="Auto,*" RowSpacing="2">
+
+    <Grid Grid.Row="0" ColumnDefinitions="64,64,*,*,150,26" ColumnSpacing="6" Margin="10,0,10,3">
+      <TextBlock Grid.Column="0" Classes="caption" Text="START" VerticalAlignment="Center" />
+      <TextBlock Grid.Column="1" Classes="caption" Text="END" VerticalAlignment="Center" />
+      <TextBlock Grid.Column="2" Classes="caption" Text="PROJECT" VerticalAlignment="Center" />
+      <TextBlock Grid.Column="3" Classes="caption" Text="TOPIC" VerticalAlignment="Center" />
+      <TextBlock Grid.Column="4" Classes="caption" Text="NOTE" VerticalAlignment="Center" />
+    </Grid>
+
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+      <StackPanel>
+
+        <ItemsControl x:Name="Rows" ItemsSource="{Binding Rows}">
+          <ItemsControl.DataTemplates>
+
+            <DataTemplate DataType="vm:EntryRowViewModel">
+              <Border Classes="row" IsEnabled="{Binding IsEditable}">
+                <Grid ColumnDefinitions="64,64,*,*,150,26" ColumnSpacing="6">
+
+                  <TextBox Grid.Column="0"
+                           Classes="cell start-input"
+                           Text="{Binding StartText, UpdateSourceTrigger=LostFocus}" />
+
+                  <TextBox Grid.Column="1"
+                           Classes="cell end-input"
+                           Text="{Binding EndText, UpdateSourceTrigger=LostFocus}" />
+
+                  <ComboBox Grid.Column="2"
+                            Classes="cell"
+                            ItemsSource="{Binding Projects}"
+                            SelectedItem="{Binding Project}"
+                            PlaceholderText="Project">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding Label}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+
+                  <ComboBox Grid.Column="3"
+                            Classes="cell"
+                            ItemsSource="{Binding Topics}"
+                            SelectedItem="{Binding Topic}"
+                            PlaceholderText="—" />
+
+                  <TextBox Grid.Column="4"
+                           Classes="cell note-input"
+                           Text="{Binding Note}"
+                           PlaceholderText="—" />
+
+                  <Button Grid.Column="5"
+                          Classes="row-action"
+                          Content="✕"
+                          Command="{Binding RetractCommand}"
+                          ToolTip.Tip="Retract this entry" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+
+            <DataTemplate DataType="vm:GapRowViewModel">
+              <Border Classes="gap">
+                <Grid ColumnDefinitions="64,64,*,*,150,26" ColumnSpacing="6">
+
+                  <TextBlock Grid.Column="0"
+                             Grid.ColumnSpan="2"
+                             Classes="gap-span"
+                             Text="{Binding Span}"
+                             VerticalAlignment="Center" />
+
+                  <TextBlock Grid.Column="2"
+                             Classes="gap-note"
+                             Text="{Binding Length}"
+                             VerticalAlignment="Center" />
+
+                  <StackPanel Grid.Column="4"
+                              Grid.ColumnSpan="2"
+                              Orientation="Horizontal"
+                              Spacing="6"
+                              HorizontalAlignment="Right"
+                              VerticalAlignment="Center"
+                              IsVisible="{Binding IsEditable}">
+                    <Button Classes="chip"
+                            Content="Break"
+                            Command="{Binding BreakCommand}"
+                            ToolTip.Tip="Record this hole as a break" />
+                    <Button Classes="row-action"
+                            Content="＋"
+                            Command="{Binding FillCommand}"
+                            ToolTip.Tip="Put these times in the entry line" />
+                  </StackPanel>
+                </Grid>
+              </Border>
+            </DataTemplate>
+
+          </ItemsControl.DataTemplates>
+        </ItemsControl>
+
+        <TextBlock Classes="quiet"
+                   Text="Nothing logged on this day yet."
+                   Margin="14,16,0,0"
+                   IsVisible="{Binding IsEmpty}" />
+
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

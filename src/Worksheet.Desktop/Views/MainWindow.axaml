@@ -1,0 +1,30 @@
+<suki:SukiWindow xmlns="https://github.com/avaloniaui"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:suki="clr-namespace:SukiUI.Controls;assembly=SukiUI"
+                 xmlns:c="using:Worksheet.Desktop.Components"
+                 xmlns:vm="using:Worksheet.Desktop.ViewModels"
+                 x:Class="Worksheet.Desktop.Views.MainWindow"
+                 x:DataType="vm:DayViewModel"
+                 Title="Worksheet"
+                 Width="940"
+                 Height="620"
+                 MinWidth="760"
+                 MinHeight="460">
+
+  <suki:SukiWindow.KeyBindings>
+    <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}" />
+    <KeyBinding Gesture="Meta+Z" Command="{Binding UndoCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}" />
+    <KeyBinding Gesture="Meta+Shift+Z" Command="{Binding RedoCommand}" />
+  </suki:SukiWindow.KeyBindings>
+
+  <!-- The window is a composition of five components and nothing else. -->
+  <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="12" Margin="20,12,20,16">
+    <c:DayHeader x:Name="Header" Grid.Row="0" />
+    <c:DayStatus x:Name="DayKind" Grid.Row="1" />
+    <c:QuickEntry x:Name="Entry" Grid.Row="2" IsVisible="{Binding !IsFrozen}" />
+    <c:DayTable x:Name="Table" Grid.Row="3" />
+    <c:StatusLine x:Name="Status" Grid.Row="4" />
+  </Grid>
+
+</suki:SukiWindow>

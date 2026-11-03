@@ -1,0 +1,39 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Worksheet.Desktop.ViewModels"
+             x:Class="Worksheet.Desktop.Components.DayStatus"
+             x:DataType="vm:DayViewModel">
+
+  <!--
+    What kind of day this is: five radios, one of them already chosen — a weekend for a Saturday
+    or a Sunday. Anything but a working day freezes the timetable; the rows stay on screen so the
+    recorded time is still visible, and nothing on them can be changed until the day works again.
+  -->
+  <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+
+    <ItemsControl x:Name="Kinds" Grid.Column="0" ItemsSource="{Binding Kinds}">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <StackPanel Orientation="Horizontal" Spacing="6" />
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate DataType="vm:DayKindOptionViewModel">
+          <RadioButton Classes="kind"
+                       GroupName="day-kind"
+                       Tag="{Binding Name}"
+                       Content="{Binding Label}"
+                       IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <TextBlock x:Name="FrozenNote"
+               Grid.Column="1"
+               Classes="quiet"
+               Text="{Binding FrozenNote}"
+               IsVisible="{Binding IsFrozen}"
+               VerticalAlignment="Center" />
+
+  </Grid>
+</UserControl>

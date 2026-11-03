@@ -1,0 +1,49 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Worksheet.Desktop.ViewModels"
+             x:Class="Worksheet.Desktop.Components.DayHeader"
+             x:DataType="vm:DayViewModel">
+
+  <!--
+    Navigation, the day it is on, and the calendar to jump anywhere. The arrows are 44x44 targets,
+    because the previous version's 24x24 glyphs were the most-complained-about control.
+  -->
+  <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
+
+    <Button x:Name="PreviousDay"
+            Grid.Column="0"
+            Classes="nav"
+            Content="❮"
+            Command="{Binding PreviousDayCommand}"
+            ToolTip.Tip="Previous day" />
+
+    <Button x:Name="NextDay"
+            Grid.Column="1"
+            Classes="nav"
+            Content="❯"
+            Command="{Binding NextDayCommand}"
+            ToolTip.Tip="Next day" />
+
+    <TextBlock x:Name="DayTitle" Grid.Column="2" Classes="title" Text="{Binding DayTitle}" Margin="8,0" />
+
+    <CalendarDatePicker x:Name="Calendar"
+                        Grid.Column="3"
+                        SelectedDate="{Binding SelectedDate}"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="Pick a day" />
+
+    <Button x:Name="Today"
+            Grid.Column="4"
+            Content="Today"
+            Command="{Binding TodayCommand}"
+            VerticalAlignment="Center" />
+
+    <TextBlock x:Name="Total"
+               Grid.Column="5"
+               Classes="total"
+               Text="{Binding Total}"
+               MinWidth="96"
+               TextAlignment="Right" />
+
+  </Grid>
+</UserControl>

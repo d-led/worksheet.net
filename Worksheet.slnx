@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Worksheet.Core/Worksheet.Core.csproj" />
+    <Project Path="src/Worksheet.Desktop/Worksheet.Desktop.csproj" />
+    <Project Path="src/Worksheet.Storage/Worksheet.Storage.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Worksheet.Tests/Worksheet.Tests.csproj" />
+    <Project Path="tests/Worksheet.TestSupport/Worksheet.TestSupport.csproj" />
+    <Project Path="tests/Worksheet.UiTests/Worksheet.UiTests.csproj" />
+  </Folder>
+</Solution>

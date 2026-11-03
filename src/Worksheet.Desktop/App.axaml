@@ -1,0 +1,27 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:suki="clr-namespace:SukiUI;assembly=SukiUI"
+             x:Class="Worksheet.Desktop.App"
+             RequestedThemeVariant="Default">
+
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="SurfaceBrush" Color="#B8FFFFFF" />
+          <SolidColorBrush x:Key="HairlineBrush" Color="#1F000000" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="SurfaceBrush" Color="#1FFFFFFF" />
+          <SolidColorBrush x:Key="HairlineBrush" Color="#26FFFFFF" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+
+  <Application.Styles>
+    <suki:SukiTheme ThemeColor="Blue" />
+    <StyleInclude Source="avares://Worksheet.Desktop/Styles/Tokens.axaml" />
+  </Application.Styles>
+
+</Application>

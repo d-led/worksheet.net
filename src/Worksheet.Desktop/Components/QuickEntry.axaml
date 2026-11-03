@@ -1,0 +1,64 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Worksheet.Desktop.ViewModels"
+             x:Class="Worksheet.Desktop.Components.QuickEntry"
+             x:DataType="vm:DayViewModel">
+
+  <!--
+    One line, and under it an answer to "what now": the shape of a line in four parts with the
+    next one named, then anything wrong with what has been typed so far — including an
+    intersection, which is visible before Enter rather than after it. Known names are chips below:
+    the arrows walk them and Tab takes the one they are on.
+  -->
+  <StackPanel Spacing="5">
+
+    <TextBox x:Name="EntryBox"
+             Classes="entry"
+             Text="{Binding EntryText}"
+             PlaceholderText="Website (login) 09:00 1h30m">
+      <TextBox.KeyBindings>
+        <KeyBinding Gesture="Enter" Command="{Binding LogCommand}" />
+      </TextBox.KeyBindings>
+    </TextBox>
+
+    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+      <TextBlock Classes="legend" Text="project › (topic) › 09:00 › 1h30m" VerticalAlignment="Center" />
+      <TextBlock x:Name="NextStep"
+                 Grid.Column="1"
+                 Classes="hint"
+                 Text="{Binding NextStep}"
+                 VerticalAlignment="Center" />
+    </Grid>
+
+    <TextBlock x:Name="Validation"
+               Classes="meta problem"
+               Text="{Binding Validation}"
+               IsVisible="{Binding HasValidation}"
+               TextWrapping="Wrap" />
+
+    <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasSuggestions}">
+      <TextBlock x:Name="SuggestionCaption"
+                 Classes="caption"
+                 Text="{Binding SuggestionCaption}"
+                 VerticalAlignment="Center"
+                 Margin="2,0,4,0" />
+      <ItemsControl x:Name="Suggestions" ItemsSource="{Binding Suggestions}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <WrapPanel Orientation="Horizontal" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Button Classes="chip"
+                    Classes.chosen="{Binding IsSelected}"
+                    Content="{Binding Text}"
+                    Command="{Binding Use}"
+                    Margin="0,0,6,0" />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+
+  </StackPanel>
+</UserControl>

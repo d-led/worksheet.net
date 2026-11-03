@@ -1,0 +1,37 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Worksheet.Desktop.ViewModels"
+             x:Class="Worksheet.Desktop.Components.StatusLine"
+             x:DataType="vm:DayViewModel">
+
+  <!-- What just happened, and the two ways back out of it. -->
+  <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+
+    <TextBlock x:Name="Message"
+               Grid.Column="0"
+               Classes="meta"
+               Classes.problem="{Binding MessageIsProblem}"
+               Text="{Binding Message}"
+               IsVisible="{Binding HasMessage}"
+               TextWrapping="Wrap"
+               VerticalAlignment="Center" />
+
+    <TextBlock Grid.Column="1"
+               Classes="quiet"
+               Text="⌘Z undo · ⇧⌘Z redo"
+               VerticalAlignment="Center" />
+
+    <Button x:Name="Undo"
+            Grid.Column="2"
+            Content="Undo"
+            Command="{Binding UndoCommand}"
+            IsEnabled="{Binding CanUndo}" />
+
+    <Button x:Name="Redo"
+            Grid.Column="3"
+            Content="Redo"
+            Command="{Binding RedoCommand}"
+            IsEnabled="{Binding CanRedo}" />
+
+  </Grid>
+</UserControl>
