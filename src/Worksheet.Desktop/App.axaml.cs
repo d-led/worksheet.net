@@ -61,7 +61,7 @@ public sealed class App : Application
         _window = new MainWindow { DataContext = new DayViewModel(_local) };
         desktop.MainWindow = _window;
 
-        TrayHost.Attach(this, ShowWindow, UndoLastChange, RedoLastChange, OpenDataFolder, () => Quit(desktop));
+        TrayHost.Attach(this, ShowWindow, OpenDataFolder, () => Quit(desktop));
 
         // A binary started from a terminal is not a bundle, so macOS does not bring it forward.
         _window.Show();
@@ -81,10 +81,6 @@ public sealed class App : Application
         _window.WindowState = WindowState.Normal;
         _window.Activate();
     }
-
-    private void UndoLastChange() => CurrentDay?.UndoCommand.Execute(null);
-
-    private void RedoLastChange() => CurrentDay?.RedoCommand.Execute(null);
 
     /// <summary>Shows the journal in the file manager: the folder exists once a ledger was opened.</summary>
     private static void OpenDataFolder()

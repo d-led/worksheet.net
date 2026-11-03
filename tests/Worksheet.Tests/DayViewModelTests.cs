@@ -296,6 +296,25 @@ public sealed class DayViewModelTests : IDisposable
     }
 
     [Fact]
+    public void An_entry_written_after_an_undo_forgets_what_could_be_redone()
+    {
+        var day = DayWith("Website 09:00 1h");
+        day.UndoCommand.Execute(null);
+        Assert.True(day.CanRedo);
+
+        day.EntryText = "Mobile 11:00 1h";
+        day.LogCommand.Execute(null);
+
+        Assert.False(day.CanRedo);
+        Assert.Single(day.Rows);
+        Assert.Equal("1h", day.Total);
+
+        day.RedoCommand.Execute(null);
+        Assert.Equal("There is nothing to redo.", day.Message);
+        Assert.Single(day.Rows);
+    }
+
+    [Fact]
     public void Retracting_leaves_the_project_for_next_time()
     {
         var day = DayWith("Website (login) 09:00 1h");

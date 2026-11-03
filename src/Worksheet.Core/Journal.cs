@@ -151,10 +151,12 @@ public sealed class Ledger
         return State;
     }
 
-    /// <summary>Appends the inverse of the most recent change and remembers it for redo.</summary>
-    public bool TryUndo(out string? reason) => TryUndo(ChangeOrigin.Undo, out reason);
-
-    public bool TryUndo(ChangeOrigin origin, out string? reason)
+    /// <summary>
+    /// Appends the inverse of the most recent change and remembers it for redo. The inverse is a
+    /// change like any other — appended, dated, undone by its own inverse — so the journal is still
+    /// the whole story, and nothing is ever overwritten or dropped.
+    /// </summary>
+    public bool TryUndo(out string? reason)
     {
         var last = _journal.ReadFrom(Version - 1).FirstOrDefault();
 
@@ -173,7 +175,7 @@ public sealed class Ledger
         }
 
         _redo.Push(last.Change);
-        Commit([inverse], origin);
+        Commit([inverse], ChangeOrigin.Undo);
         reason = null;
         return true;
     }

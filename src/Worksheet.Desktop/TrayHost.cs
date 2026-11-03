@@ -12,8 +12,11 @@ namespace Worksheet.Desktop;
 /// <summary>
 /// The tray icon and its menu. A click on the icon raises the window — it never hides it, so a
 /// double click is simply two raises rather than a show and a hide — and the menu, which is a right
-/// click on Windows and Linux and the only click on macOS, holds everything else: undo, redo, the
+/// click on Windows and Linux and the only click on macOS, holds what is safe without a window: the
 /// folder the journal lives in, and the one way to quit.
+///
+/// Undo and redo are deliberately *not* here. They change the day, and the day is not on screen:
+/// a compensating change taken blind is a change nobody can see the effect of.
 /// </summary>
 internal static class TrayHost
 {
@@ -22,8 +25,6 @@ internal static class TrayHost
     public static void Attach(
         Application application,
         Action showWindow,
-        Action undoLastChange,
-        Action redoLastChange,
         Action openDataFolder,
         Action quit)
     {
@@ -42,9 +43,6 @@ internal static class TrayHost
             Items =
             {
                 MenuItem("Show window", showWindow),
-                new NativeMenuItemSeparator(),
-                MenuItem("Undo last change", undoLastChange),
-                MenuItem("Redo last change", redoLastChange),
                 new NativeMenuItemSeparator(),
                 MenuItem("Open data folder", openDataFolder),
                 new NativeMenuItemSeparator(),

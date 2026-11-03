@@ -88,14 +88,18 @@ again. Choosing a status is a change like any other, so undo takes it back too.
 
 ## Undo and redo
 
-`⌘Z` / `⇧⌘Z`, or `Ctrl+Z` / `Ctrl+Shift+Z`, or the two buttons at the bottom, or the tray menu.
+`⌘Z` / `⇧⌘Z`, `Ctrl+Z` / `Ctrl+Shift+Z`, or the two buttons at the bottom. Both work the way the
+journal wants them to: an undo is the inverse change *appended* to the history — never a rewrite,
+never a deletion — and anything recorded after an undo forgets what could have been redone.
 
 ## It lives in the tray
 
 Closing the window hides it and the day keeps counting. A click on the tray icon brings the window
 back — it never hides it, so a double click is just two raises — and the menu behind it (a right
-click on Windows and Linux, the icon itself on macOS) holds undo, redo, *Open data folder* and the
-one way to quit. A second copy leaves quietly instead of fighting the first over the same data file.
+click on Windows and Linux, the icon itself on macOS) holds *Show window*, *Open data folder* and the
+one way to quit. Undo and redo are deliberately not there: they change the day, and a change made
+without the day on screen is a change nobody can see. A second copy leaves quietly instead of
+fighting the first over the same data file.
 
 ## Where your data lives
 
