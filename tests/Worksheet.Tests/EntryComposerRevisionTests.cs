@@ -158,4 +158,19 @@ public sealed class EntryComposerRevisionTests
         Assert.False(result.Created);
         Assert.Single(ledger.State.Entries);
     }
+
+    [Fact]
+    public void A_break_cannot_be_given_a_topic_by_correction()
+    {
+        var ledger = NewLedger();
+        var website = Log(ledger, "Website (login) 09:00 1h");
+        var pause = Log(ledger, "Break 11:00 30m");
+        var topic = website.TopicId!.Value;
+
+        var result = new EntryComposer(ledger).Revise(pause, pause with { TopicId = topic });
+
+        Assert.False(result.Created);
+        Assert.Equal("A break has no topic; leave the brackets out.", Assert.Single(result.Problems));
+        Assert.Null(ledger.State.Entries[pause.Id].TopicId);
+    }
 }

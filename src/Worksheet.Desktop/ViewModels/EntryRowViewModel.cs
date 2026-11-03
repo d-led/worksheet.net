@@ -33,6 +33,13 @@ public sealed partial class EntryRowViewModel : ObservableObject
     [ObservableProperty]
     private string? _topic;
 
+    /// <summary>
+    /// Whether the topic picker is open. A break is a break, not a topic of one, so its picker is
+    /// closed rather than inviting a choice the ledger would refuse.
+    /// </summary>
+    [ObservableProperty]
+    private bool _topicPicker = true;
+
     [ObservableProperty]
     private string _note = string.Empty;
 
@@ -115,6 +122,7 @@ public sealed partial class EntryRowViewModel : ObservableObject
     {
         var names = TopicNamesFor(Project?.Id);
 
+        TopicPicker = !Break.IsBreak(Project?.Label);
         Topics.Clear();
 
         foreach (var name in names)

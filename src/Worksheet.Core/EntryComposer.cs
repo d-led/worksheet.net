@@ -38,6 +38,9 @@ public sealed class EntryComposer(Ledger ledger)
     /// <summary>What composing a line would write, or why it cannot be written at all.</summary>
     private sealed record Plan(Entry? Entry, List<LedgerEvent> Changes, List<string> Problems);
 
+    /// <summary>The project and topic a line names, opened where they are new.</summary>
+    private sealed record Named(Guid ProjectId, Guid? TopicId);
+
     /// <summary>
     /// The walk from a line to the changes it would add, in the order a person would meet the
     /// objections: the day, the names, then the rest of the day the entry has to fit into. Nothing
@@ -53,21 +56,12 @@ public sealed class EntryComposer(Ledger ledger)
             return new Plan(null, changes, [refusal]);
         }
 
-        var projectId = ResolveProject(command.Project, changes, problems);
-
-        if (projectId is not { } project)
+        if (NamesOf(command, changes, problems) is not { } names)
         {
             return new Plan(null, changes, problems);
         }
 
-        var topicId = ResolveTopic(project, command.Topic, changes, problems);
-
-        if (problems.Count > 0)
-        {
-            return new Plan(null, changes, problems);
-        }
-
-        var entry = EntryOf(command, project, topicId);
+        var entry = EntryOf(command, names.ProjectId, names.TopicId);
         var refusals = Refusals(entry);
 
         if (refusals.Count > 0)
@@ -78,6 +72,30 @@ public sealed class EntryComposer(Ledger ledger)
         changes.Add(new EntryLogged(entry));
 
         return new Plan(entry, changes, problems);
+    }
+
+    /// <summary>
+    /// The project and its topic, or nothing when the names cannot be used. A break is the one
+    /// project without topics, so it is the one place a bracket is refused.
+    /// </summary>
+    private Named? NamesOf(EntryCommand command, List<LedgerEvent> changes, List<string> problems)
+    {
+        var project = ResolveProject(command.Project, changes, problems);
+
+        if (project is not { } resolved)
+        {
+            return null;
+        }
+
+        if (Break.IsBreak(resolved.Name) && !string.IsNullOrWhiteSpace(command.Topic))
+        {
+            problems.Add(Break.RefusedTopic);
+            return null;
+        }
+
+        var topicId = ResolveTopic(resolved.Id, command.Topic, changes, problems);
+
+        return problems.Count > 0 ? null : new Named(resolved.Id, topicId);
     }
 
     private static Entry EntryOf(EntryCommand command, Guid projectId, Guid? topicId) =>
@@ -199,6 +217,11 @@ public sealed class EntryComposer(Ledger ledger)
             yield return "That project is no longer known.";
         }
 
+        if (after.TopicId is not null && Break.IsBreak(ledger.State.ProjectName(after.ProjectId)))
+        {
+            yield return Break.RefusedTopic;
+        }
+
         if (after.TopicId is { } topicId && !ledger.State.Topics.ContainsKey(topicId))
         {
             yield return "That topic is no longer known.";
@@ -218,7 +241,7 @@ public sealed class EntryComposer(Ledger ledger)
         }
     }
 
-    private Guid? ResolveProject(string name, List<LedgerEvent> changes, List<string> problems)
+    private (Guid Id, string Name)? ResolveProject(string name, List<LedgerEvent> changes, List<string> problems)
     {
         var match = ledger.State.MatchProject(name);
 
@@ -228,15 +251,15 @@ public sealed class EntryComposer(Ledger ledger)
             return null;
         }
 
-        if (match.Found)
+        if (match.Value is { } found)
         {
-            return match.Value!.Id;
+            return (found.Id, found.Name);
         }
 
         var id = Guid.CreateVersion7();
         changes.Add(new ProjectOpened(id, name.Trim()));
 
-        return id;
+        return (id, name.Trim());
     }
 
     private Guid? ResolveTopic(Guid projectId, string? name, List<LedgerEvent> changes, List<string> problems)

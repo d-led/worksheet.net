@@ -42,6 +42,9 @@ and records decisions; it is not a description of any other program's source.
   length, and can be filled: the entry line is pre-filled with that range so
   that only a project is missing. A gap can also be taken as a break, which
   records it in the `Break` project with a note to be changed.
+- A break is a project without topics. What came before or after it is not a
+  topic, so a line may not give `Break` one, a correction may not add one later,
+  and the topic picker of a break row is closed.
 - Only a working day takes entries. A day nobody has declared follows the
   calendar: Saturday and Sunday are weekends, the rest work. Declaring any other
   kind freezes the day — its entries stay, and nothing about them can be changed

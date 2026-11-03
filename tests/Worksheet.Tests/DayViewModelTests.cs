@@ -214,6 +214,7 @@ public sealed class DayViewModelTests : IDisposable
     public void Taking_a_suggestion_completes_the_line_without_duplicating_the_project()
     {
         var day = DayWith("Website 09:00 1h");
+
         day.EntryText = "Web";
 
         day.Suggestions[0].Use.Execute(null);
@@ -385,5 +386,26 @@ public sealed class DayViewModelTests : IDisposable
         Assert.Equal("Break", _local.Ledger.State.ProjectName(taken.ProjectId));
         Assert.Equal(TimeSpan.FromHours(1), taken.Duration);
         Assert.Equal("break", taken.Note);
+    }
+
+    [Fact]
+    public void A_break_row_has_no_topic_to_pick()
+    {
+        var day = DayWith("Break 12:30 45m");
+
+        Assert.False(EntryRow(day).TopicPicker);
+    }
+
+    [Fact]
+    public void Turning_a_row_into_a_break_drops_its_topic()
+    {
+        var day = DayWith("Website (login) 09:00 1h", "Break 13:00 15m");
+        var row = EntryRow(day);
+
+        row.Project = day.Projects.Single(option => option.Label == "Break");
+
+        Assert.False(row.TopicPicker);
+        Assert.Null(row.Topic);
+        Assert.Null(_local.Ledger.State.Entries[row.Id].TopicId);
     }
 }

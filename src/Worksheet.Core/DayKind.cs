@@ -49,4 +49,11 @@ public static class Break
     public const string Project = "Break";
 
     public const string Note = "break";
+
+    /// <summary>Why a break may not carry a topic: what came before or after it is not a topic.</summary>
+    public const string RefusedTopic = "A break has no topic; leave the brackets out.";
+
+    /// <summary>Whether a project is where breaks go, which is the one project without topics.</summary>
+    public static bool IsBreak(string? projectName) =>
+        string.Equals(projectName?.Trim(), Break.Project, StringComparison.OrdinalIgnoreCase);
 }

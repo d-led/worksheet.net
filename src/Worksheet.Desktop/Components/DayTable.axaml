@@ -54,6 +54,7 @@
                             Classes="cell"
                             ItemsSource="{Binding Topics}"
                             SelectedItem="{Binding Topic}"
+                            IsEnabled="{Binding TopicPicker}"
                             PlaceholderText="—" />
 
                   <TextBox Grid.Column="4"

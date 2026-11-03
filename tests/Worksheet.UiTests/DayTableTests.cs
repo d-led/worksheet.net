@@ -122,6 +122,20 @@ public sealed class DayTableTests : UiTestBase
     }
 
     [AvaloniaFact]
+    public void A_break_row_keeps_its_topic_picker_closed()
+    {
+        var day = NewDay();
+        Seed(day, "Break 12:30 45m");
+
+        var table = Show<DayTable>(day);
+        Settle();
+
+        var topicPicker = Descendants<ComboBox>(Assert.Single(EntryRows(table))).Last();
+
+        Assert.False(topicPicker.IsEffectivelyEnabled);
+    }
+
+    [AvaloniaFact]
     public void Clicking_retract_takes_the_entry_off_the_day()
     {
         var day = NewDay();

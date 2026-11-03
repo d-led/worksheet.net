@@ -232,4 +232,30 @@ public sealed class EntryComposerTests
         Assert.Contains("is marked Sick day", Assert.Single(result.Problems));
         Assert.Equal(version, journal.Version);
     }
+
+    [Fact]
+    public void A_break_has_no_topic()
+    {
+        var ledger = NewLedger(out var journal);
+        var version = ledger.Version;
+
+        var result = Compose(ledger, "Break (pause) 12:30 45m");
+
+        Assert.False(result.Created);
+        Assert.Equal("A break has no topic; leave the brackets out.", Assert.Single(result.Problems));
+        Assert.Equal(version, journal.Version);
+        Assert.Empty(ledger.State.Topics);
+    }
+
+    [Fact]
+    public void A_break_without_brackets_is_an_ordinary_entry()
+    {
+        var ledger = NewLedger(out _);
+
+        var result = Compose(ledger, "Break 12:30 45m");
+
+        Assert.True(result.Created, string.Join(" ", result.Problems));
+        Assert.Null(result.Entry!.TopicId);
+        Assert.Equal("Break", ledger.State.ProjectName(result.Entry.ProjectId));
+    }
 }
