@@ -139,43 +139,82 @@
     <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
   </Style>
 
+  <!-- A frozen day keeps its rows on screen, and they have to look as frozen as they are. -->
+  <Style Selector="Border.row:disabled">
+    <Setter Property="Opacity" Value="0.5" />
+  </Style>
+
+  <Style Selector="Border.gap:disabled">
+    <Setter Property="Opacity" Value="0.5" />
+  </Style>
+
   <!--
-    The day's status: five small radios, each with its own colour once chosen. The colours are
-    here rather than in the views, and they say what the day means: green for a day that works,
-    red for one that does not.
+    The day's status: five small radios, each with its own colour once chosen. They are drawn as
+    pills rather than as the skin's radio button — the bullet is there to say "one of these", and
+    the row already says that — so the shape is this application's, and the colour means something:
+    green for a day that works, red for one that does not.
   -->
   <Style Selector="RadioButton.kind">
-    <Setter Property="Padding" Value="10,3" />
+    <Setter Property="Padding" Value="11,4" />
     <Setter Property="FontSize" Value="11" />
     <Setter Property="FontWeight" Value="Medium" />
-    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="CornerRadius" Value="11" />
     <Setter Property="MinWidth" Value="0" />
     <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
     <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <TextBlock Name="Label"
+                     Text="{TemplateBinding Content}"
+                     Foreground="{TemplateBinding Foreground}"
+                     FontSize="{TemplateBinding FontSize}"
+                     FontWeight="{TemplateBinding FontWeight}"
+                     VerticalAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="RadioButton.kind:pointerover">
+    <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
+    <Setter Property="Opacity" Value="0.85" />
   </Style>
 
   <Style Selector="RadioButton.kind:checked">
     <Setter Property="Foreground" Value="#FFFFFF" />
+    <Setter Property="Opacity" Value="1" />
   </Style>
 
   <Style Selector="RadioButton.kind[Tag=Working]:checked">
     <Setter Property="Background" Value="#2E9E63" />
+    <Setter Property="BorderBrush" Value="#2E9E63" />
   </Style>
 
   <Style Selector="RadioButton.kind[Tag=Flex]:checked">
     <Setter Property="Background" Value="#2F6FED" />
+    <Setter Property="BorderBrush" Value="#2F6FED" />
   </Style>
 
   <Style Selector="RadioButton.kind[Tag=Sick]:checked">
     <Setter Property="Background" Value="#E5484D" />
+    <Setter Property="BorderBrush" Value="#E5484D" />
   </Style>
 
   <Style Selector="RadioButton.kind[Tag=Holiday]:checked">
     <Setter Property="Background" Value="#C98A18" />
+    <Setter Property="BorderBrush" Value="#C98A18" />
   </Style>
 
   <Style Selector="RadioButton.kind[Tag=Weekend]:checked">
     <Setter Property="Background" Value="#6B7280" />
+    <Setter Property="BorderBrush" Value="#6B7280" />
   </Style>
 
 </Styles>

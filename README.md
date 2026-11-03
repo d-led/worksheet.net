@@ -18,9 +18,24 @@ Windows:
 irm https://raw.githubusercontent.com/d-led/worksheet.net/main/install.ps1 | iex
 ```
 
-Or take the file for your machine from the [latest release](https://github.com/d-led/worksheet.net/releases/latest):
-`worksheet-osx-arm64`, `worksheet-osx-x64`, `worksheet-win-x64.exe`, `worksheet-linux-x64`,
-`worksheet-linux-arm64`. One file, nothing else to install.
+Both put one self-contained binary on your machine — nothing else to install. What they fetch is
+the **newest build of `main`**, so there is no release to wait for; a tag makes a release with the
+same files.
+
+Prefer to take the file yourself? These links always give the latest build:
+
+| Platform | Download |
+|---|---|
+| macOS arm64 | [worksheet-osx-arm64](https://nightly.link/d-led/worksheet.net/workflows/build/main/worksheet-osx-arm64.zip) |
+| macOS x64 | [worksheet-osx-x64](https://nightly.link/d-led/worksheet.net/workflows/build/main/worksheet-osx-x64.zip) |
+| Linux x64 | [worksheet-linux-x64](https://nightly.link/d-led/worksheet.net/workflows/build/main/worksheet-linux-x64.zip) |
+| Linux arm64 | [worksheet-linux-arm64](https://nightly.link/d-led/worksheet.net/workflows/build/main/worksheet-linux-arm64.zip) |
+| Windows x64 | [worksheet-win-x64](https://nightly.link/d-led/worksheet.net/workflows/build/main/worksheet-win-x64.zip) |
+
+Unzip one and you have the application: on macOS and Linux `chmod +x worksheet-*` and run it, on
+Windows double-click the `.exe`. macOS refuses a downloaded binary until the quarantine flag is off,
+which is what the installer does for you and what `xattr -d com.apple.quarantine worksheet-osx-arm64`
+does by hand.
 
 ## Log a day
 
@@ -51,7 +66,10 @@ change like any other, so undo takes it back, and the history keeps what it was 
 
 The holes between blocks are shown as rows of their own, with their length. Their `＋` button puts
 those times into the entry line, so a forgotten half hour is two clicks away from being recorded;
-their `Break` button records the hole at once, in the `Break` project, with a note you can change.
+their `Break` button records the hole at once — the `Break` project, a note you can change — and the
+hole becomes an ordinary row:
+
+![A hole between two blocks, and the same day after pressing Break](docs/screenshots/break.png)
 
 Under the line, a `next:` hint names the part still missing, and anything already wrong — an
 intersection with another block, for instance — is said while you type, not after Enter.
@@ -61,7 +79,7 @@ intersection with another block, for instance — is said while you type, not af
 Above the table sits what the day is: `Working day`, `Flex day`, `Sick day`, `Holiday`, `Weekend`.
 A Saturday and a Sunday start as a weekend; any of the five can be picked over them.
 
-![A sick day: the recorded blocks stay, the timetable is frozen](docs/screenshots/frozen-day.png)
+![A sick day: the status row, and one row of the timetable dimmed and frozen](docs/screenshots/frozen-day.png)
 
 A day that is not a working day is frozen. Everything already recorded stays on screen — a sick
 morning is not deleted by becoming a sick day — but nothing on the day can be changed: no new line,

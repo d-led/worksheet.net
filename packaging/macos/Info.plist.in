@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  The bundle the application is copied into /Applications as. `scripts/package.sh` writes
+  @VERSION@ in from the build and adds AppIcon.icns next to it.
+
+  LSUIElement is deliberately true: the application is a tray application, so it belongs in the
+  menu bar rather than in the Dock, and its window is opened from the tray.
+-->
+<plist version="1.0">
+<dict>
+  <key>CFBundleName</key>
+  <string>Worksheet</string>
+  <key>CFBundleDisplayName</key>
+  <string>Worksheet</string>
+  <key>CFBundleIdentifier</key>
+  <string>com.d-led.worksheet</string>
+  <key>CFBundleExecutable</key>
+  <string>worksheet</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleIconFile</key>
+  <string>AppIcon</string>
+  <key>CFBundleShortVersionString</key>
+  <string>@VERSION@</string>
+  <key>CFBundleVersion</key>
+  <string>@VERSION@</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>11.0</string>
+  <key>LSUIElement</key>
+  <true/>
+  <key>NSHighResolutionCapable</key>
+  <true/>
+</dict>
+</plist>

@@ -103,7 +103,9 @@ jobs:
         with:
           name: worksheet-${{ matrix.rid }}
           path: out/*
-          retention-days: 7
+          # The README points at nightly.link for the newest build of main, which serves the
+          # newest artefact of this workflow. A week is not long enough for that promise.
+          retention-days: 90
           if-no-files-found: error
 
   release:

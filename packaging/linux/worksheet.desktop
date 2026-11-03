@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Worksheet
+GenericName=Time tracker
+Comment=A day of work in one line, on a clock
+# The tarball unpacks to /opt/worksheet; anywhere else, fix these two paths.
+Exec=/opt/worksheet/worksheet
+Icon=/opt/worksheet/worksheet.png
+Terminal=false
+Categories=Utility;Office;
+Keywords=time;timesheet;worksheet;project;topic;
+StartupNotify=false
+StartupWMClass=Worksheet

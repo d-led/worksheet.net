@@ -61,30 +61,52 @@ together, and every part is measured where it lives.
 Current state: 219 methods, no method over CRAP 10, method-average coverage 97.7%. The only
 uncovered surfaces are the tray icon and the composition root, which need a window server session.
 
-## Publishing
+## Building what a person installs
 
 ```sh
-dotnet publish src/Worksheet.Desktop -c Release -r osx-arm64 \
-  -p:PublishSingleFile=true -p:SelfContained=true \
-  -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=none \
-  -o publish/osx-arm64
+scripts/package.sh                  # this machine's platform
+scripts/package.sh osx-arm64        # one named runtime
+scripts/package.sh all              # every runtime, or --no-dmg to skip the disk image
 ```
 
-`IncludeNativeLibrariesForSelfExtract` is what makes it *one* file: without it Skia and HarfBuzz
-stay beside the executable. Compression is deliberately off — it is slow to start and unvalidated
-with Avalonia.
+It publishes with the same flags the workflow uses and then shapes the artefact:
 
-RIDs built: `osx-arm64`, `osx-x64`, `win-x64`, `linux-x64`, `linux-arm64`. Sizes are 96–103 MB.
+| platform | what lands in `artifacts/` |
+|---|---|
+| macOS | `worksheet-<rid>` (the bare binary), `worksheet-<rid>.app` to drag into `/Applications`, the same as `.app.zip`, and a `.dmg` holding the app beside a link to `/Applications` |
+| Linux | `worksheet-<rid>`, and `worksheet-<rid>.tar.gz` with the binary, its icon and a desktop entry that expects `/opt/worksheet` |
+| Windows | `worksheet-<rid>.exe` — copying it somewhere is the installation |
+
+`IncludeNativeLibrariesForSelfExtract` is what makes it *one* file: without it Skia and HarfBuzz
+stay beside the executable. The script drops the `.pdb`s those libraries leave behind and refuses to
+ship a directory holding more than one file. Compression stays off — slow to start, unvalidated with
+Avalonia. An unsigned `.app` runs on the machine that built it; a downloaded one needs
+`xattr -d com.apple.quarantine` or a signature.
+
+RIDs: `osx-arm64`, `osx-x64`, `win-x64`, `linux-x64`, `linux-arm64`. Binaries are 96–113 MB.
+
+### The newest build, without a release
+
+The package jobs upload each binary as its own workflow artefact, and the README links them through
+nightly.link —
+`https://nightly.link/d-led/worksheet.net/workflows/build/main/worksheet-osx-arm64.zip` — so the
+newest build of `main` is always downloadable without tagging anything. `install.sh` and
+`install.ps1` fetch from there too. Two consequences: artefacts are kept for 90 days, and renaming
+`build.yml` breaks every published link.
 
 ## Packaging into a screenshot
 
 `tools/Worksheet.Screenshot` renders the real window offscreen with headless Skia and writes a PNG:
 
 ```sh
-# a working Monday, the same day declared sick so the timetable is frozen, and a half-typed line
+# the whole window: a working Monday
 dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/day.png
-dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/frozen-day.png sick
-dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/completion.png working "Client portal ("
+
+# crops of it, on the same surface: the status with one frozen row, the entry line and its offers,
+# and a hole before and after taking it as a break
+dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/frozen-day.png --kind sick --only status
+dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/completion.png --typing "Client portal (" --only entry
+dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/break.png --only break
 ```
 
 The example day is eight hours over three projects plus a 45 minute break (525 minutes in total),
