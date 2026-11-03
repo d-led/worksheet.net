@@ -16,6 +16,8 @@ public sealed class EntryCommandParserTests
     [InlineData("Website (reports) 10:30-12:00", "Website", "reports", "10:30", 90)]
     [InlineData("Water the garden 09:00-13:30", "Water the garden", null, "09:00", 270)]
     [InlineData("Water the garden 9:0-13:3", "Water the garden", null, "09:00", 243)]
+    [InlineData("Water the garden 09:00 13:30", "Water the garden", null, "09:00", 270)]
+    [InlineData("Water the garden 9:0 13:3", "Water the garden", null, "09:00", 243)]
     [InlineData("Sprint 7 09:00 1h", "Sprint 7", null, "09:00", 60)]
     [InlineData("Deep work 9:30pm 45m", "Deep work", null, "21:30", 45)]
     [InlineData("Reading 14:00 2h 30m", "Reading", null, "14:00", 150)]

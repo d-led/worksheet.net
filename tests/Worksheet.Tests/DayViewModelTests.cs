@@ -410,6 +410,16 @@ public sealed class DayViewModelTests : IDisposable
     }
 
     [Fact]
+    public void Filling_a_hole_keeps_the_topic_of_the_block_before_it()
+    {
+        var day = DayWith("Website (login) 09:00-10:00", "Mobile 11:00-12:00");
+
+        Assert.Single(Gaps(day)).FillCommand.Execute(null);
+
+        Assert.Equal("Website (login) 10:00-11:00", day.EntryText);
+    }
+
+    [Fact]
     public void Turning_a_row_into_a_break_drops_its_topic()
     {
         var day = DayWith("Website (login) 09:00 1h", "Break 13:00 15m");

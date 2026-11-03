@@ -6,6 +6,7 @@ One line records one time range. Grammar:
 command   = [ date ] project [ "(" topic ")" ] span [ "#" note ]
 date      = d "." m "." [ yyyy ] "."
 span      = clock "-" clock            (a range)
+          | clock clock                (the same, without the dash)
           | clock duration             (a start and a length)
           | clock                      (a start; length is zero)
 clock     = H ":" M [ "am" | "pm" ]   (H and M are one or two digits: 9:05, 09:05, 9:5, 12:0)

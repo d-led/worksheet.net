@@ -10,8 +10,10 @@ using Avalonia.Platform;
 namespace Worksheet.Desktop;
 
 /// <summary>
-/// The tray icon and its menu: the same menu on every platform, and a click that brings the
-/// window back. The menu is the application's right-click affordance as well as its only exit.
+/// The tray icon and its menu. A click on the icon raises the window — it never hides it, so a
+/// double click is simply two raises rather than a show and a hide — and the menu, which is a right
+/// click on Windows and Linux and the only click on macOS, holds everything else: undo, redo, the
+/// folder the journal lives in, and the one way to quit.
 /// </summary>
 internal static class TrayHost
 {
@@ -22,6 +24,7 @@ internal static class TrayHost
         Action showWindow,
         Action undoLastChange,
         Action redoLastChange,
+        Action openDataFolder,
         Action quit)
     {
         ArgumentNullException.ThrowIfNull(application);
@@ -42,6 +45,8 @@ internal static class TrayHost
                 new NativeMenuItemSeparator(),
                 MenuItem("Undo last change", undoLastChange),
                 MenuItem("Redo last change", redoLastChange),
+                new NativeMenuItemSeparator(),
+                MenuItem("Open data folder", openDataFolder),
                 new NativeMenuItemSeparator(),
                 MenuItem("Quit", quit),
             },

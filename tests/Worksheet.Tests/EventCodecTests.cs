@@ -39,7 +39,52 @@ public sealed class EventCodecTests
             new EntryRevised(entry, entry with { Duration = TimeSpan.FromMinutes(120) }),
             new EntryRetracted(entry),
             new DayKindChanged(Day, DayKind.Working, DayKind.Sick),
+            new ProjectRenamed(Project, "Website", "Web"),
+            new TopicRenamed(Topic, "login", "sign-in"),
         ];
+    }
+
+    /// <summary>The changes that carry entries compare by identity of their arrays, not by value.</summary>
+    private static LedgerEvent[] EveryRemoval()
+    {
+        var entry = TheEntry();
+        Entry[] before = [entry];
+        Entry[] after = [entry with { ProjectId = Guid.Empty, TopicId = null }];
+        Project project = new(Project, "Website", Archived: false);
+        Topic topic = new(Topic, Project, "login", Archived: false);
+        Entry[] unTopiced = [entry with { TopicId = null }];
+
+        return
+        [
+            new ProjectRemoved(project, [topic], before, after),
+            new ProjectRestored(project, [topic], before, after),
+            new TopicRemoved(topic, before, unTopiced),
+            new TopicRestored(topic, before, unTopiced),
+        ];
+    }
+
+    public static TheoryData<LedgerEvent> Removals()
+    {
+        var data = new TheoryData<LedgerEvent>();
+
+        foreach (var change in EveryRemoval())
+        {
+            data.Add(change);
+        }
+
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(Removals))]
+    public void A_removal_survives_encoding_and_decoding(LedgerEvent change)
+    {
+        var decoded = EventCodec.Decode(EventCodec.KindOf(change), EventCodec.Encode(change));
+
+        Assert.Equal(change.GetType(), decoded.GetType());
+        Assert.Equal(EventCodec.KindOf(change), EventCodec.KindOf(decoded));
+        Assert.Contains('.', EventCodec.KindOf(change));
+        Assert.Equal(EventCodec.Encode(change), EventCodec.Encode(decoded));
     }
 
     public static TheoryData<LedgerEvent> Changes()

@@ -261,18 +261,33 @@ public sealed partial class DayViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Puts a hole's times into the entry line, with the project that ended just before it, so the
-    /// line is already valid and only needs confirming.
+    /// Puts a hole's times into the entry line, with the project — and the topic, when it had one —
+    /// of the block that ended just before it, so the line is already valid and only needs confirming.
     /// </summary>
     private void FillGap(DaySlot gap)
     {
         var preceding = _local.Ledger.State.EntriesOn(Day)
             .LastOrDefault(entry => entry.Start.ToTimeSpan() + entry.Duration == gap.Start);
 
-        var project = preceding is null ? string.Empty : _local.Ledger.State.ProjectName(preceding.ProjectId);
+        EntryText = string.Join(
+            ' ',
+            new[] { LabelOf(preceding), $"{gap.StartsAt:HH:mm}-{gap.EndsAt:HH:mm}" }.Where(part => part.Length > 0));
 
-        EntryText = string.Join(' ', new[] { project, $"{gap.StartsAt:HH:mm}-{gap.EndsAt:HH:mm}" }.Where(part => part.Length > 0));
         Report($"{gap.StartsAt:HH:mm}-{gap.EndsAt:HH:mm} filled in; add a project if there is none.", isProblem: false);
+    }
+
+    /// <summary>A block as the entry line writes it: the project, and its topic when it had one.</summary>
+    private string LabelOf(Entry? entry)
+    {
+        if (entry is null)
+        {
+            return string.Empty;
+        }
+
+        var project = _local.Ledger.State.ProjectName(entry.ProjectId);
+        var topic = _local.Ledger.State.TopicName(entry.TopicId);
+
+        return topic is null ? project : $"{project} ({topic})";
     }
 
     /// <summary>

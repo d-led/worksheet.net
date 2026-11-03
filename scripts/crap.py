@@ -33,6 +33,7 @@ DISPATCH_TABLES = {
     "LedgerState.Record": "what each kind of journal change means, one line each",
     "EventCodec.KindOf": "the stored name of every kind of change",
     "EventCodec.Decode": "a reader for every stored name",
+    "UndoPlanner.Reverse": "the inverse of every kind of change, one line each",
 }
 
 

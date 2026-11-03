@@ -226,8 +226,8 @@ public static partial class EntryCommandParser
     [GeneratedRegex(@"^(?<project>.*?)\s*\(\s*(?<topic>[^()]{1,64})\s*\)$", RegexOptions.CultureInvariant)]
     private static partial Regex Topic();
 
-    // "09:00-13:30" or "9:00am-1:30pm"; a colon followed by one digit is padded, so "9:0-13:3" works.
-    [GeneratedRegex(@"(?<from>\d{1,2}:\d{1,2}(?:[apAP][mM])?)\s*-\s*(?<to>\d{1,2}:\d{1,2}(?:[apAP][mM])?)$", RegexOptions.CultureInvariant)]
+    // "09:00-13:30", "9:00am-1:30pm" — and "09:00 13:30", because a dash is a keystroke.
+    [GeneratedRegex(@"(?<from>\d{1,2}:\d{1,2}(?:[apAP][mM])?)(?:\s*-\s*|\s+)(?<to>\d{1,2}:\d{1,2}(?:[apAP][mM])?)$", RegexOptions.CultureInvariant)]
     private static partial Regex Range();
 
     // "09:00 3h30m" and "09:00 3h 30m".

@@ -73,6 +73,30 @@ public sealed class LedgerState
                 RecordKind(changed);
                 break;
 
+            case ProjectRenamed renamed:
+                RecordRename(_projects, renamed.ProjectId, renamed.After, (project, name) => project with { Name = name });
+                break;
+
+            case TopicRenamed renamed:
+                RecordRename(_topics, renamed.TopicId, renamed.After, (topic, name) => topic with { Name = name });
+                break;
+
+            case ProjectRemoved removed:
+                RecordRemoval(removed.Project, removed.Topics, removed.Before, removed.After, archived: true);
+                break;
+
+            case ProjectRestored restored:
+                RecordRemoval(restored.Project, restored.Topics, restored.Before, restored.After, archived: false);
+                break;
+
+            case TopicRemoved removed:
+                RecordRemoval(removed.Topic, removed.Before, removed.After, archived: true);
+                break;
+
+            case TopicRestored restored:
+                RecordRemoval(restored.Topic, restored.Before, restored.After, archived: false);
+                break;
+
             default:
                 throw new NotSupportedException($"{change.GetType().Name} is not a known journal change.");
         }
@@ -162,6 +186,43 @@ public sealed class LedgerState
         }
 
         _declaredKinds.Remove(changed.Date);
+    }
+
+    private static void RecordRename<T>(Dictionary<Guid, T> items, Guid id, string name, Func<T, string, T> renamed)
+    {
+        if (items.TryGetValue(id, out var item))
+        {
+            items[id] = renamed(item, name.Trim());
+        }
+    }
+
+    /// <summary>
+    /// A removal archives the project and its topics; its inverse brings them back. The event carries
+    /// the entries of both sides, so a fold only has to read the side it means.
+    /// </summary>
+    private void RecordRemoval(Project project, Topic[] topics, Entry[] before, Entry[] after, bool archived)
+    {
+        _projects[project.Id] = project with { Archived = archived };
+
+        foreach (var topic in topics)
+        {
+            _topics[topic.Id] = topic with { Archived = archived };
+        }
+
+        foreach (var entry in archived ? after : before)
+        {
+            _entries[entry.Id] = entry;
+        }
+    }
+
+    private void RecordRemoval(Topic topic, Entry[] before, Entry[] after, bool archived)
+    {
+        _topics[topic.Id] = topic with { Archived = archived };
+
+        foreach (var entry in archived ? after : before)
+        {
+            _entries[entry.Id] = entry;
+        }
     }
 
     private static NameMatch<T> Match<T>(IEnumerable<T> candidates, Func<T, string> nameOf, string wanted)

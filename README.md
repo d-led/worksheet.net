@@ -92,9 +92,10 @@ again. Choosing a status is a change like any other, so undo takes it back too.
 
 ## It lives in the tray
 
-Closing the window hides it and the day keeps counting. The tray icon brings it back; the tray menu
-is also the only place that quits. A second copy leaves quietly instead of fighting the first over
-the same data file.
+Closing the window hides it and the day keeps counting. A click on the tray icon brings the window
+back — it never hides it, so a double click is just two raises — and the menu behind it (a right
+click on Windows and Linux, the icon itself on macOS) holds undo, redo, *Open data folder* and the
+one way to quit. A second copy leaves quietly instead of fighting the first over the same data file.
 
 ## Where your data lives
 

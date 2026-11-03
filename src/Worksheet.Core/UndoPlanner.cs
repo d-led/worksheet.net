@@ -18,6 +18,12 @@ public static class UndoPlanner
             EntryRetracted retracted => new EntryLogged(retracted.Entry),
             EntryRevised revised => new EntryRevised(revised.After, revised.Before),
             DayKindChanged changed => new DayKindChanged(changed.Date, changed.After, changed.Before),
+            ProjectRenamed renamed => new ProjectRenamed(renamed.ProjectId, renamed.After, renamed.Before),
+            TopicRenamed renamed => new TopicRenamed(renamed.TopicId, renamed.After, renamed.Before),
+            ProjectRemoved removed => new ProjectRestored(removed.Project, removed.Topics, removed.Before, removed.After),
+            ProjectRestored restored => new ProjectRemoved(restored.Project, restored.Topics, restored.Before, restored.After),
+            TopicRemoved removed => new TopicRestored(removed.Topic, removed.Before, removed.After),
+            TopicRestored restored => new TopicRemoved(restored.Topic, restored.Before, restored.After),
             _ => null,
         };
 }

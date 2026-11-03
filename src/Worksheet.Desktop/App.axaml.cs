@@ -3,6 +3,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -60,7 +61,7 @@ public sealed class App : Application
         _window = new MainWindow { DataContext = new DayViewModel(_local) };
         desktop.MainWindow = _window;
 
-        TrayHost.Attach(this, ShowWindow, UndoLastChange, RedoLastChange, () => Quit(desktop));
+        TrayHost.Attach(this, ShowWindow, UndoLastChange, RedoLastChange, OpenDataFolder, () => Quit(desktop));
 
         // A binary started from a terminal is not a bundle, so macOS does not bring it forward.
         _window.Show();
@@ -84,6 +85,15 @@ public sealed class App : Application
     private void UndoLastChange() => CurrentDay?.UndoCommand.Execute(null);
 
     private void RedoLastChange() => CurrentDay?.RedoCommand.Execute(null);
+
+    /// <summary>Shows the journal in the file manager: the folder exists once a ledger was opened.</summary>
+    private static void OpenDataFolder()
+    {
+        var directory = LocalLedger.DefaultDirectory;
+
+        Directory.CreateDirectory(directory);
+        Process.Start(new ProcessStartInfo(directory) { UseShellExecute = true });
+    }
 
     private void Quit(IClassicDesktopStyleApplicationLifetime desktop)
     {

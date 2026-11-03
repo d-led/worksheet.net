@@ -21,6 +21,12 @@ internal static class EventCodec
     private const string EntryRevisedKind = "entry.revised";
     private const string EntryRetractedKind = "entry.retracted";
     private const string DayKindChangedKind = "day.kind-changed";
+    private const string ProjectRenamedKind = "project.renamed";
+    private const string TopicRenamedKind = "topic.renamed";
+    private const string ProjectRemovedKind = "project.removed";
+    private const string ProjectRestoredKind = "project.restored";
+    private const string TopicRemovedKind = "topic.removed";
+    private const string TopicRestoredKind = "topic.restored";
 
     public static string KindOf(LedgerEvent change) =>
         change switch
@@ -31,6 +37,12 @@ internal static class EventCodec
             EntryRevised => EntryRevisedKind,
             EntryRetracted => EntryRetractedKind,
             DayKindChanged => DayKindChangedKind,
+            ProjectRenamed => ProjectRenamedKind,
+            TopicRenamed => TopicRenamedKind,
+            ProjectRemoved => ProjectRemovedKind,
+            ProjectRestored => ProjectRestoredKind,
+            TopicRemoved => TopicRemovedKind,
+            TopicRestored => TopicRestoredKind,
             _ => throw new JournalIntegrityException($"{change.GetType().Name} has no stored kind."),
         };
 
@@ -46,6 +58,12 @@ internal static class EventCodec
             EntryRevisedKind => Read<EntryRevised>(kind, payload),
             EntryRetractedKind => Read<EntryRetracted>(kind, payload),
             DayKindChangedKind => Read<DayKindChanged>(kind, payload),
+            ProjectRenamedKind => Read<ProjectRenamed>(kind, payload),
+            TopicRenamedKind => Read<TopicRenamed>(kind, payload),
+            ProjectRemovedKind => Read<ProjectRemoved>(kind, payload),
+            ProjectRestoredKind => Read<ProjectRestored>(kind, payload),
+            TopicRemovedKind => Read<TopicRemoved>(kind, payload),
+            TopicRestoredKind => Read<TopicRestored>(kind, payload),
             _ => throw new JournalIntegrityException($"The journal holds a change of unknown kind '{kind}'."),
         };
 
