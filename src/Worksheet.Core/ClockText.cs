@@ -8,12 +8,15 @@ using System.Globalization;
 namespace Worksheet.Core;
 
 /// <summary>
-/// One clock reading: <c>9:05</c>, <c>09:05</c>, <c>9:05pm</c>. The framework does the parsing, so
-/// the rules about what a time is (and is not) are the framework's, not ours.
+/// One clock reading: <c>9:05</c>, <c>09:05</c>, <c>9:05pm</c> — and the lazy spellings a person
+/// actually types, <c>12:0</c> and <c>4:30</c>. A single digit after the colon is padded, so
+/// <c>12:5</c> is five past twelve rather than ten to one. The framework does the parsing, so the
+/// rules about what a time is (and is not) are the framework's, not ours.
 /// </summary>
 public static class ClockText
 {
-    private static readonly string[] Shapes = ["H:mm", "HH:mm", "h:mmtt", "hh:mmtt"];
+    private static readonly string[] Shapes =
+        ["H:mm", "HH:mm", "H:m", "HH:m", "h:mmtt", "hh:mmtt", "h:mtt", "hh:mtt"];
 
     public static bool TryParse(string? text, out TimeOnly time)
     {

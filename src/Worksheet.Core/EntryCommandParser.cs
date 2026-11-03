@@ -226,15 +226,15 @@ public static partial class EntryCommandParser
     [GeneratedRegex(@"^(?<project>.*?)\s*\(\s*(?<topic>[^()]{1,64})\s*\)$", RegexOptions.CultureInvariant)]
     private static partial Regex Topic();
 
-    // "09:00-13:30" or "9:00am-1:30pm".
-    [GeneratedRegex(@"(?<from>\d{1,2}:\d{2}(?:[apAP][mM])?)\s*-\s*(?<to>\d{1,2}:\d{2}(?:[apAP][mM])?)$", RegexOptions.CultureInvariant)]
+    // "09:00-13:30" or "9:00am-1:30pm"; a colon followed by one digit is padded, so "9:0-13:3" works.
+    [GeneratedRegex(@"(?<from>\d{1,2}:\d{1,2}(?:[apAP][mM])?)\s*-\s*(?<to>\d{1,2}:\d{1,2}(?:[apAP][mM])?)$", RegexOptions.CultureInvariant)]
     private static partial Regex Range();
 
     // "09:00 3h30m" and "09:00 3h 30m".
-    [GeneratedRegex(@"(?<from>\d{1,2}:\d{2}(?:[apAP][mM])?)\s+(?<dur>(?:\d+\s*[hHmM]\s*)+)$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"(?<from>\d{1,2}:\d{1,2}(?:[apAP][mM])?)\s+(?<dur>(?:\d+\s*[hHmM]\s*)+)$", RegexOptions.CultureInvariant)]
     private static partial Regex Length();
 
     // A bare "09:00": a start with no length yet.
-    [GeneratedRegex(@"(?<from>\d{1,2}:\d{2}(?:[apAP][mM])?)$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"(?<from>\d{1,2}:\d{1,2}(?:[apAP][mM])?)$", RegexOptions.CultureInvariant)]
     private static partial Regex OpenStart();
 }

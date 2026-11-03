@@ -139,6 +139,6 @@ public static partial class EntryCompletion
     [GeneratedRegex(@"^(?<d>\d{1,2})\.(?<m>\d{1,2})\.(?:(?<y>\d{4})\.?)?\s+", RegexOptions.CultureInvariant)]
     private static partial Regex DatePrefix();
 
-    [GeneratedRegex(@"\d{1,2}:\d{2}", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\d{1,2}:\d{1,2}", RegexOptions.CultureInvariant)]
     private static partial Regex Clock();
 }

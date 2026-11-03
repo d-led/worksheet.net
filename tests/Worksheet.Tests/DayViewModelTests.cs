@@ -397,6 +397,19 @@ public sealed class DayViewModelTests : IDisposable
     }
 
     [Fact]
+    public void A_clock_written_in_a_hurry_is_read_in_24_hours()
+    {
+        var day = DayWith("bla (test) 12:0 2h");
+
+        var row = EntryRow(day);
+
+        Assert.Equal("12:00", row.StartText);
+        Assert.Equal("14:00", row.EndText);
+        Assert.Equal("bla", row.Project!.Label);
+        Assert.Equal("test", row.Topic);
+    }
+
+    [Fact]
     public void Turning_a_row_into_a_break_drops_its_topic()
     {
         var day = DayWith("Website (login) 09:00 1h", "Break 13:00 15m");

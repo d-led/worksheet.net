@@ -8,12 +8,16 @@ date      = d "." m "." [ yyyy ] "."
 span      = clock "-" clock            (a range)
           | clock duration             (a start and a length)
           | clock                      (a start; length is zero)
-clock     = H ":" MM [ "am" | "pm" ]
+clock     = H ":" M [ "am" | "pm" ]   (H and M are one or two digits: 9:05, 09:05, 9:5, 12:0)
 duration  = { digits ( "h" | "m" ) }   (the Go duration shape: 3h30m, 90m, 2h, 2h 30m)
 ```
 
 Everything is trimmed; the fields are recognised from the right, so a project
 name may contain spaces and digits.
+
+A clock is read leniently. A single digit after the colon is padded, so `12:0` is noon,
+`4:30` is half past four in the morning, and `12:5` is five past twelve rather than ten
+to one. Without `am` or `pm` a time is in 24-hour form: `4:30` is 04:30, not 16:30.
 
 ## Examples
 
@@ -23,6 +27,7 @@ name may contain spaces and digits.
 | `Website (reports) 10:30-12:00` | Website | reports | 10:30–12:00 |
 | `Water the garden 09:00-13:30` | Water the garden | — | 09:00–13:30 |
 | `Deep work 9:30pm 45m` | Deep work | — | 21:30 + 45m |
+| `Reading 12:0 45m` | Reading | — | 12:00 + 45m |
 | `3.11. Reading 14:00 45m` | Reading | — | 2026-11-03, 14:00 + 45m |
 | `Reading 14:00 2h 30m # the LiteDB paper` | Reading | — | 14:00 + 2h30m, note |
 

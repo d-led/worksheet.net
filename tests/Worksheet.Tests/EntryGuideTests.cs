@@ -21,6 +21,9 @@ public sealed class EntryGuideTests
     [InlineData("web 09:00 1h", EntryStep.Complete)]
     [InlineData("web 09:00-10:00", EntryStep.Complete)]
     [InlineData("web (login) 09:00 1h30m", EntryStep.Complete)]
+    // A clock written in a hurry still counts as a clock, so the length comes next.
+    [InlineData("web (login) 12:0", EntryStep.Span)]
+    [InlineData("web 4:30 1h", EntryStep.Complete)]
     public void Says_what_to_write_next(string typed, EntryStep expected)
     {
         Assert.Equal(expected, EntryGuide.Next(typed));

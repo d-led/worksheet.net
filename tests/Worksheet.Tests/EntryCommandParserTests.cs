@@ -15,6 +15,7 @@ public sealed class EntryCommandParserTests
     [InlineData("Website (login) 09:00 1h30m", "Website", "login", "09:00", 90)]
     [InlineData("Website (reports) 10:30-12:00", "Website", "reports", "10:30", 90)]
     [InlineData("Water the garden 09:00-13:30", "Water the garden", null, "09:00", 270)]
+    [InlineData("Water the garden 9:0-13:3", "Water the garden", null, "09:00", 243)]
     [InlineData("Sprint 7 09:00 1h", "Sprint 7", null, "09:00", 60)]
     [InlineData("Deep work 9:30pm 45m", "Deep work", null, "21:30", 45)]
     [InlineData("Reading 14:00 2h 30m", "Reading", null, "14:00", 150)]
@@ -138,6 +139,15 @@ public sealed class EntryCommandParserTests
     [InlineData("P 0:00-8:00", 0, 0)]
     // The framework reads 0:00am as midnight; a zero hour with a designator is not worth a rule.
     [InlineData("P 0:00am 1h", 0, 0)]
+    // A colon and one digit is what a person types in a hurry: padded, in 24 hours unless a
+    // designator says otherwise, so 4:30 is half past four in the morning and 12:5 is 12:05.
+    [InlineData("P 12:0 2h", 12, 0)]
+    [InlineData("P 4:0 1h", 4, 0)]
+    [InlineData("P 4:30 1h", 4, 30)]
+    [InlineData("P 12:5 1h", 12, 5)]
+    [InlineData("P 9:5 1h", 9, 5)]
+    [InlineData("P 7:0am 1h", 7, 0)]
+    [InlineData("P 7:0pm 1h", 19, 0)]
     public void Reads_clocks_in_every_accepted_shape(string line, int hour, int minute)
     {
         var parse = EntryCommandParser.Parse(line, Today);
@@ -150,8 +160,6 @@ public sealed class EntryCommandParserTests
     [InlineData("P 24:00 1h", "'24:00' is not a time; write it like 09:00.")]
     [InlineData("P 9:60 1h", "'9:60' is not a time; write it like 09:00.")]
     [InlineData("P 13:00pm 1h", "'13:00pm' is not a time; write it like 09:00.")]
-    // Not clock-shaped at all, so it reads as a line with no time rather than a bad clock.
-    [InlineData("P 9:5 1h", EntryCommandParser.MissingTimeMessage)]
     public void Refuses_impossible_clocks_with_the_offending_text(string line, string error)
     {
         var parse = EntryCommandParser.Parse(line, Today);

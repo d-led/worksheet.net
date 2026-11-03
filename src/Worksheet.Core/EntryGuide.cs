@@ -63,6 +63,6 @@ public static partial class EntryGuide
     /// <summary>What to write at this step, for the hint line.</summary>
     public static string Label(EntryStep step) => Labels[(int)step];
 
-    [GeneratedRegex(@"\d{1,2}:\d{2}", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\d{1,2}:\d{1,2}", RegexOptions.CultureInvariant)]
     private static partial Regex Clock();
 }
