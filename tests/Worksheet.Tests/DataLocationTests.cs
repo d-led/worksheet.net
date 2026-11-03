@@ -28,10 +28,14 @@ public sealed class DataLocationTests
         Assert.Equal(LocalLedger.DataDirectory(null), LocalLedger.DataDirectory(overridden));
     }
 
-    [Fact]
-    public void An_override_is_used_as_given_but_trimmed()
+    [Theory]
+    [InlineData("  tmp/portable  ", "tmp/portable")]
+    [InlineData("  tmp\\portable  ", "tmp\\portable")]
+    public void An_override_is_used_as_given_but_trimmed(string overridden, string expected)
     {
-        Assert.Equal(Path.Combine("tmp", "portable"), LocalLedger.DataDirectory("  tmp/portable  "));
+        // As given, on every platform: the separator the person wrote is the one they get back,
+        // and Windows accepts either. Normalising it here would be a surprise, not a service.
+        Assert.Equal(expected, LocalLedger.DataDirectory(overridden));
     }
 
     [Fact]
