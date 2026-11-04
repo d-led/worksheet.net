@@ -12,6 +12,9 @@ public sealed class EntryCommandParserTests
 {
     private static readonly DateOnly Today = new(2026, 11, 3);
 
+    /// <summary>When the day is taken to have stopped: the end the shorthand continues from.</summary>
+    private static readonly TimeOnly Stopped = new(10, 0);
+
     [Theory]
     [InlineData("Website (login) 09:00 1h30m", "Website", "login", "09:00", 90)]
     [InlineData("Website (reports) 10:30-12:00", "Website", "reports", "10:30", 90)]
@@ -47,6 +50,81 @@ public sealed class EntryCommandParserTests
 
         Assert.True(parse.Succeeded, parse.Error);
         Assert.Equal(TimeSpan.Zero, parse.Command!.Duration);
+    }
+
+    [Theory]
+    [InlineData("Website (login) till 13:30", "Website", "login", 210)]
+    [InlineData("Website until 12:00", "Website", null, 120)]
+    [InlineData("Website (login) for 1h30m", "Website", "login", 90)]
+    [InlineData("Water the garden for 20m", "Water the garden", null, 20)]
+    public void A_line_without_a_start_continues_from_the_last_end(
+        string line,
+        string project,
+        string? topic,
+        int minutes)
+    {
+        var parse = EntryCommandParser.Parse(line, Today, _ => Stopped);
+
+        Assert.True(parse.Succeeded, parse.Error);
+        Assert.Equal(project, parse.Command!.Project);
+        Assert.Equal(topic, parse.Command.Topic);
+        Assert.Equal(Stopped, parse.Command.Start);
+        Assert.Equal(TimeSpan.FromMinutes(minutes), parse.Command.Duration);
+    }
+
+    [Fact]
+    public void A_line_without_a_start_asks_the_day_it_names_for_that_end()
+    {
+        var other = Today.AddDays(1);
+
+        var parse = EntryCommandParser.Parse(
+            $"{other.Day}.{other.Month}. Website till 13:30",
+            Today,
+            day => day == other ? new TimeOnly(12, 0) : Stopped);
+
+        Assert.True(parse.Succeeded, parse.Error);
+        Assert.Equal(other, parse.Command!.Date);
+        Assert.Equal(new TimeOnly(12, 0), parse.Command.Start);
+        Assert.Equal(TimeSpan.FromMinutes(90), parse.Command.Duration);
+    }
+
+    [Fact]
+    public void A_line_without_a_start_is_refused_on_a_day_with_nothing_to_continue()
+    {
+        var parse = EntryCommandParser.Parse("Website till 13:30", Today);
+
+        Assert.False(parse.Succeeded);
+        Assert.Equal(EntryCommandParser.NothingToContinueMessage, parse.Error);
+    }
+
+    [Fact]
+    public void A_line_without_a_start_must_end_after_the_last_one()
+    {
+        var parse = EntryCommandParser.Parse("Website till 10:00", Today, _ => Stopped);
+
+        Assert.False(parse.Succeeded);
+        Assert.Equal("10:00 is not after 10:00, where the last entry ended.", parse.Error);
+    }
+
+    [Theory]
+    [InlineData("Website till 25:00", "'25:00' is not a time; write it like 09:00.")]
+    [InlineData("Website for 0m", "'0m' is not a duration; write it like 3h30m, 90m or 2h.")]
+    public void A_shorthand_still_reads_what_is_written_in_it(string line, string error)
+    {
+        var parse = EntryCommandParser.Parse(line, Today, _ => Stopped);
+
+        Assert.False(parse.Succeeded);
+        Assert.Equal(error, parse.Error);
+    }
+
+    [Fact]
+    public void A_project_may_hold_the_word_that_begins_a_shorthand()
+    {
+        var parse = EntryCommandParser.Parse("Work for the client 09:00 1h", Today, _ => Stopped);
+
+        Assert.True(parse.Succeeded, parse.Error);
+        Assert.Equal("Work for the client", parse.Command!.Project);
+        Assert.Equal(TimeSpan.FromHours(1), parse.Command.Duration);
     }
 
     [Fact]

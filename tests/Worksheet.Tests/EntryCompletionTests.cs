@@ -106,4 +106,12 @@ public sealed class EntryCompletionTests
     [Fact]
     public void A_name_taken_over_a_whole_line_replaces_it() =>
         Assert.Equal("Client portal (", EntryCompletion.Take(Ledger(), "port", "Client portal"));
+
+    [Fact]
+    public void The_shorthand_that_follows_a_project_is_not_part_of_its_name() =>
+        Assert.Equal(new[] { "Website" }, Names("web till"));
+
+    [Fact]
+    public void Taking_a_project_keeps_the_shorthand_already_typed() =>
+        Assert.Equal("Website till", EntryCompletion.Take(Ledger(), "web till", "Website"));
 }

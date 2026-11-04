@@ -11,7 +11,9 @@ namespace Worksheet.Core;
 /// <summary>
 /// Reads one line of the entry language (see <c>docs/entry-syntax.md</c>). Fields are recognised
 /// from the right, so a project name may contain spaces, digits and dots. The parser is total:
-/// every input yields either a command or one sentence saying what is missing.
+/// every input yields either a command or one sentence saying what is missing. A line may name
+/// only its end or only its length — <c>till 13:30</c>, <c>for 1h30m</c> — and then starts where
+/// the last entry on that day ended.
 /// </summary>
 public static partial class EntryCommandParser
 {
@@ -21,34 +23,39 @@ public static partial class EntryCommandParser
 
     public const string MissingProjectMessage = "A project name is needed before the time.";
 
-    public static EntryParse Parse(string? text, DateOnly today)
+    public const string NothingToContinueMessage =
+        "\"till\" and \"for\" start where the last entry ended, and this day has none; write the start, e.g. 09:00 1h30m.";
+
+    /// <param name="continueFrom">
+    /// When work stopped on a day: the end of its last entry, which a line that names no start
+    /// continues from. It is asked per day, because a line may name its own.
+    /// </param>
+    public static EntryParse Parse(string? text, DateOnly today, Func<DateOnly, TimeOnly?>? continueFrom = null)
     {
         var rest = (text ?? string.Empty).Trim();
 
-        if (rest.Length == 0)
-        {
-            return EntryParse.Fail(EmptyInputMessage);
-        }
+        return rest.Length == 0 ? EntryParse.Fail(EmptyInputMessage) : Read(rest, today, continueFrom);
+    }
 
+    /// <summary>A line with something on it, read from its note inwards: the day, then the span.</summary>
+    private static EntryParse Read(string rest, DateOnly today, Func<DateOnly, TimeOnly?>? continueFrom)
+    {
         var note = TakeNote(ref rest);
-
         var (date, dateError) = TakeDate(ref rest, today);
 
-        if (dateError is not null)
-        {
-            return EntryParse.Fail(dateError);
-        }
+        return dateError is null ? ReadSpan(rest, date, note, continueFrom) : EntryParse.Fail(dateError);
+    }
 
-        var span = MatchSpan(rest);
+    private static EntryParse ReadSpan(string rest, DateOnly date, string? note, Func<DateOnly, TimeOnly?>? continueFrom)
+    {
+        var span = MatchSpan(rest, continueFrom?.Invoke(date));
 
         if (span.Error is not null)
         {
             return EntryParse.Fail(span.Error);
         }
 
-        return span.Matched
-            ? Build(rest[..span.Index], span, date, note)
-            : EntryParse.Fail(MissingTimeMessage);
+        return span.Matched ? Build(rest[..span.Index], span, date, note) : EntryParse.Fail(MissingTimeMessage);
     }
 
     private static EntryParse Build(string head, SpanParse span, DateOnly date, string? note)
@@ -121,9 +128,13 @@ public static partial class EntryCommandParser
     private static bool IsRealDate(int day, int month, int year) =>
         month is >= 1 and <= 12 && day >= 1 && day <= DateTime.DaysInMonth(year, month);
 
-    private static SpanParse MatchSpan(string text)
+    private static SpanParse MatchSpan(string text, TimeOnly? continuesFrom)
     {
-        var attempt = MatchRange(text) ?? MatchLength(text) ?? MatchOpenStart(text);
+        var attempt = MatchRange(text)
+            ?? MatchLength(text)
+            ?? MatchTill(text, continuesFrom)
+            ?? MatchFor(text, continuesFrom)
+            ?? MatchOpenStart(text);
 
         return attempt ?? SpanParse.NoMatch;
     }
@@ -161,16 +172,59 @@ public static partial class EntryCommandParser
             return null;
         }
 
-        if (!TryReadClock(match.Groups["from"], out var from))
+        return TryReadClock(match.Groups["from"], out var from)
+            ? SpanOf(match.Index, from, match.Groups["dur"])
+            : SpanParse.Fail(NotATime(match.Groups["from"].Value));
+    }
+
+    /// <summary>A span of the duration the line wrote, from the start it has.</summary>
+    private static SpanParse SpanOf(int index, TimeOnly from, Group written) =>
+        Durations.TryParse(written.Value, out var duration)
+            ? SpanParse.Match(index, from, duration)
+            : SpanParse.Fail(NotADuration(written.Value));
+
+    /// <summary>"till 13:30": the end is written, the start is where the last entry ended.</summary>
+    private static SpanParse? MatchTill(string text, TimeOnly? continuesFrom)
+    {
+        var match = Till().Match(text);
+
+        if (!match.Success)
         {
-            return SpanParse.Fail(NotATime(match.Groups["from"].Value));
+            return null;
         }
 
-        var written = match.Groups["dur"].Value;
+        if (continuesFrom is not { } from)
+        {
+            return SpanParse.Fail(NothingToContinueMessage);
+        }
 
-        return Durations.TryParse(written, out var duration)
-            ? SpanParse.Match(match.Index, from, duration)
-            : SpanParse.Fail($"'{written}' is not a duration; write it like 3h30m, 90m or 2h.");
+        return TryReadClock(match.Groups["to"], out var to)
+            ? Ended(match.Index, from, to)
+            : SpanParse.Fail(NotATime(match.Groups["to"].Value));
+    }
+
+    /// <summary>A span that stops at a written clock, if that clock is after where the day stopped.</summary>
+    private static SpanParse Ended(int index, TimeOnly from, TimeOnly to) =>
+        to <= from
+            ? SpanParse.Fail($"{Clock(to)} is not after {Clock(from)}, where the last entry ended.")
+            : SpanParse.Match(index, from, to.ToTimeSpan() - from.ToTimeSpan());
+
+    /// <summary>"for 1h30m": the length is written, the start is where the last entry ended.</summary>
+    private static SpanParse? MatchFor(string text, TimeOnly? continuesFrom)
+    {
+        var match = For().Match(text);
+
+        if (!match.Success)
+        {
+            return null;
+        }
+
+        if (continuesFrom is not { } from)
+        {
+            return SpanParse.Fail(NothingToContinueMessage);
+        }
+
+        return SpanOf(match.Index, from, match.Groups["dur"]);
     }
 
     private static SpanParse? MatchOpenStart(string text)
@@ -205,6 +259,8 @@ public static partial class EntryCommandParser
 
     private static string NotATime(string text) => $"'{text.Trim()}' is not a time; write it like 09:00.";
 
+    private static string NotADuration(string text) => $"'{text}' is not a duration; write it like 3h30m, 90m or 2h.";
+
     private static string Clock(TimeOnly time) => ClockText.Format(time);
 
     private static int Digits(string text) => int.Parse(text, NumberStyles.None, CultureInfo.InvariantCulture);
@@ -234,6 +290,14 @@ public static partial class EntryCommandParser
     // "09:00 3h30m" and "09:00 3h 30m".
     [GeneratedRegex(@"(?<from>\d{1,2}:\d{1,2}(?:[apAP][mM])?)\s+(?<dur>(?:\d+\s*[hHmM]\s*)+)$", RegexOptions.CultureInvariant)]
     private static partial Regex Length();
+
+    // "till 13:30" and "until 13:30": the end, against where the last entry ended.
+    [GeneratedRegex("(?<!\\w)(?:till|until)\\s+(?<to>\\d{1,2}:\\d{1,2}(?:[apAP][mM])?)\\s*$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
+    private static partial Regex Till();
+
+    // "for 1h30m": the length, against the same start.
+    [GeneratedRegex(@"(?<!\w)for\s+(?<dur>(?:\d+\s*[hHmM]\s*)+)\s*$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
+    private static partial Regex For();
 
     // A bare "09:00": a start with no length yet.
     [GeneratedRegex(@"(?<from>\d{1,2}:\d{1,2}(?:[apAP][mM])?)$", RegexOptions.CultureInvariant)]

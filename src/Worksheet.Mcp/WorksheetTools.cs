@@ -61,7 +61,7 @@ public sealed class WorksheetTools : IToolkit
 
     private ToolOutcome Log(string line, DateOnly day)
     {
-        var parse = EntryCommandParser.Parse(line, day);
+        var parse = EntryCommandParser.Parse(line, day, _ledger.State.EndOfLast);
 
         if (!parse.Succeeded)
         {
@@ -207,6 +207,8 @@ public sealed class WorksheetTools : IToolkit
             "log_entry",
             "Record exactly one time range. The line is the application's own syntax, for example "
             + "'Client portal (login) 08:30 2h30m', 'Client portal (reports) 11:00-12:30' or 'Break 12:30 45m'. "
+            + "A line may leave its start out — 'Client portal till 16:00', 'Client portal for 1h30m' — "
+            + "and then begins where the last range of that day ended. "
             + "One call records one range: a day of four ranges is four calls. "
             + "A line may name its own day ('3.11. Reading 14:00 45m'); otherwise date is the day it belongs to. "
             + "A range that cannot be recorded is refused with a sentence saying why, and nothing is written.",

@@ -9,6 +9,9 @@ namespace Worksheet.Tests;
 
 public sealed class EntryGuideTests
 {
+    /// <summary>Where the day stopped: the start a line may leave out.</summary>
+    private static readonly TimeOnly Stopped = new(10, 0);
+
     [Theory]
     [InlineData("", EntryStep.Project)]
     [InlineData("   ", EntryStep.Project)]
@@ -38,5 +41,47 @@ public sealed class EntryGuideTests
     public void Every_step_has_a_sentence(EntryStep step, string expected)
     {
         Assert.Equal(expected, EntryGuide.Label(step));
+    }
+
+    [Theory]
+    [InlineData("web till 13:30", EntryStep.Complete)]
+    [InlineData("web for 1h30m", EntryStep.Complete)]
+    [InlineData("web (login) until 13:30", EntryStep.Complete)]
+    [InlineData("web till", EntryStep.Span)]
+    [InlineData("web for", EntryStep.Span)]
+    public void A_shorthand_is_read_once_the_day_has_an_end_to_continue_from(string typed, EntryStep expected)
+    {
+        Assert.Equal(expected, EntryGuide.Next(typed, Stopped));
+    }
+
+    [Fact]
+    public void Without_an_end_to_continue_from_a_shorthand_is_still_being_written()
+    {
+        Assert.Equal(EntryStep.Span, EntryGuide.Next("web till 13:30"));
+    }
+
+    [Fact]
+    public void The_start_step_offers_the_shorthands_beside_the_clock()
+    {
+        Assert.Equal(
+            "start 09:00, or from 10:00 \"till 11:30\" / \"for 1h30m\"",
+            EntryGuide.Label(EntryStep.Start, "web (login) ", Stopped));
+    }
+
+    [Theory]
+    [InlineData("web till", "an end, e.g. 11:30")]
+    [InlineData("web until", "an end, e.g. 11:30")]
+    [InlineData("web for", "a length, e.g. 1h30m")]
+    public void The_span_step_says_which_half_of_it_the_shorthand_still_needs(string typed, string expected)
+    {
+        Assert.Equal(expected, EntryGuide.Label(EntryStep.Span, typed, Stopped));
+    }
+
+    [Fact]
+    public void The_example_end_reads_later_than_the_start_it_continues()
+    {
+        Assert.Equal(
+            "start 09:00, or from 17:30 \"till 19:00\" / \"for 1h30m\"",
+            EntryGuide.Label(EntryStep.Start, "web (login) ", new TimeOnly(17, 30)));
     }
 }

@@ -7,8 +7,9 @@
   <!--
     One line, and under it an answer to "what now": the shape of a line in four parts with the
     next one named, then anything wrong with what has been typed so far — including an
-    intersection, which is visible before Enter rather than after it. Known names are chips below:
-    the arrows walk them and Tab takes the one they are on.
+    intersection, which is visible before Enter rather than after it. The hint wraps rather than
+    clips, because once the day has an end to continue from it offers two shorthands beside the
+    clock. Known names are chips below: the arrows walk them and Tab takes the one they are on.
   -->
   <StackPanel Spacing="5">
 
@@ -21,12 +22,13 @@
       </TextBox.KeyBindings>
     </TextBox>
 
-    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
       <TextBlock Classes="legend" Text="project › (topic) › 09:00 › 1h30m" VerticalAlignment="Center" />
       <TextBlock x:Name="NextStep"
                  Grid.Column="1"
                  Classes="hint"
                  Text="{Binding NextStep}"
+                 TextWrapping="Wrap"
                  VerticalAlignment="Center" />
     </Grid>
 

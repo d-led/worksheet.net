@@ -9,12 +9,19 @@ span      = clock "-" clock            (a range)
           | clock clock                (the same, without the dash)
           | clock duration             (a start and a length)
           | clock                      (a start; length is zero)
+          | "till" clock               (the end, from where the last entry ended)
+          | "for" duration             (the length, from the same start)
 clock     = H ":" M [ "am" | "pm" ]   (H and M are one or two digits: 9:05, 09:05, 9:5, 12:0)
 duration  = { digits ( "h" | "m" ) }   (the Go duration shape: 3h30m, 90m, 2h, 2h 30m)
 ```
 
 Everything is trimmed; the fields are recognised from the right, so a project
 name may contain spaces and digits.
+
+Once the day holds an entry, the start can be left out: `till 13:30` and `for
+1h30m` both begin where the last entry of that day ended. `until` is read as
+`till`. A day with nothing on it has no end to continue from, so the shorthand
+is refused there rather than guessed at.
 
 A project with no topic is written without brackets: `Website 09:00 1h30m`. Empty
 brackets — `Website () 09:00 1h30m` — mean the same, so a half-typed topic left behind
@@ -36,6 +43,8 @@ to one. Without `am` or `pm` a time is in 24-hour form: `4:30` is 04:30, not 16:
 | `Reading 12:0 45m` | Reading | — | 12:00 + 45m |
 | `3.11. Reading 14:00 45m` | Reading | — | 2026-11-03, 14:00 + 45m |
 | `Reading 14:00 2h 30m # the LiteDB paper` | Reading | — | 14:00 + 2h30m, note |
+| `Website (login) till 13:30` | Website | login | last end – 13:30 |
+| `Website for 1h30m` | Website | — | last end + 1h30m |
 
 ## Rules
 
@@ -44,10 +53,13 @@ to one. Without `am` or `pm` a time is in 24-hour form: `4:30` is 04:30, not 16:
    rather than guessed at. Splitting work at midnight is the user's decision.
 3. **Zero length is allowed** for the `clock` and `clock duration` forms only
    when written as a bare `clock`; a written duration of `0m` is an error.
-4. **Dates are optional** and default to the day being edited. A missing year is
+4. **`till` and `for` continue the day.** The start is the end of the last entry
+   on the day the line names, and that end must come before the one written, or
+   the span is empty.
+5. **Dates are optional** and default to the day being edited. A missing year is
    the current year.
-5. **Names are resolved, not created silently.** Resolution is exact,
+6. **Names are resolved, not created silently.** Resolution is exact,
    case-insensitive; failing that, a unique prefix. Only then is a new project or
    topic opened, and that is an appended journal entry like any other.
-6. **Errors are messages, not exceptions.** The parser is total: every input
+7. **Errors are messages, not exceptions.** The parser is total: every input
    produces either a command or one sentence explaining what is missing.

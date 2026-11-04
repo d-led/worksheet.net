@@ -142,7 +142,7 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void Log()
     {
-        var parse = EntryCommandParser.Parse(EntryText, Day);
+        var parse = EntryCommandParser.Parse(EntryText, Day, _local.Ledger.State.EndOfLast);
 
         if (!parse.Succeeded)
         {
@@ -546,13 +546,14 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     /// </summary>
     private void UpdateGuide()
     {
-        var step = EntryGuide.Next(EntryText);
+        var lastEnd = _local.Ledger.State.EndOfLast(Day);
+        var step = EntryGuide.Next(EntryText, lastEnd);
 
         NextStep = step == EntryStep.Complete
             ? "complete"
-            : $"next: {EntryGuide.Label(step)}";
+            : $"next: {EntryGuide.Label(step, EntryText, lastEnd)}";
 
-        var parse = EntryCommandParser.Parse(EntryText, Day);
+        var parse = EntryCommandParser.Parse(EntryText, Day, _local.Ledger.State.EndOfLast);
         Validation = parse.Succeeded && _composer.Preview(parse.Command!) is { Count: > 0 } conflicts
             ? string.Join("; ", conflicts)
             : null;

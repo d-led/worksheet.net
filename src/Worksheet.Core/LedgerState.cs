@@ -127,6 +127,21 @@ public sealed class LedgerState
     public IEnumerable<Entry> EntriesOn(DateOnly day) =>
         _entries.Values.Where(entry => entry.Date == day).OrderBy(entry => entry.Start).ThenBy(entry => entry.Id.Value);
 
+    /// <summary>
+    /// Where the day stops: the end of the last stretch logged on it, or nothing when the day is
+    /// empty. A stretch that ends exactly at midnight ends the day too, so it is no start for
+    /// another entry on that day.
+    /// </summary>
+    public TimeOnly? EndOfLast(DateOnly day)
+    {
+        var ends = EntriesOn(day)
+            .Select(entry => entry.Start.ToTimeSpan() + entry.Duration)
+            .Where(end => end > TimeSpan.Zero && end < TimeSpan.FromDays(1))
+            .ToList();
+
+        return ends.Count == 0 ? null : TimeOnly.FromTimeSpan(ends.Max());
+    }
+
     /// <summary>What the day is: what was declared for it, or what the calendar says.</summary>
     public DayKind KindOf(DateOnly day) =>
         _declaredKinds.TryGetValue(day, out var kind) ? kind : DayKinds.DefaultOf(day);

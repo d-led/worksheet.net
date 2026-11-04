@@ -165,6 +165,33 @@ public sealed class DayViewModelTests : IDisposable
     }
 
     [Fact]
+    public void The_hint_offers_the_shorthands_once_the_day_has_an_end_to_continue_from()
+    {
+        var day = DayWith("Website 09:00 1h");
+
+        day.EntryText = "Mobile (app) ";
+
+        Assert.Equal("next: start 09:00, or from 10:00 \"till 11:30\" / \"for 1h30m\"", day.NextStep);
+    }
+
+    [Fact]
+    public void A_line_that_says_till_is_logged_from_where_the_last_entry_ended()
+    {
+        var day = DayWith("Website 09:00 1h");
+
+        day.EntryText = "Mobile (app) till 12:00";
+        Assert.Equal("complete", day.NextStep);
+
+        day.LogCommand.Execute(null);
+
+        var row = (EntryRowViewModel)day.Rows[1];
+        Assert.Equal("10:00", row.StartText);
+        Assert.Equal("12:00", row.EndText);
+        Assert.Equal("Mobile", row.ProjectText);
+        Assert.Equal("app", row.TopicText);
+    }
+
+    [Fact]
     public void An_intersection_is_reported_while_typing_not_after_enter()
     {
         var day = DayWith("Website 09:00 2h");
@@ -318,7 +345,7 @@ public sealed class DayViewModelTests : IDisposable
 
         Assert.Equal("Website (login) ", day.EntryText);
         Assert.False(day.HasSuggestions);
-        Assert.Equal("next: start, e.g. 09:00", day.NextStep);
+        Assert.Equal("next: start 09:00, or from 10:00 \"till 11:30\" / \"for 1h30m\"", day.NextStep);
     }
 
     [Fact]

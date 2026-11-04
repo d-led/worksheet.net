@@ -77,24 +77,44 @@ public static partial class EntryCompletion
     /// </summary>
     private static Draft DraftOf(string text)
     {
-        var line = text.Trim();
+        var (head, after) = Cut(text.Trim());
+        var open = head.IndexOf('(');
+
+        return open < 0 ? BeforeBrackets(head, after) : InsideBrackets(head, open, after);
+    }
+
+    /// <summary>
+    /// The line cut where its time begins. The "till" or "for" that lets the line leave out its
+    /// start belongs with that time, not with the name in front of it.
+    /// </summary>
+    private static (string Head, string After) Cut(string line)
+    {
         var clock = Clock().Match(line);
         var head = clock.Success ? line[..clock.Index] : line;
         var after = clock.Success ? line[clock.Index..] : string.Empty;
-        var open = head.IndexOf('(');
 
-        if (open < 0)
+        if (Tail().Match(head) is not { Success: true } tail)
         {
-            var date = DatePrefix().Match(head);
-            var before = date.Success ? head[..date.Length] : string.Empty;
-
-            return new Draft(before, head[before.Length..].Trim(), after, null, EntryStep.Project);
+            return (head, after);
         }
 
-        return head.IndexOf(')', open) >= 0
+        return (head[..tail.Index], $"{head[tail.Index..].Trim()} {after}".Trim());
+    }
+
+    /// <summary>A line with no bracket yet: the project is being named, after an optional date.</summary>
+    private static Draft BeforeBrackets(string head, string after)
+    {
+        var date = DatePrefix().Match(head);
+        var before = date.Success ? head[..date.Length] : string.Empty;
+
+        return new Draft(before, head[before.Length..].Trim(), after, null, EntryStep.Project);
+    }
+
+    /// <summary>A line with a bracket: a closed one leaves the time, an open one its topic.</summary>
+    private static Draft InsideBrackets(string head, int open, string after) =>
+        head.IndexOf(')', open) >= 0
             ? new Draft(head.TrimEnd(), string.Empty, after, null, EntryStep.Start)
             : new Draft(head[..(open + 1)], head[(open + 1)..].Trim(), after, head[..open].Trim(), EntryStep.Topic);
-    }
 
     /// <summary>
     /// What follows a completed project: an open bracket when the project has topics to offer,
@@ -141,4 +161,8 @@ public static partial class EntryCompletion
 
     [GeneratedRegex(@"\d{1,2}:\d{1,2}", RegexOptions.CultureInvariant)]
     private static partial Regex Clock();
+
+    // The keyword that lets a line leave out its start, at the end of what has been typed.
+    [GeneratedRegex(@"(?:\s|^)(?:till|until|for)\s*$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
+    private static partial Regex Tail();
 }
