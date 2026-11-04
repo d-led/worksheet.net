@@ -77,7 +77,8 @@ another block, for instance — is shown while you type.
 ## Export a range
 
 *Export month* in the heading writes one zip for the month the day on screen belongs to; the arrow
-beside it offers the day, the quarter and the year. The zip holds two files:
+beside it offers the day, the quarter and the year. The file is named for when it was taken and what
+it covers — `2026-11-04-0930-worksheet-2026-11.zip` — and holds two files:
 
 - `worksheet-2026-11.json` — the range as data: minutes per project and per project and topic, and
   every logged day with its entries. The first field, `version`, is the format version: it changes

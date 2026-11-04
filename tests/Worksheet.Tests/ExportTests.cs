@@ -150,6 +150,24 @@ public sealed class ExportTests
     }
 
     [Fact]
+    public void The_zip_is_named_for_when_it_was_taken_and_what_it_covers()
+    {
+        var report = Report(ExportPeriod.Month);
+
+        Assert.Equal("2026-11-04-0930-worksheet-2026-11.zip", ExportBundle.ZipName(report, Generated));
+    }
+
+    [Fact]
+    public void Two_exports_of_one_range_are_named_apart_by_when_they_were_taken()
+    {
+        var report = Report(ExportPeriod.Month);
+
+        Assert.NotEqual(
+            ExportBundle.ZipName(report, Generated),
+            ExportBundle.ZipName(report, Generated.AddMinutes(1)));
+    }
+
+    [Fact]
     public void The_page_carries_the_tables_the_figures_and_both_pictures()
     {
         Logged("Website (login) 09:00 1h");
@@ -226,7 +244,7 @@ public sealed class ExportTests
         var names = archive.Entries.Select(entry => entry.FullName).Order().ToArray();
 
         Assert.Equal(["worksheet-2026-11.html", "worksheet-2026-11.json"], names);
-        Assert.Equal("worksheet-2026-11.zip", ExportBundle.ZipName(report));
+        Assert.Equal("2026-11-04-0930-worksheet-2026-11.zip", ExportBundle.ZipName(report, Generated));
     }
 
     [Fact]

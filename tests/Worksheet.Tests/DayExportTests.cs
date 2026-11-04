@@ -19,6 +19,9 @@ public sealed class DayExportTests : IDisposable
 {
     private static readonly DateOnly Today = new(2026, 11, 3);
 
+    /// <summary>The moment the export is taken, so the file names do not depend on the clock.</summary>
+    private static readonly DateTimeOffset Exported = new(2026, 11, 4, 9, 30, 0, TimeSpan.FromHours(1));
+
     private readonly TempDirectory _temp = new("worksheet-export");
     private readonly LocalLedger _local;
 
@@ -32,7 +35,7 @@ public sealed class DayExportTests : IDisposable
 
     private DayViewModel DayWith(params string[] lines)
     {
-        var day = new DayViewModel(_local, Today);
+        var day = new DayViewModel(_local, Today, () => Exported);
 
         foreach (var line in lines)
         {
@@ -51,13 +54,13 @@ public sealed class DayExportTests : IDisposable
         day.SaveExport = file =>
         {
             handed = file;
-            return Task.FromResult<string?>("/somewhere/worksheet-2026-11.zip");
+            return Task.FromResult<string?>("/somewhere/2026-11-04-0930-worksheet-2026-11.zip");
         };
 
         await day.ExportMonthCommand.ExecuteAsync(null);
 
-        Assert.Equal("worksheet-2026-11.zip", handed!.FileName);
-        Assert.Equal("Exported worksheet-2026-11.zip.", day.Message);
+        Assert.Equal("2026-11-04-0930-worksheet-2026-11.zip", handed!.FileName);
+        Assert.Equal("Exported 2026-11-04-0930-worksheet-2026-11.zip.", day.Message);
         Assert.False(day.MessageIsProblem);
     }
 
@@ -97,7 +100,7 @@ public sealed class DayExportTests : IDisposable
         await day.ExportYearCommand.ExecuteAsync(null);
 
         Assert.Equal(
-            ["worksheet-2026-11-03.zip", "worksheet-2026-Q4.zip", "worksheet-2026.zip"],
+            ["2026-11-04-0930-worksheet-2026-11-03.zip", "2026-11-04-0930-worksheet-2026-Q4.zip", "2026-11-04-0930-worksheet-2026.zip"],
             names);
     }
 

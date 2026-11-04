@@ -25,6 +25,7 @@ public sealed partial class DayViewModel : ObservableObject
     private readonly EntryComposer _composer;
     private readonly DayCalendar _calendar;
     private readonly DateOnly _today;
+    private readonly Func<DateTimeOffset> _now;
 
     [ObservableProperty]
     private DateTime? _selectedDate;
@@ -73,7 +74,7 @@ public sealed partial class DayViewModel : ObservableObject
     private EntryProposals _proposals = EntryProposals.None;
     private int _chosen;
 
-    public DayViewModel(LocalLedger local, DateOnly? today = null)
+    public DayViewModel(LocalLedger local, DateOnly? today = null, Func<DateTimeOffset>? now = null)
     {
         ArgumentNullException.ThrowIfNull(local);
 
@@ -81,6 +82,7 @@ public sealed partial class DayViewModel : ObservableObject
         _composer = new EntryComposer(local.Ledger);
         _calendar = new DayCalendar(local.Ledger);
         _today = today ?? DateOnly.FromDateTime(DateTime.Today);
+        _now = now ?? (() => DateTimeOffset.Now);
         _selectedDate = _today.ToDateTime(TimeOnly.MinValue);
 
         Refresh();
@@ -192,8 +194,9 @@ public sealed partial class DayViewModel : ObservableObject
     public ExportFile BuildExport(ExportPeriod period)
     {
         var report = RangeReport.Of(_local.Ledger.State, ExportRange.For(period, Day));
+        var generatedAt = _now();
 
-        return new ExportFile(ExportBundle.ZipName(report), ExportBundle.Zip(report, DateTimeOffset.Now));
+        return new ExportFile(ExportBundle.ZipName(report, generatedAt), ExportBundle.Zip(report, generatedAt));
     }
 
     [RelayCommand]

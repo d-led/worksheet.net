@@ -3,6 +3,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+using System.Globalization;
 using System.IO.Compression;
 using System.Text;
 
@@ -20,7 +21,16 @@ public static class ExportBundle
 
     public const string ZipExtension = ".zip";
 
-    public static string ZipName(RangeReport report) => report.Range.FileStem + ZipExtension;
+    /// <summary>
+    /// The name a person sees in the save dialog: when the export was taken, then the range it
+    /// covers, so two exports of the same month cannot land on one another.
+    /// </summary>
+    public static string ZipName(RangeReport report, DateTimeOffset generatedAt) =>
+        $"{Moment(generatedAt)}-{report.Range.FileStem}{ZipExtension}";
+
+    /// <summary>A moment written so that it sorts and so that no platform refuses it as a name.</summary>
+    private static string Moment(DateTimeOffset moment) =>
+        moment.ToString("yyyy-MM-dd-HHmm", CultureInfo.InvariantCulture);
 
     public static byte[] Zip(RangeReport report, DateTimeOffset generatedAt)
     {
