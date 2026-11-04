@@ -127,6 +127,86 @@ public sealed class EntryCommandParserTests
         Assert.Equal(TimeSpan.FromHours(1), parse.Command.Duration);
     }
 
+    [Theory]
+    [InlineData("Website (login) 09:00 till 13:30", 270)]
+    [InlineData("Website 09:00 for 1h30m", 90)]
+    public void A_start_written_in_front_of_the_word_is_the_start_and_not_part_of_the_name(string line, int minutes)
+    {
+        var parse = EntryCommandParser.Parse(line, Today);
+
+        Assert.True(parse.Succeeded, parse.Error);
+        Assert.Equal("Website", parse.Command!.Project);
+        Assert.Equal(Clocks.At("09:00"), parse.Command.Start);
+        Assert.Equal(TimeSpan.FromMinutes(minutes), parse.Command.Duration);
+    }
+
+    [Fact]
+    public void A_name_that_still_ends_in_a_time_is_refused_rather_than_swallowing_it()
+    {
+        var parse = EntryCommandParser.Parse("Website 10:00 09:00 till 13:30", Today);
+
+        Assert.False(parse.Succeeded);
+        Assert.Equal(
+            "\"Website 10:00\" ends in a time; end the project name with \"-\" if that is part of it, or write one start and one span.",
+            parse.Error);
+    }
+
+    [Fact]
+    public void A_name_that_still_ends_in_a_span_word_is_refused_too()
+    {
+        var parse = EntryCommandParser.Parse("Work for 09:00-13:30", Today);
+
+        Assert.False(parse.Succeeded);
+        Assert.Equal(
+            "\"Work for\" ends in \"for\", which the line reads as its span; end the project name with \"-\" if that is part of it, or write one start and one span.",
+            parse.Error);
+    }
+
+    [Theory]
+    [InlineData("Website- 09:00 1h", "Website", null)]
+    [InlineData("Website - 09:00 1h", "Website", null)]
+    [InlineData("Website-  (login) 09:00 1h", "Website", "login")]
+    [InlineData("Website - (login) 09:00 1h", "Website", "login")]
+    [InlineData("Website ()- 09:00 1h", "Website", null)]
+    [InlineData("e-commerce 09:00 1h", "e-commerce", null)]
+    public void A_dash_says_where_the_name_ends_and_is_not_part_of_it(string line, string project, string? topic)
+    {
+        var parse = EntryCommandParser.Parse(line, Today);
+
+        Assert.True(parse.Succeeded, parse.Error);
+        Assert.Equal(project, parse.Command!.Project);
+        Assert.Equal(topic, parse.Command.Topic);
+    }
+
+    [Fact]
+    public void A_dash_keeps_a_time_that_belongs_to_the_name_out_of_the_span()
+    {
+        var parse = EntryCommandParser.Parse("Standup 09:00- for 1h", Today, _ => Stopped);
+
+        Assert.True(parse.Succeeded, parse.Error);
+        Assert.Equal("Standup 09:00", parse.Command!.Project);
+        Assert.Equal(Stopped, parse.Command.Start);
+        Assert.Equal(TimeSpan.FromHours(1), parse.Command.Duration);
+    }
+
+    [Fact]
+    public void A_dash_is_all_a_name_needs_when_it_ends_in_a_span_word()
+    {
+        var parse = EntryCommandParser.Parse("Work for- 09:00 1h", Today);
+
+        Assert.True(parse.Succeeded, parse.Error);
+        Assert.Equal("Work for", parse.Command!.Project);
+    }
+
+    [Fact]
+    public void A_dash_alone_names_nothing()
+    {
+        var parse = EntryCommandParser.Parse("- 09:00 1h", Today);
+
+        Assert.False(parse.Succeeded);
+        Assert.Equal(EntryCommandParser.MissingProjectMessage, parse.Error);
+    }
+
     [Fact]
     public void Defaults_to_the_day_being_edited()
     {

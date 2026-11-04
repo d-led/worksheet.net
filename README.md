@@ -50,7 +50,9 @@ One line records one time range. Type it, press Enter.
 | `Reading for 1h30m` | a length only, from the same start |
 
 A project name may contain spaces. Names you have used before are offered as you type: the projects
-first, then the topics of that project once its bracket is open.
+first, then the topics of that project once its bracket is open. A name that would otherwise end in
+a time, or in `till`/`for`, is refused rather than swallowed: close it with `-`, as in
+`Work for- 09:00 1h`.
 
 ![Typing the opening bracket offers the topics of that project](docs/screenshots/completion.png)
 

@@ -75,13 +75,14 @@ public static partial class EntryGuide
 
     /// <summary>
     /// A half-written line: the brackets around the topic, then the clock that comes after them.
-    /// A trailing "till" or "for" is already asking for the other half of the span.
+    /// A trailing "till" or "for" is already asking for the other half of the span, and a name
+    /// closed with "-" has said where it ends, so its start comes next.
     /// </summary>
     private static EntryStep Typed(string typed) =>
-        Tail(typed) is not null ? EntryStep.Span
+        EntryCommandParser.SpanWordAtEnd(typed) is not null ? EntryStep.Span
         : Clock().IsMatch(typed) ? EntryStep.Span
         : typed.Contains('(') && !typed.Contains(')') ? EntryStep.Topic
-        : typed.Contains(')') ? EntryStep.Start
+        : typed.TrimEnd().EndsWith('-') || typed.Contains(')') ? EntryStep.Start
         : EntryStep.Topic;
 
     /// <summary>
@@ -93,7 +94,7 @@ public static partial class EntryGuide
         {
             EntryStep.Start when continuesFrom is { } from =>
                 $"start 09:00, or from {ClockText.Format(from)} \"till {Example(from)}\" / \"for 1h30m\"",
-            EntryStep.Span => SpanLabel(Tail(text ?? string.Empty), continuesFrom),
+            EntryStep.Span => SpanLabel(EntryCommandParser.SpanWordAtEnd(text ?? string.Empty)?.Word, continuesFrom),
             _ => Labels[(int)step],
         };
 
@@ -115,16 +116,6 @@ public static partial class EntryGuide
             ? ClockText.Format(TimeOnly.FromTimeSpan(from.ToTimeSpan() + ExampleLength))
             : "13:30";
 
-    /// <summary>The shorthand the line already ends with: "till" (or "until"), "for", or nothing.</summary>
-    private static string? Tail(string typed) =>
-        TailWord().Match(typed) is { Success: true } tail
-            ? tail.Groups["word"].Value.Equals("for", StringComparison.OrdinalIgnoreCase) ? "for" : "till"
-            : null;
-
     [GeneratedRegex(@"\d{1,2}:\d{1,2}", RegexOptions.CultureInvariant)]
     private static partial Regex Clock();
-
-    // The keyword that lets the line leave its start out, at the end of what has been typed.
-    [GeneratedRegex(@"(?:\s|^)(?<word>till|until|for)\s*$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
-    private static partial Regex TailWord();
 }

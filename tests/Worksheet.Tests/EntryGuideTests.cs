@@ -70,6 +70,13 @@ public sealed class EntryGuideTests
     }
 
     [Fact]
+    public void A_name_closed_with_a_dash_is_ready_for_its_start()
+    {
+        Assert.Equal(EntryStep.Start, EntryGuide.Next("web-"));
+        Assert.Equal(EntryStep.Start, EntryGuide.Next("web (login) -"));
+    }
+
+    [Fact]
     public void The_start_step_offers_the_shorthands_beside_the_clock()
     {
         Assert.Equal(

@@ -93,12 +93,9 @@ public static partial class EntryCompletion
         var head = clock.Success ? line[..clock.Index] : line;
         var after = clock.Success ? line[clock.Index..] : string.Empty;
 
-        if (Tail().Match(head) is not { Success: true } tail)
-        {
-            return (head, after);
-        }
-
-        return (head[..tail.Index], $"{head[tail.Index..].Trim()} {after}".Trim());
+        return EntryCommandParser.SpanWordAtEnd(head) is { } word
+            ? (head[..word.Index], $"{head[word.Index..].Trim()} {after}".Trim())
+            : (head, after);
     }
 
     /// <summary>A line with no bracket yet: the project is being named, after an optional date.</summary>
@@ -107,7 +104,8 @@ public static partial class EntryCompletion
         var date = DatePrefix().Match(head);
         var before = date.Success ? head[..date.Length] : string.Empty;
 
-        return new Draft(before, head[before.Length..].Trim(), after, null, EntryStep.Project);
+        // A trailing "-" is how the line says the name ends; it is not part of the name being typed.
+        return new Draft(before, head[before.Length..].Trim().TrimEnd('-').TrimEnd(), after, null, EntryStep.Project);
     }
 
     /// <summary>A line with a bracket: a closed one leaves the time, an open one its topic.</summary>
@@ -161,8 +159,4 @@ public static partial class EntryCompletion
 
     [GeneratedRegex(@"\d{1,2}:\d{1,2}", RegexOptions.CultureInvariant)]
     private static partial Regex Clock();
-
-    // The keyword that lets a line leave out its start, at the end of what has been typed.
-    [GeneratedRegex(@"(?:\s|^)(?:till|until|for)\s*$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
-    private static partial Regex Tail();
 }

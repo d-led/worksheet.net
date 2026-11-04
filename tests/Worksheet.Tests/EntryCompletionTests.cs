@@ -114,4 +114,12 @@ public sealed class EntryCompletionTests
     [Fact]
     public void Taking_a_project_keeps_the_shorthand_already_typed() =>
         Assert.Equal("Website till", EntryCompletion.Take(Ledger(), "web till", "Website"));
+
+    [Fact]
+    public void A_dash_closing_the_name_does_not_hide_the_offers() =>
+        Assert.Equal(new[] { "Website" }, Names("web-"));
+
+    [Fact]
+    public void Taking_a_project_over_a_closed_name_opens_its_bracket() =>
+        Assert.Equal("Website (", EntryCompletion.Take(Ledger(), "web-", "Website"));
 }

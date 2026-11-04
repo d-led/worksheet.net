@@ -60,19 +60,46 @@ public static partial class EntryCommandParser
 
     private static EntryParse Build(string head, SpanParse span, DateOnly date, string? note)
     {
-        var projectAndTopic = head.TrimEnd();
+        var (project, topic, error) = NameOf(head);
 
-        if (projectAndTopic.Length == 0)
+        if (error is not null)
         {
-            return EntryParse.Fail(MissingProjectMessage);
+            return EntryParse.Fail(error);
         }
-
-        var (project, topic) = SplitTopic(projectAndTopic);
 
         return project.Length == 0
             ? EntryParse.Fail(MissingProjectMessage)
             : EntryParse.Ok(new EntryCommand(date, project, topic, span.Start, span.Duration, note));
     }
+
+    /// <summary>
+    /// The name a line carries: its topic split off, and a "-" the person wrote to say where the
+    /// name ends taken off. A name that still ends in something the line reads as a span is refused:
+    /// keeping it would swallow a time into a project nobody meant to open.
+    /// </summary>
+    private static (string Project, string? Topic, string? Error) NameOf(string head)
+    {
+        var line = head.TrimEnd();
+        var closedAtEnd = line.EndsWith('-');
+
+        var (project, topic) = SplitTopic(closedAtEnd ? line[..^1].TrimEnd() : line);
+        var closedBeforeTopic = project.EndsWith('-');
+
+        project = (closedBeforeTopic ? project[..^1] : project).TrimEnd();
+
+        return closedAtEnd || closedBeforeTopic || Swallowed(project) is not { } swallowed
+            ? (project, topic, null)
+            : (project, topic, SwallowedName(project, swallowed));
+    }
+
+    /// <summary>What a name ends in that the line would otherwise read as part of its span.</summary>
+    private static string? Swallowed(string project) =>
+        OpenStart().IsMatch(project) ? "a time"
+        : SpanWordAtEnd(project)?.Word is { } word ? $"\"{word}\", which the line reads as its span"
+        : null;
+
+    private static string SwallowedName(string project, string swallowed) =>
+        $"\"{project}\" ends in {swallowed}; end the project name with \"-\" if that is part of it, or write one start and one span.";
 
     private static string? TakeNote(ref string text)
     {
@@ -183,7 +210,21 @@ public static partial class EntryCommandParser
             ? SpanParse.Match(index, from, duration)
             : SpanParse.Fail(NotADuration(written.Value));
 
-    /// <summary>"till 13:30": the end is written, the start is where the last entry ended.</summary>
+    /// <summary>
+    /// The start of a line that says "till" or "for": the clock written in front of the keyword, else
+    /// where the last entry of the day ended. Neither is assumed when neither is there.
+    /// </summary>
+    private static (TimeOnly Start, string? Error) StartOf(Match match, TimeOnly? continuesFrom)
+    {
+        if (match.Groups["from"] is { Success: true } written)
+        {
+            return TryReadClock(written, out var start) ? (start, null) : (default, NotATime(written.Value));
+        }
+
+        return continuesFrom is { } last ? (last, null) : (default, NothingToContinueMessage);
+    }
+
+    /// <summary>"till 13:30": the end is written, the start is in front of it or where the last entry ended.</summary>
     private static SpanParse? MatchTill(string text, TimeOnly? continuesFrom)
     {
         var match = Till().Match(text);
@@ -193,23 +234,25 @@ public static partial class EntryCommandParser
             return null;
         }
 
-        if (continuesFrom is not { } from)
+        var (start, error) = StartOf(match, continuesFrom);
+
+        if (error is not null)
         {
-            return SpanParse.Fail(NothingToContinueMessage);
+            return SpanParse.Fail(error);
         }
 
         return TryReadClock(match.Groups["to"], out var to)
-            ? Ended(match.Index, from, to)
+            ? Ended(match.Index, start, to)
             : SpanParse.Fail(NotATime(match.Groups["to"].Value));
     }
 
-    /// <summary>A span that stops at a written clock, if that clock is after where the day stopped.</summary>
+    /// <summary>A span that stops at a written clock, if that clock is after where it starts.</summary>
     private static SpanParse Ended(int index, TimeOnly from, TimeOnly to) =>
         to <= from
             ? SpanParse.Fail($"{Clock(to)} is not after {Clock(from)}, where the last entry ended.")
             : SpanParse.Match(index, from, to.ToTimeSpan() - from.ToTimeSpan());
 
-    /// <summary>"for 1h30m": the length is written, the start is where the last entry ended.</summary>
+    /// <summary>"for 1h30m": the length is written, the start is in front of it or where the last entry ended.</summary>
     private static SpanParse? MatchFor(string text, TimeOnly? continuesFrom)
     {
         var match = For().Match(text);
@@ -219,12 +262,9 @@ public static partial class EntryCommandParser
             return null;
         }
 
-        if (continuesFrom is not { } from)
-        {
-            return SpanParse.Fail(NothingToContinueMessage);
-        }
+        var (start, error) = StartOf(match, continuesFrom);
 
-        return SpanOf(match.Index, from, match.Groups["dur"]);
+        return error is not null ? SpanParse.Fail(error) : SpanOf(match.Index, start, match.Groups["dur"]);
     }
 
     private static SpanParse? MatchOpenStart(string text)
@@ -242,6 +282,16 @@ public static partial class EntryCommandParser
     }
 
     private static bool TryReadClock(Group group, out TimeOnly time) => ClockText.TryParse(group.Value, out time);
+
+    /// <summary>
+    /// Where the span word at the end of a line begins — "till", "until" or "for" — and which it is,
+    /// spelled as the language spells it: "until" reads as "till". Nothing when the line does not
+    /// end with one.
+    /// </summary>
+    internal static (int Index, string Word)? SpanWordAtEnd(string text) =>
+        SpanWord().Match(text) is { Success: true } match
+            ? (match.Index, match.Groups["word"].Value.Equals("for", StringComparison.OrdinalIgnoreCase) ? "for" : "till")
+            : null;
 
     private static (string Project, string? Topic) SplitTopic(string text)
     {
@@ -291,13 +341,19 @@ public static partial class EntryCommandParser
     [GeneratedRegex(@"(?<from>\d{1,2}:\d{1,2}(?:[apAP][mM])?)\s+(?<dur>(?:\d+\s*[hHmM]\s*)+)$", RegexOptions.CultureInvariant)]
     private static partial Regex Length();
 
-    // "till 13:30" and "until 13:30": the end, against where the last entry ended.
-    [GeneratedRegex("(?<!\\w)(?:till|until)\\s+(?<to>\\d{1,2}:\\d{1,2}(?:[apAP][mM])?)\\s*$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
+    // "till 13:30" and "until 13:30", from where the last entry ended — or from the clock written in
+    // front of the keyword: "09:00 till 13:30" is "09:00-13:30" spelt with a word. A "-" after the
+    // name breaks the pattern, so a time that belongs to the name stays in it.
+    [GeneratedRegex("(?:(?<from>\\d{1,2}:\\d{1,2}(?:[apAP][mM])?)\\s+)?(?<!\\w)(?:till|until)\\s+(?<to>\\d{1,2}:\\d{1,2}(?:[apAP][mM])?)\\s*$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
     private static partial Regex Till();
 
-    // "for 1h30m": the length, against the same start.
-    [GeneratedRegex(@"(?<!\w)for\s+(?<dur>(?:\d+\s*[hHmM]\s*)+)\s*$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
+    // "for 1h30m", from the same start.
+    [GeneratedRegex(@"(?:(?<from>\d{1,2}:\d{1,2}(?:[apAP][mM])?)\s+)?(?<!\w)for\s+(?<dur>(?:\d+\s*[hHmM]\s*)+)\s*$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
     private static partial Regex For();
+
+    // The word that asks for the other half of a span, at the end of what has been typed.
+    [GeneratedRegex(@"(?:\s|^)(?<word>till|until|for)\s*$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
+    private static partial Regex SpanWord();
 
     // A bare "09:00": a start with no length yet.
     [GeneratedRegex(@"(?<from>\d{1,2}:\d{1,2}(?:[apAP][mM])?)$", RegexOptions.CultureInvariant)]
