@@ -91,7 +91,8 @@ public sealed partial class DayViewModel : ObservableObject
     /// <summary>The five kinds of day, one of them chosen, pre-filled for a weekend.</summary>
     public ObservableCollection<DayKindOptionViewModel> Kinds { get; } = [];
 
-    public ObservableCollection<ProjectOption> Projects { get; } = [];
+    /// <summary>The names the row editors offer; a name none of them has may still be typed.</summary>
+    public ObservableCollection<string> Projects { get; } = [];
 
     public ObservableCollection<SuggestionViewModel> Suggestions { get; } = [];
 
@@ -232,9 +233,9 @@ public sealed partial class DayViewModel : ObservableObject
     {
         Projects.Clear();
 
-        foreach (var option in ProjectOptions(_local.Ledger.State))
+        foreach (var name in ProjectNames(_local.Ledger.State))
         {
-            Projects.Add(option);
+            Projects.Add(name);
         }
     }
 
@@ -248,7 +249,14 @@ public sealed partial class DayViewModel : ObservableObject
 
         foreach (var entry in layout.Entries)
         {
-            var row = new EntryRowViewModel(entry, Projects, () => _local.Ledger.State, Revise, Retract, editable);
+            var row = new EntryRowViewModel(
+                entry,
+                [.. Projects],
+                () => _local.Ledger.State,
+                Revise,
+                _composer.Point,
+                Retract,
+                editable);
             row.Rejected += (_, _) => Dispatcher.UIThread.Post(RefreshRows);
 
             Rows.Add(row);
@@ -309,11 +317,11 @@ public sealed partial class DayViewModel : ObservableObject
         Refresh();
     }
 
-    private static IEnumerable<ProjectOption> ProjectOptions(LedgerState state) =>
+    private static IEnumerable<string> ProjectNames(LedgerState state) =>
         state.Projects.Values
             .Where(project => !project.Archived)
             .OrderBy(project => project.Name, StringComparer.CurrentCultureIgnoreCase)
-            .Select(project => new ProjectOption(project.Id, project.Name))
+            .Select(project => project.Name)
             .ToList();
 
     private string DescribeDay(DateOnly day) =>

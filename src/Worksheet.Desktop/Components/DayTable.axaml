@@ -38,24 +38,22 @@
                            Classes="cell end-input"
                            Text="{Binding EndText, UpdateSourceTrigger=LostFocus}" />
 
-                  <ComboBox Grid.Column="2"
-                            Classes="cell"
-                            ItemsSource="{Binding Projects}"
-                            SelectedItem="{Binding Project}"
-                            PlaceholderText="Project">
-                    <ComboBox.ItemTemplate>
-                      <DataTemplate>
-                        <TextBlock Text="{Binding Label}" />
-                      </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                  </ComboBox>
+                  <Border Grid.Column="2" Classes="cell-frame">
+                    <AutoCompleteBox Classes="project-input"
+                                     Text="{Binding ProjectText, UpdateSourceTrigger=LostFocus}"
+                                     ItemsSource="{Binding Projects}"
+                                     MinimumPrefixLength="0"
+                                     PlaceholderText="Project" />
+                  </Border>
 
-                  <ComboBox Grid.Column="3"
-                            Classes="cell"
-                            ItemsSource="{Binding Topics}"
-                            SelectedItem="{Binding Topic}"
-                            IsEnabled="{Binding TopicPicker}"
-                            PlaceholderText="—" />
+                  <Border Grid.Column="3" Classes="cell-frame">
+                    <AutoCompleteBox Classes="topic-input"
+                                     Text="{Binding TopicText, UpdateSourceTrigger=LostFocus}"
+                                     ItemsSource="{Binding Topics}"
+                                     MinimumPrefixLength="0"
+                                     IsEnabled="{Binding TopicPicker}"
+                                     PlaceholderText="—" />
+                  </Border>
 
                   <TextBox Grid.Column="4"
                            Classes="cell note-input"

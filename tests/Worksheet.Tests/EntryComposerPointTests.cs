@@ -69,13 +69,15 @@ public sealed class EntryComposerPointTests
     }
 
     [Fact]
-    public void A_break_takes_no_topic_when_a_row_is_pointed_at_one()
+    public void Pointing_a_row_at_a_break_takes_its_topic_away()
     {
-        var entry = Logged("Website 09:00 1h");
+        var entry = Logged("Website (login) 09:00 1h");
 
         var pointed = _composer.Point(entry, Break.Project, "login");
 
-        Assert.Equal(Break.RefusedTopic, Assert.Single(pointed.Problems));
+        Assert.True(pointed.Created, string.Join(" ", pointed.Problems));
+        Assert.Equal("Break", _ledger.State.ProjectName(pointed.Entry!.ProjectId));
+        Assert.Null(pointed.Entry.TopicId);
     }
 
     [Fact]

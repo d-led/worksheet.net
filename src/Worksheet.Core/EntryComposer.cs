@@ -56,7 +56,7 @@ public sealed class EntryComposer(Ledger ledger)
             return new Plan(null, changes, [refusal]);
         }
 
-        if (NamesOf(command.Project, command.Topic, changes, problems) is not { } names)
+        if (NamesOf(command.Project, command.Topic, BreakTopic.Refused, changes, problems) is not { } names)
         {
             return new Plan(null, changes, problems);
         }
@@ -74,35 +74,62 @@ public sealed class EntryComposer(Ledger ledger)
         return new Plan(entry, changes, problems);
     }
 
+    /// <summary>What a break does with a topic: a line refuses it, because the brackets were typed.</summary>
+    private enum BreakTopic
+    {
+        Refused,
+
+        Dropped,
+    }
+
     /// <summary>
     /// The project and its topic, or nothing when the names cannot be used. A break is the one
-    /// project without topics, so it is the one place a bracket is refused. A line and a row ask
-    /// this the same way, so they refuse the same things in the same words.
+    /// project without topics. A line and a row ask this the same way, so they refuse the same
+    /// things in the same words.
     /// </summary>
-    private Named? NamesOf(string projectName, string? topicName, List<LedgerEvent> changes, List<string> problems)
+    private Named? NamesOf(
+        string projectName,
+        string? topicName,
+        BreakTopic onBreak,
+        List<LedgerEvent> changes,
+        List<string> problems)
     {
-        if (string.IsNullOrWhiteSpace(projectName))
+        if (Names.Trimmed(projectName).Length == 0)
         {
             problems.Add("An entry needs a project.");
             return null;
         }
 
-        var project = ResolveProject(projectName, changes, problems);
+        return ResolveProject(projectName, changes, problems) is { } project
+            ? TopicOf(project, topicName, onBreak, changes, problems)
+            : null;
+    }
 
-        if (project is not { } resolved)
+    /// <summary>
+    /// A break is the one project without topics: a line refuses a topic that was typed in
+    /// brackets, and a row drops the one it was carrying.
+    /// </summary>
+    private Named? TopicOf(
+        (Guid Id, string Name) project,
+        string? topicName,
+        BreakTopic onBreak,
+        List<LedgerEvent> changes,
+        List<string> problems)
+    {
+        if (Break.IsBreak(project.Name) && !string.IsNullOrWhiteSpace(topicName))
         {
-            return null;
+            if (onBreak is BreakTopic.Refused)
+            {
+                problems.Add(Break.RefusedTopic);
+                return null;
+            }
+
+            return new Named(project.Id, null);
         }
 
-        if (Break.IsBreak(resolved.Name) && !string.IsNullOrWhiteSpace(topicName))
-        {
-            problems.Add(Break.RefusedTopic);
-            return null;
-        }
+        var topicId = ResolveTopic(project.Id, topicName, changes, problems);
 
-        var topicId = ResolveTopic(resolved.Id, topicName, changes, problems);
-
-        return problems.Count > 0 ? null : new Named(resolved.Id, topicId);
+        return problems.Count > 0 ? null : new Named(project.Id, topicId);
     }
 
     private static Entry EntryOf(EntryCommand command, Guid projectId, Guid? topicId) =>
@@ -234,7 +261,7 @@ public sealed class EntryComposer(Ledger ledger)
             return ComposeResult.Refused(refusal);
         }
 
-        if (NamesOf(projectName, topicName, changes, problems) is not { } names)
+        if (NamesOf(projectName, topicName, BreakTopic.Dropped, changes, problems) is not { } names)
         {
             return new ComposeResult(null, problems);
         }

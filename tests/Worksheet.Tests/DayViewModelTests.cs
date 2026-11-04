@@ -81,8 +81,8 @@ public sealed class DayViewModelTests : IDisposable
         var row = Assert.IsType<EntryRowViewModel>(Assert.Single(day.Rows));
         Assert.Equal("09:00", row.StartText);
         Assert.Equal("10:30", row.EndText);
-        Assert.Equal("Website", row.Project!.Label);
-        Assert.Equal("login", row.Topic);
+        Assert.Equal("Website", row.ProjectText);
+        Assert.Equal("login", row.TopicText);
         Assert.Equal("1h30m", day.Total);
         Assert.Equal(string.Empty, day.EntryText);
         Assert.False(day.HasMessage);
@@ -448,8 +448,8 @@ public sealed class DayViewModelTests : IDisposable
 
         Assert.Equal("12:00", row.StartText);
         Assert.Equal("14:00", row.EndText);
-        Assert.Equal("bla", row.Project!.Label);
-        Assert.Equal("test", row.Topic);
+        Assert.Equal("bla", row.ProjectText);
+        Assert.Equal("test", row.TopicText);
     }
 
     [Fact]
@@ -468,10 +468,10 @@ public sealed class DayViewModelTests : IDisposable
         var day = DayWith("Website (login) 09:00 1h", "Break 13:00 15m");
         var row = EntryRow(day);
 
-        row.Project = day.Projects.Single(option => option.Label == "Break");
+        row.ProjectText = "Break";
 
         Assert.False(row.TopicPicker);
-        Assert.Null(row.Topic);
+        Assert.Equal(string.Empty, row.TopicText);
         Assert.Null(_local.Ledger.State.Entries[row.Id].TopicId);
     }
 }

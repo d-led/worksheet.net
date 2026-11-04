@@ -114,15 +114,36 @@ public sealed class DayTableTests : UiTestBase
         Settle();
 
         var row = EntryRows(table)[0];
-        var projectPicker = Descendants<ComboBox>(row).First();
-        var topicPicker = Descendants<ComboBox>(row).Last();
+        var projectOffers = Descendants<AutoCompleteBox>(row).First();
+        var topicOffers = Descendants<AutoCompleteBox>(row).Last();
 
-        Assert.Equal(2, projectPicker.ItemsSource!.Cast<ProjectOption>().Count());
-        Assert.Equal(new[] { "login" }, topicPicker.ItemsSource!.Cast<string>());
+        Assert.Equal(new[] { "Mobile", "Website" }, projectOffers.ItemsSource!.Cast<string>());
+        Assert.Equal(new[] { "login" }, topicOffers.ItemsSource!.Cast<string>());
     }
 
     [AvaloniaFact]
-    public void A_break_row_keeps_its_topic_picker_closed()
+    public void Typing_a_project_nobody_used_yet_in_a_row_opens_it()
+    {
+        var day = NewDay();
+        Seed(day, "Website 09:00 1h");
+
+        var table = Show<DayTable>(day);
+        Settle();
+
+        var row = Assert.Single(EntryRows(table));
+        var projectBox = Descendants<AutoCompleteBox>(row).First();
+
+        projectBox.Focus();
+        projectBox.Text = "Client portal";
+        Cell(row, "note-input").Focus();
+        Settle();
+
+        var entry = Assert.Single(Ledger.Ledger.State.Entries).Value;
+        Assert.Equal("Client portal", Ledger.Ledger.State.ProjectName(entry.ProjectId));
+    }
+
+    [AvaloniaFact]
+    public void A_break_row_keeps_its_topic_box_closed()
     {
         var day = NewDay();
         Seed(day, "Break 12:30 45m");
@@ -130,9 +151,9 @@ public sealed class DayTableTests : UiTestBase
         var table = Show<DayTable>(day);
         Settle();
 
-        var topicPicker = Descendants<ComboBox>(Assert.Single(EntryRows(table))).Last();
+        var topicBox = Descendants<AutoCompleteBox>(Assert.Single(EntryRows(table))).Last();
 
-        Assert.False(topicPicker.IsEffectivelyEnabled);
+        Assert.False(topicBox.IsEffectivelyEnabled);
     }
 
     [AvaloniaFact]

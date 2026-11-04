@@ -7,9 +7,6 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace Worksheet.Desktop.ViewModels;
 
-/// <summary>A project as a picker shows it: an identity and a label.</summary>
-public sealed record ProjectOption(Guid Id, string Label);
-
 /// <summary>
 /// A known name offered while typing. It carries its own command so the template needs no relative
 /// binding to reach the window's data context, and knows whether the arrow keys are on it.

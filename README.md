@@ -64,6 +64,10 @@ The table shows absolute times — when a block started and when it ended — on
 start order. Every cell is editable: the times, the project, the topic, the note. A correction is a
 change like any other, so undo takes it back, and the history keeps what it was before.
 
+The project and topic cells take a name you type, not only one from the list: the known names are
+offered as you write, and a name nobody has used yet is opened when you leave the cell — so a
+block can be moved onto a new project without going back to the entry line.
+
 The holes between blocks are shown as rows of their own, with their length. Their `＋` button puts
 those times into the entry line, so a forgotten half hour is two clicks away from being recorded;
 their `Break` button records the hole at once — the `Break` project, a note you can change — and the
