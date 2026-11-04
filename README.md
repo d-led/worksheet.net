@@ -18,11 +18,10 @@ Windows:
 irm https://raw.githubusercontent.com/d-led/worksheet.net/main/install.ps1 | iex
 ```
 
-Both put one self-contained binary on your machine — nothing else to install. What they fetch is
-the **newest build of `main`**, so there is no release to wait for; a tag makes a release with the
-same files.
+Each installs one self-contained binary. They fetch the newest build of `main`, so there is no
+release to wait for. How those builds are made: `docs/development.md`.
 
-Prefer to take the file yourself? These links always give the latest build:
+Or take the file yourself. These links always give the newest build:
 
 | Platform | Download |
 |---|---|
@@ -32,10 +31,9 @@ Prefer to take the file yourself? These links always give the latest build:
 | Linux arm64 | [worksheet-linux-arm64](https://nightly.link/d-led/worksheet.net/workflows/build/main/worksheet-linux-arm64.zip) |
 | Windows x64 | [worksheet-win-x64](https://nightly.link/d-led/worksheet.net/workflows/build/main/worksheet-win-x64.zip) |
 
-Unzip one and you have the application: on macOS and Linux `chmod +x worksheet-*` and run it, on
-Windows double-click the `.exe`. macOS refuses a downloaded binary until the quarantine flag is off,
-which is what the installer does for you and what `xattr -d com.apple.quarantine worksheet-osx-arm64`
-does by hand.
+Unzip and run it: `chmod +x worksheet-*` on macOS and Linux, a double-click on Windows. macOS refuses
+a downloaded binary until the quarantine flag is off; the installer clears it, and
+`xattr -d com.apple.quarantine worksheet-osx-arm64` does the same by hand.
 
 ## Log a day
 
@@ -49,65 +47,63 @@ One line records one time range. Type it, press Enter.
 | `Reading 14:00 2h 30m # the paper` | spaced units and a note |
 | `3.11. Reading 14:00 45m` | another day than the one on screen |
 
-A project name may contain spaces. Names you have used before are offered as you type — the
-projects first, then the topics of the project once its bracket is open:
+A project name may contain spaces. Names you have used before are offered as you type: the projects
+first, then the topics of that project once its bracket is open.
 
 ![Typing the opening bracket offers the topics of that project](docs/screenshots/completion.png)
 
-`←` `→` (or `↑` `↓`) walk the offers, `Tab` takes the one they are on, and the bracket that comes
-next is written for you: after a project, `(`; after a topic, `)`. Whatever does not make sense is
-answered in one sentence next to the line — nothing is swallowed.
+`←` `→` (or `↑` `↓`) walk the offers, `Tab` takes the one they are on, and the next bracket is
+written for you: `(` after a project, `)` after a topic. A line that cannot be recorded is refused
+in one sentence beside it.
 
 ## Fix a day
 
 The table shows absolute times — when a block started and when it ended — one row per block, in
 start order. Every cell is editable: the times, the project, the topic, the note. A correction is a
-change like any other, so undo takes it back, and the history keeps what it was before.
+change, so undo takes it back.
 
-The project and topic cells take a name you type, not only one from the list: the known names are
-offered as you write, and a name nobody has used yet is opened when you leave the cell — so a
-block can be moved onto a new project without going back to the entry line.
+The project and topic cells take a name you type, not only one from the list. A name nobody has used
+yet is created when you leave the cell, so a block can be moved onto a new project without returning
+to the entry line.
 
-The holes between blocks are shown as rows of their own, with their length. Their `＋` button puts
-those times into the entry line, so a forgotten half hour is two clicks away from being recorded;
-their `Break` button records the hole at once — the `Break` project, a note you can change — and the
-hole becomes an ordinary row:
+The holes between blocks are rows of their own, with their length. `＋` puts that range into the
+entry line; `Break` records it directly as a `Break` entry with a note you can change:
 
 ![A hole between two blocks, and the same day after pressing Break](docs/screenshots/break.png)
 
-Under the line, a `next:` hint names the part still missing, and anything already wrong — an
-intersection with another block, for instance — is said while you type, not after Enter.
+Under the line, a `next:` hint names the part still missing, and an error — an intersection with
+another block, for instance — is shown while you type.
 
-## Take a range with you
+## Export a range
 
 *Export month* in the heading writes one zip for the month the day on screen belongs to; the arrow
-beside it offers the day itself, the quarter and the year. The zip holds two files:
+beside it offers the day, the quarter and the year. The zip holds two files:
 
-- `worksheet-2026-11.json` — the range as data: minutes per project, per project and topic, and every
-  logged day with its entries, for whatever you want to do with it next;
-- `worksheet-2026-11.html` — a page of it: totals with shares, the same two tables, a pie of the
-  projects, a gantt of the range as it was worked, and a foldable list of the days. It loads Bootstrap
-  and mermaid from a CDN, so the two pictures need a connection; the tables read either way.
+- `worksheet-2026-11.json` — the range as data: minutes per project and per project and topic, and
+  every logged day with its entries. The first field, `version`, is the format version: it changes
+  only when a reader of the older file would read the newer one wrongly, so a script can check it
+  and stop.
+- `worksheet-2026-11.html` — totals with shares, the same two tables, a pie of the projects, a gantt
+  of the range, and a foldable list of the days. Bootstrap and mermaid come from a CDN, so the
+  pictures need a connection and the tables do not.
 
-Days that hold nothing are left out, and the page says so at the bottom.
+Days that hold nothing are left out; the page says so at the bottom.
 
 ## Days that do not work
 
-Above the table sits what the day is: `Working day`, `Flex day`, `Sick day`, `Holiday`, `Weekend`.
-A Saturday and a Sunday start as a weekend; any of the five can be picked over them.
+Above the table sits the day's status: `Working day`, `Flex day`, `Sick day`, `Holiday`, `Weekend`.
+Saturday and Sunday start as weekend; any of the five can be chosen.
 
 ![A sick day: the status row, and one row of the timetable dimmed and frozen](docs/screenshots/frozen-day.png)
 
-A day that is not a working day is frozen. Everything already recorded stays on screen — a sick
-morning is not deleted by becoming a sick day — but nothing on the day can be changed: no new line,
-no correction, no retraction, no break taken out of a hole. Pick `Working day` and the day is yours
-again. Choosing a status is a change like any other, so undo takes it back too.
+A day that is not a working day is frozen: what is recorded stays on screen, and nothing on the day
+can be changed — no new line, no correction, no retraction, no break from a hole. Choose `Working
+day` to edit it again. A status is a change, so undo takes it back.
 
 ## Undo and redo
 
-`⌘Z` / `⇧⌘Z`, `Ctrl+Z` / `Ctrl+Shift+Z`, or the two buttons at the bottom. Both work the way the
-journal wants them to: an undo is the inverse change *appended* to the history — never a rewrite,
-never a deletion — and anything recorded after an undo forgets what could have been redone.
+`⌘Z` / `⇧⌘Z`, `Ctrl+Z` / `Ctrl+Shift+Z`, or the two buttons at the bottom. Anything recorded after an
+undo discards the redo history; how undo is stored is in `docs/adr/0001-event-sourced-ledger.md`.
 
 ## Let an agent log for you
 
@@ -127,25 +123,23 @@ only. *Connect an agent…* in the tray menu shows the two snippets a client nee
 ```
 
 An agent can log a line, read a day back, ask for totals per project, list the catalogue, rename or
-remove a project or a topic, and undo. Answers are sentences, refusals included, and every change it
-makes is one undo away in the window's own undo. The port is chosen in *Settings…* in the tray menu;
-`WORKSHEET_MCP_PORT` sets it too, and `0` leaves the server off.
+remove a project or a topic, and undo. Answers are sentences, refusals included. Each change it makes
+is one step in the window's undo. The port comes from *Settings…* or `WORKSHEET_MCP_PORT`; `0` turns
+the server off.
 
 ## Rename or retire a project
 
 *Projects and topics…* in the tray menu lists every project in use with how many entries each holds,
-and the topics of the one you choose. Renaming keeps the entries where they are. Retiring a project
-sends its hours to a project you pick and its topics go out of use with it; retiring a topic leaves
-its hours on their days with no topic. Each of those is one change, so undo takes it back in one step.
+and the topics of the one you choose. A rename keeps the entries where they are. Retiring a project
+sends its hours to a project you pick and takes its topics out of use; retiring a topic leaves its
+hours on their days without a topic. Each is one change, so one undo reverts it.
 
-## It lives in the tray
+## The tray
 
-Closing the window hides it and the day keeps counting. A click on the tray icon brings the window
-back — it never hides it, so a double click is just two raises — and the menu behind it (a right
-click on Windows and Linux, the icon itself on macOS) holds *Show window*, *Connect an agent…*,
-*Projects and topics…*, *Settings…*, *Open data folder* and the one way to quit. Undo and redo are
-deliberately not there: they change the day, and a change made without the day on screen is a change
-nobody can see. A second copy leaves quietly instead of fighting the first over the same data file.
+Closing the window hides it; the day keeps counting. A click on the tray icon raises the window. The
+menu — a right click on Windows and Linux, the icon itself on macOS — holds *Show window*, *Connect
+an agent…*, *Projects and topics…*, *Settings…*, *Open data folder* and *Quit*. A second copy exits
+at start-up.
 
 ## Where your data lives
 
@@ -155,13 +149,12 @@ One file:
 - Windows — `%APPDATA%\Worksheet`
 - Linux — `~/.config/Worksheet`
 
-Set `WORKSHEET_DATA_DIR` to keep it somewhere else, for a portable copy.
+Set `WORKSHEET_DATA_DIR` to keep it elsewhere.
 
-Beside the journal sits `settings.json`: the two knobs *Settings…* offers — the MCP port and how
-often the fold is rewritten. What you choose there wins over the environment, and the environment
-wins over the built-in value; *Revert to defaults* forgets the choice, so `WORKSHEET_MCP_PORT` and
-`WORKSHEET_SNAPSHOT_EVERY` decide again. It is a file of its own on purpose: a preference is not
-something to undo.
+Beside the journal sits `settings.json`, with the two values *Settings…* writes: the MCP port and how
+often the fold is rewritten. A stored value wins over the environment, the environment over the
+built-in value; *Revert to defaults* removes the stored choice, so `WORKSHEET_MCP_PORT` and
+`WORKSHEET_SNAPSHOT_EVERY` decide again.
 
 ## Licence
 

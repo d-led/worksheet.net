@@ -58,7 +58,7 @@ per method, worst first, and exits non-zero if any method is over 10. It merges 
 generated XAML members, and skips the composition roots (`App`, `Program`) — they only wire parts
 together, and every part is measured where it lives.
 
-Current state: 584 methods, no method over CRAP 10, method-average coverage 94.7%. What stays
+Current state: 582 methods, no method over CRAP 10, method-average coverage 94.7%. What stays
 uncovered needs a window server session — the tray, the composition root, the save dialog's file
 picker — or is a guard against a state a test cannot reach on purpose.
 
@@ -160,6 +160,20 @@ is decided. No view sets one inline.
 - `docs/design-review.md` — what was wrong with the first window, and the shape that replaced it.
 - `docs/entry-syntax.md` — the grammar of one line, with examples.
 - `docs/behaviour.md` — what the application does, and what it deliberately does not do.
+
+Three choices in the window look like omissions and are not:
+
+- **Undo and redo stay out of the tray menu.** They change the day, and a change made with the window
+  hidden is one nobody can see. The footer carries both, with their key combinations.
+- **A second copy of the process exits at start-up** instead of opening the same data file twice,
+  because one process is the only writer (`docs/adr/0001-event-sourced-ledger.md`).
+- **`settings.json` is a file of its own**, apart from the journal, so that a preference is never part
+  of the undo history.
+
+Two export details that come from the same kind of reasoning: the JSON opens with a `version`
+(`ReportJson.FormatVersion`) that counts up only when a reader of the older file would read the newer
+one wrongly — a field merely added does not move it — and the page's Bootstrap and mermaid come from a
+CDN, which is why the two pictures need a connection and the tables do not.
 
 ## Licence and provenance
 
