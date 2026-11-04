@@ -29,10 +29,10 @@ public static class ReportHtml
         page.AppendLine("<!doctype html>");
         page.AppendLine("<html lang=\"en\">");
         page.Append(Head(report));
-        page.AppendLine("<body class=\"bg-body-tertiary\">");
-        page.AppendLine("<main class=\"container py-4\" style=\"max-width: 1100px\">");
-        page.Append(Header(report, generatedAt));
-        page.Append(Figures(report));
+        page.AppendLine("<body>");
+        page.AppendLine("<main class=\"container py-4\">");
+        page.Append(Header(report));
+        page.Append(Summary(report, generatedAt));
         page.Append(ProjectCard(report));
         page.Append(TopicCard(report));
         page.Append(TimelineCard(report));
@@ -53,50 +53,36 @@ public static class ReportHtml
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>Worksheet — {{Esc(report.Range.Label)}}</title>
             <link href="{{Bootstrap}}" rel="stylesheet">
-            <style>
-              .mermaid { background: transparent; }
-              summary { cursor: pointer; }
-              .figure { font-variant-numeric: tabular-nums; }
-            </style>
           </head>
 
           """;
 
-    private static string Header(RangeReport report, DateTimeOffset generatedAt) =>
+    private static string Header(RangeReport report) =>
         $$"""
-          <header class="mb-4">
-            <p class="text-uppercase text-secondary small mb-1">Worksheet · {{Esc(Word(report.Range.Period))}}</p>
-            <h1 class="h3 mb-1">{{Esc(report.Range.Label)}}</h1>
-            <p class="text-secondary mb-0 figure">
-              {{Esc(DayText(report.Range.From))}} – {{Esc(DayText(report.Range.To))}} ·
-              {{Esc(Shares.Hours(report.TotalMinutes))}} over {{report.DaysLogged}} {{Plural(report.DaysLogged, "day", "days")}} logged ·
-              generated {{Esc(Moment(generatedAt))}}
-            </p>
+          <header class="mb-3">
+            <p class="text-body-secondary text-uppercase small mb-1">Worksheet · {{Esc(Word(report.Range.Period))}}</p>
+            <h1 class="h3 mb-0">{{Esc(report.Range.Label)}}</h1>
           </header>
 
           """;
 
-    private static string Figures(RangeReport report) =>
+    /// <summary>
+    /// Four figures on one line, the way Bootstrap's own typography puts them: a muted label and a
+    /// value, no boxes. The dates and the time of generation are small print below.
+    /// </summary>
+    private static string Summary(RangeReport report, DateTimeOffset generatedAt) =>
         $$"""
-          <section class="row row-cols-2 row-cols-lg-4 g-3 mb-4">
-            {{Figure("Total", Shares.Hours(report.TotalMinutes))}}
-            {{Figure("Days logged", report.DaysLogged.ToString(CultureInfo.InvariantCulture))}}
-            {{Figure("Projects", report.Projects.Count.ToString(CultureInfo.InvariantCulture))}}
-            {{Figure("Busiest day", Busiest(report))}}
+          <section class="mb-4">
+            <p class="mb-1">
+              <span class="text-body-secondary">Total</span> <span class="fs-5 fw-semibold">{{Esc(Shares.Hours(report.TotalMinutes))}}</span>
+              <span class="text-body-secondary ms-4">Days logged</span> <span class="fs-5 fw-semibold">{{report.DaysLogged}}</span>
+              <span class="text-body-secondary ms-4">Projects</span> <span class="fs-5 fw-semibold">{{report.Projects.Count}}</span>
+              <span class="text-body-secondary ms-4">Busiest day</span> <span class="fs-5 fw-semibold">{{Esc(Busiest(report))}}</span>
+            </p>
+            <p class="text-body-secondary small mb-0">
+              {{Esc(DayText(report.Range.From))}} – {{Esc(DayText(report.Range.To))}} · generated {{Esc(Moment(generatedAt))}}
+            </p>
           </section>
-
-          """;
-
-    private static string Figure(string caption, string value) =>
-        $$"""
-              <div class="col">
-                <div class="card h-100">
-                  <div class="card-body py-3">
-                    <div class="text-secondary text-uppercase small">{{Esc(caption)}}</div>
-                    <div class="fs-5 fw-semibold figure">{{Esc(value)}}</div>
-                  </div>
-                </div>
-              </div>
 
           """;
 
@@ -104,12 +90,10 @@ public static class ReportHtml
         $$"""
           <section class="card mb-4">
             <div class="card-body">
-              <h2 class="h5">Where the time went</h2>
+              <h2 class="h5 mb-3">Where the time went</h2>
               <div class="row g-4 align-items-center">
-                <div class="col-lg-5">{{Pie(report)}}</div>
-                <div class="col-lg-7">
-                  {{ProjectsTable(report)}}
-                </div>
+                <div class="col-md-4">{{Pie(report)}}</div>
+                <div class="col-md-8">{{ProjectsTable(report)}}</div>
               </div>
             </div>
           </section>
@@ -118,19 +102,18 @@ public static class ReportHtml
 
     private static string ProjectsTable(RangeReport report) =>
         report.Projects.Count == 0
-            ? "<p class=\"text-secondary mb-0\">Nothing was logged in this range.</p>\n"
+            ? "<p class=\"text-body-secondary mb-0\">Nothing was logged in this range.</p>\n"
             : $$"""
-              <table class="table table-sm align-middle mb-0">
+              <table class="table table-sm align-middle w-auto mb-0">
                 <thead>
-                  <tr><th scope="col">Project</th><th scope="col" class="text-end">Time</th><th scope="col" class="text-end">Share</th><th scope="col" style="width: 30%"></th></tr>
+                  <tr><th scope="col">Project</th><th scope="col" class="text-end">Time</th><th scope="col" class="text-end">Share</th></tr>
                 </thead>
                 <tbody>
                   {{Rows(report, report.Projects.Select(project => (project.Project, project.Minutes)))}}
                   <tr class="table-light fw-semibold">
                     <td>Total</td>
-                    <td class="text-end figure">{{Esc(Shares.Hours(report.TotalMinutes))}}</td>
-                    <td class="text-end figure">100.0 %</td>
-                    <td></td>
+                    <td class="text-end">{{Esc(Shares.Hours(report.TotalMinutes))}}</td>
+                    <td class="text-end">100.0 %</td>
                   </tr>
                 </tbody>
               </table>
@@ -148,7 +131,7 @@ public static class ReportHtml
             <div class="card-body">
               <h2 class="h5">By project and topic</h2>
               {{(pairs.Length == 0
-                  ? "<p class=\"text-secondary mb-0\">No project was used yet in this range.</p>\n"
+                  ? "<p class=\"text-body-secondary mb-0\">No project was used yet in this range.</p>\n"
                   : TopicsTable(report, pairs))}}
             </div>
           </section>
@@ -164,12 +147,12 @@ public static class ReportHtml
         {
             rows.AppendLine(
                 $"      <tr><td>{Esc(project)}</td><td>{Esc(topic)}</td>"
-                + $"<td class=\"text-end figure\">{Esc(Shares.Hours(minutes))}</td>"
-                + $"<td class=\"text-end figure\">{Esc(Shares.Percent(minutes, report.TotalMinutes))}</td></tr>");
+                + $"<td class=\"text-end\">{Esc(Shares.Hours(minutes))}</td>"
+                + $"<td class=\"text-end\">{Esc(Shares.Percent(minutes, report.TotalMinutes))}</td></tr>");
         }
 
         return $$"""
-                   <table class="table table-sm align-middle mb-0">
+                   <table class="table table-sm align-middle w-auto mb-0">
                      <thead>
                        <tr><th scope="col">Project</th><th scope="col">Topic</th><th scope="col" class="text-end">Time</th><th scope="col" class="text-end">Share</th></tr>
                      </thead>
@@ -188,11 +171,8 @@ public static class ReportHtml
         {
             rows.AppendLine(
                 $"      <tr><td>{Esc(label)}</td>"
-                + $"<td class=\"text-end figure\">{Esc(Shares.Hours(minutes))}</td>"
-                + $"<td class=\"text-end figure\">{Esc(Shares.Percent(minutes, report.TotalMinutes))}</td>"
-                + $"<td><div class=\"progress\" role=\"progressbar\" aria-valuenow=\"{Shares.Width(minutes, report.TotalMinutes)}\""
-                + " aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"height: 8px\">"
-                + $"<div class=\"progress-bar\" style=\"width: {Shares.Width(minutes, report.TotalMinutes)}%\"></div></div></td></tr>");
+                + $"<td class=\"text-end\">{Esc(Shares.Hours(minutes))}</td>"
+                + $"<td class=\"text-end\">{Esc(Shares.Percent(minutes, report.TotalMinutes))}</td></tr>");
         }
 
         return rows.ToString();
@@ -208,7 +188,7 @@ public static class ReportHtml
 
         if (projects.Length == 0)
         {
-            return "<p class=\"text-secondary mb-0\">No hours to share out.</p>\n";
+            return "<p class=\"text-body-secondary mb-0\">No hours to share out.</p>\n";
         }
 
         var chart = new StringBuilder("pie showData\n    title Hours by project\n");
@@ -231,7 +211,7 @@ public static class ReportHtml
     {
         if (report.Days.Count == 0)
         {
-            return "<p class=\"text-secondary mb-0\">Nothing to draw.</p>\n";
+            return "<p class=\"text-body-secondary mb-0\">Nothing to draw.</p>\n";
         }
 
         var perEntry = report.Range.Days <= 62;
@@ -305,11 +285,11 @@ public static class ReportHtml
 
         foreach (var day in report.Days)
         {
-            page.AppendLine($"    <details class=\"card mb-2\"><summary class=\"card-body py-2\">");
+            page.AppendLine($"    <details class=\"card mb-1\"><summary class=\"card-body py-2\">");
             page.AppendLine(
                 $"      <span class=\"fw-semibold\">{Esc(day.Date.ToString("ddd d MMM yyyy", CultureInfo.InvariantCulture))}</span>");
             page.AppendLine(
-                $"      <span class=\"text-secondary\">· {Esc(day.Kind)} · {Esc(Shares.Hours(day.Minutes))}</span>");
+                $"      <span class=\"text-body-secondary\">· {Esc(day.Kind)} · {Esc(Shares.Hours(day.Minutes))}</span>");
             page.AppendLine("    </summary>");
             page.AppendLine("    <div class=\"card-body py-2\">");
             page.Append(Entries(day));
@@ -328,10 +308,10 @@ public static class ReportHtml
         foreach (var entry in day.Entries)
         {
             rows.AppendLine(
-                $"      <tr><td class=\"figure\">{entry.Start:HH:mm}–{entry.End:HH:mm}</td>"
+                $"      <tr><td class=\"text-nowrap\">{entry.Start:HH:mm}–{entry.End:HH:mm}</td>"
                 + $"<td>{Esc(entry.Project)}</td><td>{Esc(entry.Topic ?? string.Empty)}</td>"
-                + $"<td class=\"text-end figure\">{Esc(Shares.Hours(entry.Minutes))}</td>"
-                + $"<td class=\"text-secondary\">{Esc(entry.Note ?? string.Empty)}</td></tr>");
+                + $"<td class=\"text-end\">{Esc(Shares.Hours(entry.Minutes))}</td>"
+                + $"<td class=\"text-body-secondary\">{Esc(entry.Note ?? string.Empty)}</td></tr>");
         }
 
         return $$"""
@@ -348,7 +328,7 @@ public static class ReportHtml
 
     private static string Footer(RangeReport report) =>
         $$"""
-          <footer class="text-secondary small mt-5">
+          <footer class="text-body-secondary small mt-5">
             <p class="mb-1">Made by Worksheet from its journal. Days that hold nothing are left out; the total is what the journal says, not a guess at a working day.</p>
             <p class="mb-0">This page loads Bootstrap and mermaid from jsDelivr. Without a connection the tables still read; the two pictures do not.</p>
           </footer>
@@ -363,7 +343,7 @@ public static class ReportHtml
               startOnLoad: true,
               securityLevel: 'strict',
               theme: 'default',
-              gantt: { barHeight: 16, barGap: 6, topPadding: 40, gridLineStartPadding: 20, fontSize: 11, sectionFontSize: 13, numberSectionStyles: 2, useWidth: 1000 },
+              gantt: { barHeight: 16, barGap: 6, topPadding: 40, gridLineStartPadding: 20, fontSize: 11, sectionFontSize: 13, numberSectionStyles: 2 },
               pie: { textPosition: 0.62 }
             });
           </script>
@@ -371,7 +351,7 @@ public static class ReportHtml
           """;
 
     private static string MermaidBlock(string diagram) =>
-        $"<pre class=\"mermaid\">\n{diagram.Replace("<", "&lt;").Replace(">", "&gt;")}</pre>\n";
+        $"<div class=\"overflow-auto\"><pre class=\"mermaid\">\n{diagram.Replace("<", "&lt;").Replace(">", "&gt;")}</pre></div>\n";
 
     /// <summary>A label mermaid can read: no colon (it starts a task's data), no quote, one line.</summary>
     private static string Label(string text) =>
@@ -406,8 +386,6 @@ public static class ReportHtml
             ExportPeriod.Quarter => "quarter",
             _ => "year",
         };
-
-    private static string Plural(int count, string one, string many) => count == 1 ? one : many;
 
     private static string Esc(string? text) =>
         (text ?? string.Empty)

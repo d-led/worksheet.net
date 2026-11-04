@@ -20,8 +20,4 @@ internal static class Shares
 
     public static string Percent(int minutes, int total) =>
         (Of(minutes, total) * 100).ToString("0.0", CultureInfo.InvariantCulture) + " %";
-
-    /// <summary>What a bar chart would say, in a width a progress bar can use.</summary>
-    public static string Width(int minutes, int total) =>
-        (Of(minutes, total) * 100).ToString("0.#", CultureInfo.InvariantCulture);
 }
