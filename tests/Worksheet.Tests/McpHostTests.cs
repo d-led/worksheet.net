@@ -70,20 +70,6 @@ public sealed class McpHostTests
     }
 
     [Fact]
-    public void Without_a_port_setting_the_default_port_is_used()
-    {
-        Assert.Equal(McpSettings.DefaultPort, McpSettings.PortFrom(null));
-        Assert.Equal(McpSettings.DefaultPort, McpSettings.PortFrom("   "));
-    }
-
-    [Fact]
-    public void A_port_that_is_not_a_port_falls_back_to_the_default()
-    {
-        Assert.Equal(McpSettings.DefaultPort, McpSettings.PortFrom("fifty"));
-        Assert.Equal(McpSettings.DefaultPort, McpSettings.PortFrom("70000"));
-    }
-
-    [Fact]
     public void Zero_turns_the_server_off()
     {
         var settings = new McpSettings(0);

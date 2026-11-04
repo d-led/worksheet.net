@@ -9,6 +9,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
+using Worksheet.Core;
 using Worksheet.Desktop.ViewModels;
 using Worksheet.Desktop.Views;
 using Worksheet.Mcp;
@@ -25,7 +26,8 @@ public sealed class App : Application
     private MainWindow? _window;
     private SingleInstance? _instance;
     private McpHttpHost? _mcp;
-    private McpSettings _mcpSettings = McpSettings.FromEnvironment();
+    private SettingsResolver? _resolver;
+    private ResolvedSettings? _resolved;
     private string? _mcpProblem;
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
@@ -62,12 +64,18 @@ public sealed class App : Application
         desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
         desktop.Exit += (_, _) => Release();
 
-        _local = LocalLedger.Open();
+        _resolver = new SettingsResolver(
+            LocalLedger.DefaultDirectory,
+            Environment.GetEnvironmentVariable,
+            new AppSettings(McpSettings.DefaultPort, LocalLedger.SnapshotEveryChanges));
+        _resolved = _resolver.Resolve();
+
+        _local = LocalLedger.Open(policy: SnapshotPolicy.EveryChanges(_resolved.Values.SnapshotEvery));
         var day = new DayViewModel(_local);
         _window = new MainWindow { DataContext = day };
         desktop.MainWindow = _window;
 
-        TrayHost.Attach(this, ShowWindow, ShowConnect, OpenDataFolder, () => Quit(desktop));
+        TrayHost.Attach(this, ShowWindow, ShowConnect, ShowSettings, OpenDataFolder, () => Quit(desktop));
 
         StartMcp(day, _local);
 
@@ -86,7 +94,11 @@ public sealed class App : Application
     /// </summary>
     private void StartMcp(DayViewModel day, LocalLedger local)
     {
-        var settings = _mcpSettings;
+        var settings = CurrentMcpSettings();
+
+        _mcp?.Dispose();
+        _mcp = null;
+        _mcpProblem = null;
 
         if (!settings.Enabled)
         {
@@ -114,17 +126,19 @@ public sealed class App : Application
 
         if (problem is not null)
         {
-            day.Say($"{problem} Set {McpSettings.PortVariable} to another port.", isProblem: true);
+            day.Say($"{problem} Choose another port in Settings.", isProblem: true);
         }
     }
+
+    private McpSettings CurrentMcpSettings() => new(_resolved?.Values.McpPort ?? McpSettings.DefaultPort);
 
     /// <summary>Opens the window that says what to paste into a client, and whether the server is up.</summary>
     private void ShowConnect()
     {
-        var settings = _mcpSettings;
+        var settings = CurrentMcpSettings();
         var status = settings.Enabled
             ? _mcpProblem ?? $"Listening on {settings.Url}."
-            : $"The MCP server is off. Set {McpSettings.PortVariable} to a port and start the application again to turn it on.";
+            : "The MCP server is off. Set a port in Settings to turn it on.";
 
         var window = new ConnectWindow
         {
@@ -138,6 +152,50 @@ public sealed class App : Application
         }
 
         window.Show(_window);
+    }
+
+    /// <summary>Opens the knobs: the port the server listens on, and how often the fold is rewritten.</summary>
+    private void ShowSettings()
+    {
+        if (_resolver is null)
+        {
+            return;
+        }
+
+        var window = new SettingsWindow
+        {
+            DataContext = new SettingsViewModel(_resolver, LocalLedger.DefaultDirectory),
+            Applied = ApplySettings,
+        };
+
+        if (_window is null)
+        {
+            window.Show();
+            return;
+        }
+
+        window.Show(_window);
+    }
+
+    /// <summary>
+    /// Applies what can be applied while the window runs: the MCP port, by starting the server again
+    /// on the new one. The snapshot interval is read when the ledger is opened, which is the next start.
+    /// </summary>
+    private void ApplySettings()
+    {
+        if (_resolver is null || _resolved is null)
+        {
+            return;
+        }
+
+        var port = _resolved.Values.McpPort;
+
+        _resolved = _resolver.Resolve();
+
+        if (_resolved.Values.McpPort != port && CurrentDay is { } day && _local is { } local)
+        {
+            StartMcp(day, local);
+        }
     }
 
     private void ShowWindow()

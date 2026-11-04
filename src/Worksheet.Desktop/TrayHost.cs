@@ -26,6 +26,7 @@ internal static class TrayHost
         Application application,
         Action showWindow,
         Action connect,
+        Action settings,
         Action openDataFolder,
         Action quit)
     {
@@ -46,6 +47,7 @@ internal static class TrayHost
                 MenuItem("Show window", showWindow),
                 new NativeMenuItemSeparator(),
                 MenuItem("Connect an agent…", connect),
+                MenuItem("Settings…", settings),
                 MenuItem("Open data folder", openDataFolder),
                 new NativeMenuItemSeparator(),
                 MenuItem("Quit", quit),

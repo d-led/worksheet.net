@@ -115,8 +115,8 @@ only. *Connect an agent…* in the tray menu shows the two snippets a client nee
 
 An agent can log a line, read a day back, ask for totals per project, list the catalogue, rename or
 remove a project or a topic, and undo. Answers are sentences, refusals included, and every change it
-makes is one undo away in the window's own undo. `WORKSHEET_MCP_PORT` moves the port; `0` leaves the
-server off.
+makes is one undo away in the window's own undo. The port is chosen in *Settings…* in the tray menu;
+`WORKSHEET_MCP_PORT` sets it too, and `0` leaves the server off.
 
 ## It lives in the tray
 
@@ -136,6 +136,12 @@ One file:
 - Linux — `~/.config/Worksheet`
 
 Set `WORKSHEET_DATA_DIR` to keep it somewhere else, for a portable copy.
+
+Beside the journal sits `settings.json`: the two knobs *Settings…* offers — the MCP port and how
+often the fold is rewritten. What you choose there wins over the environment, and the environment
+wins over the built-in value; *Revert to defaults* forgets the choice, so `WORKSHEET_MCP_PORT` and
+`WORKSHEET_SNAPSHOT_EVERY` decide again. It is a file of its own on purpose: a preference is not
+something to undo.
 
 ## Licence
 
