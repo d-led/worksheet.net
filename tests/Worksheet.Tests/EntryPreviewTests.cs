@@ -4,6 +4,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Worksheet.Core;
+using Worksheet.TestSupport;
 
 namespace Worksheet.Tests;
 
@@ -13,7 +14,7 @@ public sealed class EntryPreviewTests
     private static readonly DateOnly Day = new(2026, 11, 3);
 
     private static EntryCommand Command(string start, int minutes) =>
-        new(Day, "Website", null, TimeOnly.Parse(start), TimeSpan.FromMinutes(minutes), null);
+        new(Day, "Website", null, Clocks.At(start), TimeSpan.FromMinutes(minutes), null);
 
     private static Core.Ledger NewLedger() => Core.Ledger.Open(new InMemoryJournal());
 

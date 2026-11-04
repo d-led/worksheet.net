@@ -9,6 +9,27 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <EnableDefaultNoneItems>false</EnableDefaultNoneItems>
+
+    <!--
+      The compiler's own analysers, at the level Microsoft recommends, plus the code-style
+      rules as warnings: with TreatWarningsAsErrors above, a rule that fires is a build that
+      stops, which is the only kind of analyser anyone keeps reading.
+    -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <!--
+    A mutation run (scripts/mutate.sh) compiles hundreds of deliberately broken variants of the
+    same code. Half of them trip a nullable warning, and with warnings as errors each of those
+    would be reported as a mutant that cannot compile rather than as a finding about the tests.
+    The run says so by exporting WS_MUTATION=1; nothing else ever sets it.
+  -->
+  <PropertyGroup Condition="'$(WS_MUTATION)' == '1'">
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
 </Project>

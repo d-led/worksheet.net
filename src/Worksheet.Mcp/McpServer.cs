@@ -144,7 +144,7 @@ public sealed class McpServer(IToolkit toolkit)
         var call = parameters.TryGetProperty("arguments", out var given)
             ? new ToolCall(nameElement.GetString()!, given.Clone())
             : new ToolCall(nameElement.GetString()!, null);
-        var outcome = toolkit.Call(call);
+        var outcome = toolkit.Run(call);
 
         return Answered(
             id,

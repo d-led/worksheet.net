@@ -29,6 +29,25 @@ env:
 
 jobs:
 
+  quality:
+    name: Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: '10.0.x'
+
+      # The compiler's analysers with warnings as errors, then the CRAP gate over both test
+      # projects. Neither needs Node, a signing key or a GUI, and one leg is enough: the same
+      # sources analysed three times would say the same thing three times.
+      - name: Static analysis
+        run: ./scripts/analyse.sh
+
+      - name: Complexity and coverage
+        run: ./scripts/crap.sh
+
   test:
     name: Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -48,7 +67,7 @@ jobs:
 
   package:
     name: Package (${{ matrix.rid }})
-    needs: test
+    needs: [test, quality]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

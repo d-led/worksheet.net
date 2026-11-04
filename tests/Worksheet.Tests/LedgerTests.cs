@@ -4,6 +4,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Worksheet.Core;
+using Worksheet.TestSupport;
 
 namespace Worksheet.Tests;
 
@@ -18,7 +19,7 @@ public sealed class LedgerTests
             Id = EntryId.Create(),
             ProjectId = Project,
             Date = Day,
-            Start = TimeOnly.Parse(start),
+            Start = Clocks.At(start),
             Duration = TimeSpan.FromMinutes(minutes),
         };
 

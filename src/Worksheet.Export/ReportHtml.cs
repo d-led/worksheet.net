@@ -312,6 +312,7 @@ public static class ReportHtml
         foreach (var entry in report.Days.Where(day => day.Date == date).SelectMany(day => day.Entries).Where(lane.Holds))
         {
             marks.Append(
+                CultureInfo.InvariantCulture,
                 $"<span class=\"position-absolute top-0 bottom-0 bg-{lane.Colour} rounded-1\""
                 + $" style=\"{Place(entry, from, span)}\" title=\"{Esc(When(entry))}\"></span>");
         }
@@ -329,7 +330,9 @@ public static class ReportHtml
     }
 
     private static string When(EntryLine entry) =>
-        $"{entry.Start:HH:mm}–{entry.End:HH:mm} · {Shares.Hours(entry.Minutes)}";
+        $"{Clock(entry.Start)}–{Clock(entry.End)} · {Shares.Hours(entry.Minutes)}";
+
+    private static string Clock(TimeOnly time) => time.ToString("HH:mm", CultureInfo.InvariantCulture);
 
     private static string Frac(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
 
@@ -351,8 +354,10 @@ public static class ReportHtml
         {
             page.AppendLine($"    <details class=\"card mb-1\"><summary class=\"card-body py-2\">");
             page.AppendLine(
-                $"      <span class=\"fw-semibold\">{Esc(day.Date.ToString("ddd d MMM yyyy", CultureInfo.InvariantCulture))}</span>");
+                CultureInfo.InvariantCulture,
+                $"      <span class=\"fw-semibold\">{Esc(day.Date.ToString("dddd MMM yyyy", CultureInfo.InvariantCulture))}</span>");
             page.AppendLine(
+                CultureInfo.InvariantCulture,
                 $"      <span class=\"text-body-secondary\">· {Esc(day.Kind)} · {Esc(Shares.Hours(day.Minutes))}</span>");
             page.AppendLine("    </summary>");
             page.AppendLine("    <div class=\"card-body py-2\">");
@@ -372,7 +377,8 @@ public static class ReportHtml
         foreach (var entry in day.Entries)
         {
             rows.AppendLine(
-                $"      <tr><td class=\"text-nowrap\">{entry.Start:HH:mm}–{entry.End:HH:mm}</td>"
+                CultureInfo.InvariantCulture,
+                $"      <tr><td class=\"text-nowrap\">{Clock(entry.Start)}–{Clock(entry.End)}</td>"
                 + $"<td>{Esc(entry.Project)}</td><td>{Esc(entry.Topic ?? string.Empty)}</td>"
                 + $"<td class=\"text-end\">{Esc(Shares.Hours(entry.Minutes))}</td>"
                 + $"<td class=\"text-body-secondary\">{Esc(entry.Note ?? string.Empty)}</td></tr>");

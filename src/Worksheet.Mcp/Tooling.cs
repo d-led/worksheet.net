@@ -96,16 +96,16 @@ public interface IToolkit
 {
     IReadOnlyList<ToolDefinition> Tools { get; }
 
-    ToolOutcome Call(ToolCall call);
+    ToolOutcome Run(ToolCall toolCall);
 }
 
 /// <summary>
 /// Runs every call where the ledger may be touched. The fold has one writer and no lock, so the
 /// transport thread must never reach it directly; the host decides which thread calls arrive on.
 /// </summary>
-public sealed class SerialToolkit(IToolkit inner, Func<Func<ToolOutcome>, ToolOutcome> run) : IToolkit
+public sealed class SerialToolkit(IToolkit inner, Func<Func<ToolOutcome>, ToolOutcome> serialise) : IToolkit
 {
     public IReadOnlyList<ToolDefinition> Tools => inner.Tools;
 
-    public ToolOutcome Call(ToolCall call) => run(() => inner.Call(call));
+    public ToolOutcome Run(ToolCall toolCall) => serialise(() => inner.Run(toolCall));
 }

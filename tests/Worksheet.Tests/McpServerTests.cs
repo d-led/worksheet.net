@@ -32,7 +32,7 @@ public sealed class McpServerTests
                 Annotations: ToolAnnotations.Readings),
         ];
 
-        public ToolOutcome Call(ToolCall call)
+        public ToolOutcome Run(ToolCall call)
         {
             Calls.Add(call);
 

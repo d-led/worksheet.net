@@ -1,0 +1,7 @@
+{
+  "stryker-config": {
+    "project": "Worksheet.Core.csproj",
+    "test-projects": ["tests/Worksheet.Tests/Worksheet.Tests.csproj"],
+    "thresholds": { "high": 85, "low": 70, "break": 0 }
+  }
+}

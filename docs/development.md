@@ -10,6 +10,9 @@ Everything that is about building this rather than using it.
   native copying. This application has no Apple workload and needs no Xcode — Avalonia's macOS
   backend is its own dylib — but the pin keeps that distinction from being discovered the hard way.
 - No other prerequisites; Avalonia, SukiUI and LiteDB come from NuGet.
+- Node is needed for one optional check (`scripts/dupes.sh`); nothing else does.
+- `dotnet tool restore` installs Stryker for `scripts/mutate.sh` from
+  `.config/dotnet-tools.json`. No other tool is installed this way.
 
 ## Build, test, run
 
@@ -48,9 +51,7 @@ releasing file handles late).
 ### Coverage and the CRAP metric
 
 ```sh
-rm -rf coverage
-dotnet test Worksheet.slnx --collect:"XPlat Code Coverage" --results-directory ./coverage
-python3 scripts/crap.py
+scripts/crap.sh
 ```
 
 `scripts/crap.py` reads the cobertura reports and prints `complexity² × (1 − coverage)³ + complexity`
@@ -58,9 +59,30 @@ per method, worst first, and exits non-zero if any method is over 10. It merges 
 generated XAML members, and skips the composition roots (`App`, `Program`) — they only wire parts
 together, and every part is measured where it lives.
 
-Current state: 793 methods, no method over CRAP 10, method-average coverage 94.7%. What stays
+Current state: 809 methods, no method over CRAP 10, method-average coverage 94.8%. What stays
 uncovered needs a window server session — the tray, the composition root, the save dialog's file
 picker — or is a guard against a state a test cannot reach on purpose.
+
+### The four checks
+
+| command | what it answers | when |
+|---|---|---|
+| `scripts/analyse.sh` | do the analysers and code-style rules agree with the code? | every commit; CI |
+| `scripts/crap.sh` | is a method too tangled for how little of it is tested? | every commit; CI |
+| `scripts/dupes.sh` | is the same block of lines written twice? | by hand, occasionally |
+| `scripts/mutate.sh` | do the tests notice a broken statement? | by hand, occasionally |
+
+The first two gate: non-zero exit, and CI's `Quality` job runs them, so packaging waits for them.
+The last two read, and stay off CI. `dupes.sh` needs Node (jscpd through `npx`); 0.5% duplicated
+today, fails over 5%. `mutate.sh` needs `dotnet tool restore` and runs Stryker over
+`Worksheet.Core`; a full run is minutes, so it is not a commit hook. It sets `WS_MUTATION=1`
+because a run compiles deliberately broken variants, and warnings-as-errors would report half of
+them as "cannot compile" instead of as findings.
+
+crap4dotnet was tried and dropped: it wants the .NET 8 runtime, cannot read `.slnx`, and mis-joins
+coverage (74 methods flagged that `crap.py` measures under 10, `EventCodec.Decode` among them).
+
+
 
 ## Building what a person installs
 
@@ -138,10 +160,15 @@ how the clipped start column was found.
 
 `.github/workflows/build.yml`:
 
+- **quality** — `ubuntu-latest`, `scripts/analyse.sh` then `scripts/crap.sh`: the analysers with
+  warnings as errors, and the CRAP gate over both test projects
 - **test** — `ubuntu-latest`, `windows-latest`, `macos-latest`, `dotnet test Worksheet.slnx`
 - **package** — one job per RID, each published on its own operating system, then asserted to
   contain exactly one file, renamed to `worksheet-<rid>[.exe]` so all five can share a release
 - **release** — on a `v*` tag, downloads every artifact and attaches it with `gh release create`
+
+Packaging waits for both `test` and `quality`, so nothing is published from a tree that fails
+either. The duplicate and mutation checks are not in CI on purpose — see the four checks above.
 
 Not there yet: dmg/msi/deb installers and notarisation, which need signing credentials. On macOS an
 unsigned download carries the quarantine flag; `install.sh` clears it after copying.
@@ -199,20 +226,26 @@ Some choices in the window look like omissions and are not:
   copy raises its window. A named pipe rather than a named event, because .NET implements named
   synchronization primitives only on Windows. The pipe's path carries the temporary folder and macOS
   caps a socket path at 104 characters, so the name is short and a pipe that cannot be had simply
-  means no summons rather than a failure to start. macOS asks a running application to *reopen*
-  rather than starting a second process, so `ActivationKind.Reopen` raises the window too.
-- **On macOS the Dock icon is the way back, and that is why it is there.** Avalonia's own
-  documentation says `TrayIcon.Clicked` is never raised on macOS, and an icon that carries a menu
-  opens the menu instead — so the menu-bar icon cannot raise the window. It cannot report a reopen
-  either: `ClassicDesktopStyleApplicationLifetime` is not an `IActivatableLifetime` in Avalonia
-  12.1.5 (measured, not assumed), so `Activated` never fires and a listener for it is dead code.
-  What does work is AppKit's own behaviour: activating the application restores its minimised
-  windows, which was measured too — `open -a` on a running copy took the window from `Minimized`
-  back to `Normal` with no code of ours involved. So closing the window on macOS minimises it
-  rather than hiding it, the Dock icon restores it, and `MacOSPlatformOptions.ShowInDock = true` is
-  said out loud in `Program.cs` rather than inherited from a default (which is also why the bundle
-  no longer claims `LSUIElement`). Reaching the window from the menu bar is *Show window*, first in
-  the menu.
+  means no summons rather than a failure to start.
+- **On macOS there is no Dock icon, and closing says so once.** Avalonia's own documentation says
+  `TrayIcon.Clicked` is never raised on macOS, and an icon that carries a menu opens the menu
+  instead — so the menu-bar icon cannot raise the window. It cannot report a reopen either:
+  `ClassicDesktopStyleApplicationLifetime` is not an `IActivatableLifetime` in Avalonia 12.1.5
+  (measured, not assumed), so `Activated` never fires and a listener for it is dead code. An
+  earlier attempt kept a Dock icon and made closing minimise, relying on AppKit restoring minimised
+  windows when the application is activated; but the same measurement showed the Dock icon itself
+  answers no click, so it took a place and returned nothing. The application is now a menu-bar
+  application: `MacOSPlatformOptions.ShowInDock = false` in `Program.cs` and `LSUIElement` in the
+  bundle, and closing hides.
+- **The close notice is our own window, not a system notification.** Avalonia has no API for
+  system notifications; `Avalonia.Controls.Notifications` is the in-window card set, and macOS
+  Notification Center would need a signed bundle and entitlements. So the first close opens a small
+  window beside it that says the day keeps counting and where the icon is, with *Quit Worksheet*
+  and *Close the window* (the default, so Escape and Return both take the harmless answer). It is
+  shown once: `settings.json` holds `closeNoticeShown`, `SettingsResolver.HasShownCloseNotice` reads
+  it and `RememberCloseNotice()` writes it, and `Store` keeps the flag while writing the knobs. A
+  notice that repeats itself is one nobody reads.
+
 - **A merge is one journal change.** Renaming a project or a topic onto a name already in use
   rewrites entries and re-homes or retires topics, which is several changes; they travel as one
   `Batch`, so the journal records one decision and one undo takes the whole of it back. The

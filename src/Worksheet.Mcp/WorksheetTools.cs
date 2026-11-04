@@ -46,10 +46,10 @@ public sealed class WorksheetTools : IToolkit
 
     public IReadOnlyList<ToolDefinition> Tools => Definitions;
 
-    public ToolOutcome Call(ToolCall call) =>
-        _handlers.TryGetValue(call.Name, out var handler)
-            ? handler(call)
-            : ToolOutcome.Refused($"There is no tool called '{call.Name}'.");
+    public ToolOutcome Run(ToolCall toolCall) =>
+        _handlers.TryGetValue(toolCall.Name, out var handler)
+            ? handler(toolCall)
+            : ToolOutcome.Refused($"There is no tool called '{toolCall.Name}'.");
 
     /// <summary>The line is the product: whatever the entry field accepts, a tool call accepts too.</summary>
     private ToolOutcome LogEntry(ToolCall call) =>

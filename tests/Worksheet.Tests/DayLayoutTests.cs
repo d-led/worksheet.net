@@ -4,6 +4,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Worksheet.Core;
+using Worksheet.TestSupport;
 
 namespace Worksheet.Tests;
 
@@ -18,7 +19,7 @@ public sealed class DayLayoutTests
             Id = EntryId.Create(),
             ProjectId = Project,
             Date = Day,
-            Start = TimeOnly.Parse(start),
+            Start = Clocks.At(start),
             Duration = TimeSpan.FromMinutes(minutes),
         };
 
@@ -29,7 +30,7 @@ public sealed class DayLayoutTests
 
         Assert.Equal(
             new[] { "08:30", "10:00", "13:00" },
-            layout.Entries.Select(entry => entry.Start.ToString("HH:mm")));
+            layout.Entries.Select(entry => Clocks.Text(entry.Start)));
     }
 
     [Fact]

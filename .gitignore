@@ -7,3 +7,6 @@ coverage/
 .vs/
 .idea/
 artifacts/
+
+# Mutation reports, local only (scripts/mutate.sh)
+StrykerOutput/

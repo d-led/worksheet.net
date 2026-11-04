@@ -4,6 +4,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Worksheet.Core;
+using Worksheet.TestSupport;
 
 namespace Worksheet.Tests;
 
@@ -35,7 +36,7 @@ public sealed class EntryCommandParserTests
         Assert.True(parse.Succeeded, parse.Error);
         Assert.Equal(project, parse.Command!.Project);
         Assert.Equal(topic, parse.Command.Topic);
-        Assert.Equal(TimeOnly.Parse(start), parse.Command.Start);
+        Assert.Equal(Clocks.At(start), parse.Command.Start);
         Assert.Equal(TimeSpan.FromMinutes(minutes), parse.Command.Duration);
     }
 

@@ -258,7 +258,7 @@ public sealed class ExportTests
 
         Assert.Single(Regex.Matches(page, ">Website · login</td>"));
         Assert.Single(Regex.Matches(page, ">Website · reports</td>"));
-        Assert.Equal(3, Regex.Matches(page, "position-absolute top-0 bottom-0").Count);
+        Assert.Equal(3, Regex.Count(page, "position-absolute top-0 bottom-0"));
     }
 
     [Fact]
@@ -305,7 +305,7 @@ public sealed class ExportTests
         var report = Report(ExportPeriod.Month);
         using var archive = new ZipArchive(new MemoryStream(ExportBundle.Zip(report, Generated)), ZipArchiveMode.Read);
 
-        using var reader = new StreamReader(archive.Entries.Single(entry => entry.Name.EndsWith(".json")).Open(), Encoding.UTF8);
+        using var reader = new StreamReader(archive.Entries.Single(entry => entry.Name.EndsWith(".json", StringComparison.Ordinal)).Open(), Encoding.UTF8);
         var text = reader.ReadToEnd();
 
         Assert.Contains("\"totalMinutes\": 60", text);

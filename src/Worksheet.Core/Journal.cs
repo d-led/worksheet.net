@@ -217,7 +217,7 @@ public sealed class Ledger : IObservable<LedgerState>
     /// </summary>
     public bool TryUndo(out string? reason)
     {
-        var last = _journal.ReadFrom(Version - 1).FirstOrDefault();
+        var last = _journal.ReadFrom(Version - 1) is [var newest, ..] ? newest : null;
 
         if (last is null)
         {

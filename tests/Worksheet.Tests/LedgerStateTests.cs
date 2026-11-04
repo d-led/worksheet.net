@@ -4,6 +4,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Worksheet.Core;
+using Worksheet.TestSupport;
 
 namespace Worksheet.Tests;
 
@@ -36,7 +37,7 @@ public sealed class LedgerStateTests
             Id = EntryId.Create(),
             ProjectId = Website,
             Date = day,
-            Start = TimeOnly.Parse(start),
+            Start = Clocks.At(start),
             Duration = TimeSpan.FromMinutes(minutes),
         };
 
@@ -55,7 +56,7 @@ public sealed class LedgerStateTests
     {
         var state = Ledger();
 
-        var starts = state.EntriesOn(Day).Select(entry => entry.Start.ToString("HH:mm"));
+        var starts = state.EntriesOn(Day).Select(entry => Clocks.Text(entry.Start));
 
         Assert.Equal(new[] { "09:00", "10:30" }, starts);
     }

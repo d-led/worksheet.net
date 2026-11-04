@@ -1,0 +1,7 @@
+{
+  "min-tokens": 70,
+  "min-lines": 8,
+  "threshold": 5,
+  "absolute": true,
+  "ignore": ["**/bin/**", "**/obj/**", "**/publish/**", "**/artifacts/**", "**/*.g.cs"]
+}

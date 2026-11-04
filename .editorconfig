@@ -1,0 +1,37 @@
+root = true
+
+# The compiler's analysers run during the build with warnings as errors, so a rule that is off
+# here is a rule that was looked at and decided against. Keep this file to decisions with a
+# reason; a rule that fires and wants fixing is fixed in the code, not switched off here.
+
+[*.cs]
+
+# CA1000 — static members on generic types. NameMatch<T>.None and NameMatch<T>.Ambiguity are the
+# two empty answers of the result type they belong to; a separate non-generic factory class would
+# only hide where they come from. The rule exists for framework shapes that become ambiguous when
+# type arguments arrive, which this is not.
+dotnet_diagnostic.CA1000.severity = none
+
+# CA1859 — narrow an interface to the concrete type you happen to pass. The two places it fires
+# take or return IReadOnlyList<Entry> and LedgerEvent? because that is what the caller may know;
+# narrowing them would trade the API's meaning for a microsecond of dispatch.
+dotnet_diagnostic.CA1859.severity = none
+
+[src/Worksheet.Desktop/App.axaml.cs]
+
+# CA1001 — a type owning a disposable field should itself be disposable. App is the composition
+# root: it builds the window and lives exactly as long as the process does, and the framework
+# closes the windows it owns when the lifetime shuts down. There is no later moment at which
+# disposing the window would be the right thing to do.
+dotnet_diagnostic.CA1001.severity = none
+
+[tests/**/*.cs]
+
+# CA1707 — no underscores in member names. A test is named after the behaviour it pins, and that
+# name is read as a sentence in the test runner; the underscores are its spaces.
+dotnet_diagnostic.CA1707.severity = none
+
+# CA1861 — avoid constant arrays as arguments on repeated calls. The cost is one allocation per
+# call, and a test makes the call once; the rule asks for a `static readonly` field where its own
+# premise (repetition) does not hold.
+dotnet_diagnostic.CA1861.severity = none

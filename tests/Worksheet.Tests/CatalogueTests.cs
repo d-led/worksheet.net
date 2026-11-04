@@ -4,6 +4,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Worksheet.Core;
+using Worksheet.TestSupport;
 
 namespace Worksheet.Tests;
 
@@ -48,7 +49,7 @@ public sealed class CatalogueTests
             ProjectId = projectId,
             TopicId = topicId,
             Date = Day,
-            Start = TimeOnly.Parse(start),
+            Start = Clocks.At(start),
             Duration = TimeSpan.FromHours(1),
         };
 

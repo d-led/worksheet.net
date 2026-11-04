@@ -129,9 +129,9 @@ public static partial class EntryCompletion
     private static IReadOnlyList<string> Starts(IEnumerable<string> names, string word) =>
     [
         .. names
-            .Where(name => name.StartsWith(word, StringComparison.CurrentCultureIgnoreCase)
-                        && !string.Equals(name, word, StringComparison.CurrentCultureIgnoreCase))
-            .OrderBy(name => name, StringComparer.CurrentCultureIgnoreCase)
+            .Where(name => name.StartsWith(word, StringComparison.OrdinalIgnoreCase)
+                        && !string.Equals(name, word, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
             .Take(Limit),
     ];
 

@@ -37,6 +37,7 @@ public abstract class UiTestBase : IDisposable
     {
         Ledger.Dispose();
         _temp.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     protected DayViewModel NewDay() => new(Ledger, Today);
@@ -57,7 +58,7 @@ public abstract class UiTestBase : IDisposable
         return control;
     }
 
-    protected void Seed(DayViewModel day, string line)
+    protected static void Seed(DayViewModel day, string line)
     {
         day.EntryText = line;
         day.LogCommand.Execute(null);

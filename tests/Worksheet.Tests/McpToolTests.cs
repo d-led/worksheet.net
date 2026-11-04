@@ -6,6 +6,7 @@
 using System.Text.Json;
 using Worksheet.Core;
 using Worksheet.Mcp;
+using Worksheet.TestSupport;
 
 namespace Worksheet.Tests;
 
@@ -26,11 +27,11 @@ public sealed class McpToolTests
     {
         using var document = JsonDocument.Parse(arguments);
 
-        return _tools.Call(new ToolCall(name, document.RootElement.Clone()));
+        return _tools.Run(new ToolCall(name, document.RootElement.Clone()));
     }
 
     private ToolOutcome LogEntry(string line, DateOnly? on = null) =>
-        Call("log_entry", JsonSerializer.Serialize(new { line, date = on?.ToString("yyyy-MM-dd") }));
+        Call("log_entry", JsonSerializer.Serialize(new { line, date = on is { } day ? Clocks.Text(day) : null }));
 
     private ToolDefinition Definition(string name) => _tools.Tools.Single(tool => tool.Name == name);
 
