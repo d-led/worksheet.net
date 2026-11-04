@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/Worksheet.Core/Worksheet.Core.csproj" />
     <Project Path="src/Worksheet.Desktop/Worksheet.Desktop.csproj" />
+    <Project Path="src/Worksheet.Mcp/Worksheet.Mcp.csproj" />
     <Project Path="src/Worksheet.Storage/Worksheet.Storage.csproj" />
   </Folder>
   <Folder Name="/tests/">
