@@ -58,7 +58,7 @@ per method, worst first, and exits non-zero if any method is over 10. It merges 
 generated XAML members, and skips the composition roots (`App`, `Program`) — they only wire parts
 together, and every part is measured where it lives.
 
-Current state: 734 methods, no method over CRAP 10, method-average coverage 94.3%. What stays
+Current state: 793 methods, no method over CRAP 10, method-average coverage 94.7%. What stays
 uncovered needs a window server session — the tray, the composition root, the save dialog's file
 picker — or is a guard against a state a test cannot reach on purpose.
 
@@ -185,6 +185,14 @@ Some choices in the window look like omissions and are not:
   run for days without being restarted, and may not be running at midnight at all. The copy is taken
   on the UI thread, with the store's own gate held and after a checkpoint, because the ledger has one
   writer and the file it has open is the only consistent thing there is to copy.
+- **Shapes other people read are types, not anonymous objects.** The export's data file
+  (`ReportShape.cs`), the tool listing a client reads (`ToolSchema`, `ToolProperty`, `ToolListing`) and
+  the day's rows (`IDayRow`) are records and interfaces with the wire names spelled out, so a change
+  to one is a change to a named thing rather than to a shape that exists nowhere. `ExportTests`
+  pins version 1 of the data file member by member and order by order, which is what makes the
+  format safe to refactor behind. The journal's own row stays a `BsonDocument` on purpose: its field
+  names are the file's contract, and mapping it through a class would rename them in every file
+  already written.
 - **The second copy asks the first for its window.** The store is single-writer, so a second copy is
   refused the mutex; it used to leave silently, which made starting the application again do
   nothing visible. It now connects to a named pipe the running copy holds and leaves, and the running

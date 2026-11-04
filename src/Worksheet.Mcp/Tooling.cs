@@ -4,17 +4,56 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Worksheet.Mcp;
 
 /// <summary>What a client may assume about a tool before calling one, as the specification names it.</summary>
-public sealed record ToolAnnotations(bool ReadOnly = false, bool Destructive = false)
+public sealed record ToolAnnotations(
+    [property: JsonPropertyName("readOnlyHint")] bool ReadOnly = false,
+    [property: JsonPropertyName("destructiveHint")] bool Destructive = false)
 {
     public static ToolAnnotations Readings { get; } = new(ReadOnly: true);
 
     public static ToolAnnotations Writes { get; } = new();
 
     public static ToolAnnotations Removes { get; } = new(Destructive: true);
+}
+
+/// <summary>One property of a tool's input: what it holds, what it is for, and whether a call must carry it.</summary>
+public sealed record ToolProperty(
+    [property: JsonPropertyName("type")] string Type,
+    [property: JsonPropertyName("description")] string Description)
+{
+    /// <summary>Whether <c>required</c> names this property. Only the schema says it, never the property itself.</summary>
+    [JsonIgnore]
+    public bool Required { get; init; } = true;
+
+    public static ToolProperty Text(string description, bool required = true) =>
+        new("string", description) { Required = required };
+}
+
+/// <summary>
+/// The input a tool takes: an object of named properties, with the ones a call must carry named in
+/// <c>required</c>. Written as a type rather than an anonymous shape, because the listing is part of
+/// what a client reads and the names in it are a contract.
+/// </summary>
+public sealed record ToolSchema(
+    [property: JsonPropertyName("type")] string Type,
+    [property: JsonPropertyName("properties")] IReadOnlyDictionary<string, ToolProperty> Properties,
+    [property: JsonPropertyName("required")]
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    IReadOnlyList<string>? Required = null)
+{
+    /// <summary>A tool that takes nothing at all.</summary>
+    public static ToolSchema Nothing { get; } = new("object", new Dictionary<string, ToolProperty>());
+
+    /// <summary>An input of these properties, with exactly the ones marked required.</summary>
+    public static ToolSchema Of(params (string Name, ToolProperty Property)[] properties) =>
+        new(
+            "object",
+            properties.ToDictionary(pair => pair.Name, pair => pair.Property),
+            [.. properties.Where(pair => pair.Property.Required).Select(pair => pair.Name)]);
 }
 
 /// <summary>
@@ -25,7 +64,7 @@ public sealed record ToolAnnotations(bool ReadOnly = false, bool Destructive = f
 public sealed record ToolDefinition(
     string Name,
     string Description,
-    object InputSchema,
+    ToolSchema InputSchema,
     string? Title = null,
     ToolAnnotations? Annotations = null);
 

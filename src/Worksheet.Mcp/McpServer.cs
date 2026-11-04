@@ -5,8 +5,17 @@
 
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
 namespace Worksheet.Mcp;
+
+/// <summary>One tool as <c>tools/list</c> hands it over: the names here are the protocol's, not ours.</summary>
+internal sealed record ToolListing(
+    [property: JsonPropertyName("name")] string Name,
+    [property: JsonPropertyName("title")] string Title,
+    [property: JsonPropertyName("description")] string Description,
+    [property: JsonPropertyName("inputSchema")] ToolSchema InputSchema,
+    [property: JsonPropertyName("annotations")] ToolAnnotations Annotations);
 
 /// <summary>
 /// MCP as JSON-RPC 2.0 over one body in and one body out: <c>initialize</c>, <c>tools/list</c> and
@@ -146,19 +155,13 @@ public sealed class McpServer(IToolkit toolkit)
             });
     }
 
-    private static object ToolJson(ToolDefinition tool) =>
-        new
-        {
-            name = tool.Name,
-            title = tool.Title ?? tool.Name,
-            description = tool.Description,
-            inputSchema = tool.InputSchema,
-            annotations = new
-            {
-                readOnlyHint = tool.Annotations?.ReadOnly ?? false,
-                destructiveHint = tool.Annotations?.Destructive ?? false,
-            },
-        };
+    private static ToolListing ToolJson(ToolDefinition tool) =>
+        new(
+            tool.Name,
+            tool.Title ?? tool.Name,
+            tool.Description,
+            tool.InputSchema,
+            tool.Annotations ?? ToolAnnotations.Writes);
 
     private static string? MethodOf(JsonElement request) =>
         request.ValueKind == JsonValueKind.Object

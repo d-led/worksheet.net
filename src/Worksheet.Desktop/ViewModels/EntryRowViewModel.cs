@@ -17,7 +17,7 @@ namespace Worksheet.Desktop.ViewModels;
 /// same rules a line uses. Every edit is a correction of the whole entry, and a refused one puts
 /// the editors back.
 /// </summary>
-public sealed partial class EntryRowViewModel : ObservableObject
+public sealed partial class EntryRowViewModel : ObservableObject, IDayRow
 {
     private readonly Func<LedgerState> _state;
     private readonly Func<Entry, Entry?> _revise;

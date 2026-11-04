@@ -12,7 +12,7 @@ namespace Worksheet.Desktop.ViewModels;
 /// A hole in the day, shown between the entries that leave it. It carries the two things that can
 /// be done with a hole: put its times into the entry line, or take it as a break.
 /// </summary>
-public sealed class GapRowViewModel
+public sealed class GapRowViewModel : IDayRow
 {
     public GapRowViewModel(DaySlot gap, Action<DaySlot> fill, Action<DaySlot> takeBreak, bool editable)
     {

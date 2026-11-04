@@ -94,7 +94,7 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     public void Dispose() => _untilTheLedgerChanges.Dispose();
 
     /// <summary>Entries and the holes between them, in start order.</summary>
-    public ObservableCollection<object> Rows { get; } = [];
+    public ObservableCollection<IDayRow> Rows { get; } = [];
 
     /// <summary>The five kinds of day, one of them chosen, pre-filled for a weekend.</summary>
     public ObservableCollection<DayKindOptionViewModel> Kinds { get; } = [];

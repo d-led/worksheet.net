@@ -210,61 +210,37 @@ public sealed class WorksheetTools : IToolkit
             + "One call records one range: a day of four ranges is four calls. "
             + "A line may name its own day ('3.11. Reading 14:00 45m'); otherwise date is the day it belongs to. "
             + "A range that cannot be recorded is refused with a sentence saying why, and nothing is written.",
-            new
-            {
-                type = "object",
-                properties = new
-                {
-                    line = new { type = "string", description = "The entry line to record, in the application's own syntax." },
-                    date = new { type = "string", description = "The day the line belongs to, 2026-11-03. Defaults to today." },
-                },
-                required = new[] { "line" },
-            },
+            ToolSchema.Of(
+                ("line", ToolProperty.Text("The entry line to record, in the application's own syntax.")),
+                ("date", ToolProperty.Text("The day the line belongs to, 2026-11-03. Defaults to today.", required: false))),
             Title: "Log a time range",
             Annotations: ToolAnnotations.Writes),
         new(
             "day",
             "One day as recorded: every range with its project and topic, then the total.",
-            new
-            {
-                type = "object",
-                properties = new
-                {
-                    date = new { type = "string", description = "The day, 2026-11-03. Defaults to today." },
-                },
-            },
+            ToolSchema.Of(
+                ("date", ToolProperty.Text("The day, 2026-11-03. Defaults to today.", required: false))),
             Title: "Read a day",
             Annotations: ToolAnnotations.Readings),
         new(
             "totals",
             "Hours per project between two days, both included, longest first.",
-            new
-            {
-                type = "object",
-                properties = new
-                {
-                    from = new { type = "string", description = "The first day, 2026-11-03." },
-                    to = new { type = "string", description = "The last day, 2026-11-03." },
-                },
-                required = new[] { "from", "to" },
-            },
+            ToolSchema.Of(
+                ("from", ToolProperty.Text("The first day, 2026-11-03.")),
+                ("to", ToolProperty.Text("The last day, 2026-11-03."))),
             Title: "Totals for a range",
             Annotations: ToolAnnotations.Readings),
         new(
             "list_projects",
             "Every project in use, with how many entries each holds.",
-            new { type = "object", properties = new { } },
+            ToolSchema.Nothing,
             Title: "List projects",
             Annotations: ToolAnnotations.Readings),
         new(
             "list_topics",
             "The topics of one project, with how many entries each holds.",
-            new
-            {
-                type = "object",
-                properties = new { project = new { type = "string", description = "The project's name, or enough of it to be the only one." } },
-                required = new[] { "project" },
-            },
+            ToolSchema.Of(
+                ("project", ToolProperty.Text("The project's name, or enough of it to be the only one."))),
             Title: "List the topics of a project",
             Annotations: ToolAnnotations.Readings),
         new(
@@ -272,69 +248,41 @@ public sealed class WorksheetTools : IToolkit
             "Give a project another name. Its entries follow, and the change is one undo. A name that "
             + "another project already answers to merges the two into that one, with the entries of both; "
             + "the answer says when that happened.",
-            new
-            {
-                type = "object",
-                properties = new
-                {
-                    project = new { type = "string", description = "The project's current name." },
-                    name = new { type = "string", description = "The name it should answer to." },
-                },
-                required = new[] { "project", "name" },
-            },
+            ToolSchema.Of(
+                ("project", ToolProperty.Text("The project's current name.")),
+                ("name", ToolProperty.Text("The name it should answer to."))),
             Title: "Rename a project",
             Annotations: ToolAnnotations.Writes),
         new(
             "remove_project",
             "Take a project out of the catalogue. Its entries are not touched: they keep the project they "
             + "were logged under. The name stops being offered, and typing it again brings the project back.",
-            new
-            {
-                type = "object",
-                properties = new
-                {
-                    project = new { type = "string", description = "The project to take out of use." },
-                },
-                required = new[] { "project" },
-            },
+            ToolSchema.Of(
+                ("project", ToolProperty.Text("The project to take out of use."))),
             Title: "Remove a project",
             Annotations: ToolAnnotations.Removes),
         new(
             "rename_topic",
             "Give a topic of a project another name. Its entries follow, and the change is one undo. A "
             + "name another topic of that project already answers to merges the two, and the answer says so.",
-            new
-            {
-                type = "object",
-                properties = new
-                {
-                    project = new { type = "string", description = "The project the topic belongs to." },
-                    topic = new { type = "string", description = "The topic's current name." },
-                    name = new { type = "string", description = "The name it should answer to." },
-                },
-                required = new[] { "project", "topic", "name" },
-            },
+            ToolSchema.Of(
+                ("project", ToolProperty.Text("The project the topic belongs to.")),
+                ("topic", ToolProperty.Text("The topic's current name.")),
+                ("name", ToolProperty.Text("The name it should answer to."))),
             Title: "Rename a topic",
             Annotations: ToolAnnotations.Writes),
         new(
             "remove_topic",
             "Take a topic out of a project. Its entries stay on their days without a topic.",
-            new
-            {
-                type = "object",
-                properties = new
-                {
-                    project = new { type = "string", description = "The project the topic belongs to." },
-                    topic = new { type = "string", description = "The topic to take out of use." },
-                },
-                required = new[] { "project", "topic" },
-            },
+            ToolSchema.Of(
+                ("project", ToolProperty.Text("The project the topic belongs to.")),
+                ("topic", ToolProperty.Text("The topic to take out of use."))),
             Title: "Remove a topic",
             Annotations: ToolAnnotations.Removes),
         new(
             "undo",
             "Undo the last change to the ledger, whoever made it: the person at the window or this caller.",
-            new { type = "object", properties = new { } },
+            ToolSchema.Nothing,
             Title: "Undo the last change",
             Annotations: ToolAnnotations.Writes),
     ];

@@ -31,67 +31,55 @@ public static class ReportJson
         var total = report.TotalMinutes;
 
         return JsonSerializer.Serialize(
-            new
-            {
-                version = FormatVersion,
-                range = new
-                {
-                    from = Day(report.Range.From),
-                    to = Day(report.Range.To),
-                    period = report.Range.Period.ToString().ToLowerInvariant(),
-                    label = report.Range.Label,
-                    days = report.Range.Days,
-                },
-                generatedAt = generatedAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture),
-                totalMinutes = total,
-                total = Shares.Hours(total),
-                daysLogged = report.DaysLogged,
-                projects = report.Projects.Select(project => Project(project, total)),
-                days = report.Days.Select(DayOf),
-            },
+            new ReportDocument(
+                FormatVersion,
+                new ReportCoverage(
+                    Day(report.Range.From),
+                    Day(report.Range.To),
+                    report.Range.Period.ToString().ToLowerInvariant(),
+                    report.Range.Label,
+                    report.Range.Days),
+                generatedAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture),
+                total,
+                Shares.Hours(total),
+                report.DaysLogged,
+                report.Projects.Select(project => Project(project, total)),
+                report.Days.Select(DayOf)),
             Options);
     }
 
-    private static object Project(ProjectLine project, int total) =>
-        new
-        {
-            project = project.Project,
-            minutes = project.Minutes,
-            hours = Shares.Hours(project.Minutes),
-            share = Shares.Of(project.Minutes, total),
-            topics = project.Topics.Select(topic => Topic(topic, total)),
-        };
+    private static ReportProjectLine Project(ProjectLine project, int total) =>
+        new(
+            project.Project,
+            project.Minutes,
+            Shares.Hours(project.Minutes),
+            Shares.Of(project.Minutes, total),
+            project.Topics.Select(topic => Topic(topic, total)));
 
-    private static object Topic(TopicLine topic, int total) =>
-        new
-        {
-            topic = topic.Topic,
-            minutes = topic.Minutes,
-            hours = Shares.Hours(topic.Minutes),
-            share = Shares.Of(topic.Minutes, total),
-        };
+    private static ReportTopicLine Topic(TopicLine topic, int total) =>
+        new(
+            topic.Topic,
+            topic.Minutes,
+            Shares.Hours(topic.Minutes),
+            Shares.Of(topic.Minutes, total));
 
-    private static object DayOf(DayLine day) =>
-        new
-        {
-            date = Day(day.Date),
-            kind = day.Kind,
-            minutes = day.Minutes,
-            hours = Shares.Hours(day.Minutes),
-            entries = day.Entries.Select(Entry),
-        };
+    private static ReportDayLine DayOf(DayLine day) =>
+        new(
+            Day(day.Date),
+            day.Kind,
+            day.Minutes,
+            Shares.Hours(day.Minutes),
+            day.Entries.Select(Entry));
 
-    private static object Entry(EntryLine entry) =>
-        new
-        {
-            start = Clock(entry.Start),
-            end = Clock(entry.End),
-            minutes = entry.Minutes,
-            hours = Shares.Hours(entry.Minutes),
-            project = entry.Project,
-            topic = entry.Topic,
-            note = entry.Note,
-        };
+    private static ReportEntryLine Entry(EntryLine entry) =>
+        new(
+            Clock(entry.Start),
+            Clock(entry.End),
+            entry.Minutes,
+            Shares.Hours(entry.Minutes),
+            entry.Project,
+            entry.Topic,
+            entry.Note);
 
     private static string Day(DateOnly day) => day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 

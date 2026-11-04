@@ -27,12 +27,7 @@ public sealed class McpServerTests
             new(
                 "echo",
                 "Says it back.",
-                new
-                {
-                    type = "object",
-                    properties = new { text = new { type = "string" } },
-                    required = new[] { "text" },
-                },
+                ToolSchema.Of(("text", ToolProperty.Text("What to say."))),
                 Title: "Echo something",
                 Annotations: ToolAnnotations.Readings),
         ];

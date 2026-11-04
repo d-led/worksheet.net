@@ -150,6 +150,34 @@ public sealed class ExportTests
         Assert.True(version >= 1, $"version {version} is at least the first");
     }
 
+    /// <summary>
+    /// Version 1 of the data file, written down: every member, in the order it appears, at every
+    /// depth. A change here is a change to a file other people read, so it fails the build rather
+    /// than surprising a script — and the version only moves when the change is a break.
+    /// </summary>
+    [Fact]
+    public void The_data_file_keeps_the_shape_the_first_version_promised()
+    {
+        Logged("Website (login) 09:00 1h");
+
+        using var json = JsonDocument.Parse(Json(Report(ExportPeriod.Month)));
+        var root = json.RootElement;
+
+        Assert.Equal(
+            ["version", "range", "generatedAt", "totalMinutes", "total", "daysLogged", "projects", "days"],
+            Keys(root));
+        Assert.Equal(["from", "to", "period", "label", "days"], Keys(root.GetProperty("range")));
+        Assert.Equal(["project", "minutes", "hours", "share", "topics"], Keys(root.GetProperty("projects")[0]));
+        Assert.Equal(["topic", "minutes", "hours", "share"], Keys(root.GetProperty("projects")[0].GetProperty("topics")[0]));
+        Assert.Equal(["date", "kind", "minutes", "hours", "entries"], Keys(root.GetProperty("days")[0]));
+        Assert.Equal(
+            ["start", "end", "minutes", "hours", "project", "topic", "note"],
+            Keys(root.GetProperty("days")[0].GetProperty("entries")[0]));
+    }
+
+    private static string[] Keys(JsonElement element) =>
+        [.. element.EnumerateObject().Select(property => property.Name)];
+
     [Fact]
     public void The_zip_is_named_for_when_it_was_taken_and_what_it_covers()
     {
