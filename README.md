@@ -182,11 +182,11 @@ for an icon that carries a menu — and the window comes back either from *Show 
 first entry, or by starting the application again: the copy that is already running raises its
 window instead of a second one starting.
 
-The menu holds *Show window*, *Connect an agent…*, *Projects and topics…*, *The journal…*,
-*Settings…*, *Open data folder* and *Quit*.
+The menu holds *Show window*, *Connect an agent…*, *Projects and topics…*, *Settings…*, *Open data
+folder*, *The journal…* and *Quit*.
 
 The window offers the same screens without the tray: the *⋯* at the right of the heading opens
-*Settings…*, *Projects and topics…*, *The journal…*, *Connect an agent…* and *Open data folder*.
+*Settings…*, *Projects and topics…*, *Connect an agent…*, *Open data folder* and *The journal…*.
 Only *Quit* lives in the tray alone, because it is not a screen. Each of those windows closes with
 `Esc`.
 

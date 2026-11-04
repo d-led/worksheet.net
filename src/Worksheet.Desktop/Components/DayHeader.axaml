@@ -76,9 +76,9 @@
         <MenuFlyout>
           <MenuItem x:Name="OpenSettings" Header="Settings…" />
           <MenuItem x:Name="OpenManage" Header="Projects and topics…" />
-          <MenuItem x:Name="OpenAudit" Header="The journal…" />
           <MenuItem x:Name="OpenConnect" Header="Connect an agent…" />
           <MenuItem x:Name="OpenDataFolder" Header="Open data folder" />
+          <MenuItem x:Name="OpenAudit" Header="The journal…" />
         </MenuFlyout>
       </Button.Flyout>
     </Button>
