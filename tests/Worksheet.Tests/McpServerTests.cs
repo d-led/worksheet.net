@@ -66,6 +66,15 @@ public sealed class McpServerTests
     }
 
     [Fact]
+    public void The_handshake_says_what_to_do_when_nothing_answers()
+    {
+        var instructions = Asked(Handshake).GetProperty("result").GetProperty("instructions").GetString();
+
+        Assert.Contains("check that Worksheet is running", instructions, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("same port", instructions, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void A_tool_is_listed_with_its_title_and_whether_it_only_reads()
     {
         var listed = Asked("""{"jsonrpc":"2.0","id":2,"method":"tools/list"}""")

@@ -45,7 +45,11 @@ public sealed class McpServer(IToolkit toolkit)
         + "when the call does not give one. Dates are written 2026-11-03. "
         + "A range that cannot be recorded is refused with a sentence saying why, and nothing is written. "
         + "Read back with 'day' and 'totals'; see the catalogue with 'list_projects' and 'list_topics'; "
-        + "take back the last change, whoever made it, with 'undo'.";
+        + "take back the last change, whoever made it, with 'undo'. "
+        + "If this server does not answer, check that Worksheet is running — the server is inside the "
+        + "application, so there is nothing to connect to while it is closed. If it is running, compare "
+        + "the MCP settings in the agent with those in the application (Settings…, the port): both must "
+        + "name the same port.";
 
     /// <summary>
     /// The answer to one request, or nothing when the request was a notification. A notification
