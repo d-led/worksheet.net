@@ -246,17 +246,12 @@ public sealed class Catalogue(Ledger ledger)
         CatalogueResult.Refused($"'{name.Trim()}' is already out of the catalogue.");
 
     /// <summary>
-    /// Nothing, or why a name does not point at one thing: either nothing answers to it, or a
-    /// prefix fits several — and a prefix must never pick one by accident.
+    /// Nothing, or why a name does not point at one thing. The wording lives in <see cref="Names"/>
+    /// so that a refusal sounds the same wherever a name is typed.
     /// </summary>
     private static CatalogueResult? Unusable<T>(NameMatch<T> match, string name, string what)
         where T : class =>
-        match switch
-        {
-            { Ambiguous: true } => CatalogueResult.Refused($"'{name.Trim()}' fits more than one {what}; write more of the name."),
-            { Found: false } => CatalogueResult.Refused($"There is no {what} called '{name.Trim()}'."),
-            _ => null,
-        };
+        Names.Refusal(match, name, what) is { } refusal ? CatalogueResult.Refused(refusal) : null;
 
     private static string Count(int count, string singular, string plural) =>
         count == 1 ? $"1 {singular}" : $"{count} {plural}";
