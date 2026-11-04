@@ -259,7 +259,9 @@ public sealed class ExportTests
 
         Assert.Contains("https://cdn.jsdelivr.net/npm/mermaid@12.3.0/dist/mermaid.esm.min.mjs", page);
         Assert.Contains("<pre class=\"mermaid\">", page);
-        Assert.Contains("gantt", page);
+
+        // Compact mode, asked for in the frontmatter, so the bars of a project share a row.
+        Assert.Contains("<pre class=\"mermaid\">\n---\ndisplayMode: compact\n---\ngantt", page);
 
         // One swimlane per project, and a bar per range inside it — not a row per range, and not a
         // lane per range either.

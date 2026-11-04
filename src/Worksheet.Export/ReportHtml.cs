@@ -206,7 +206,8 @@ public static class ReportHtml
     /// section bands, which is more picture than a page carried by hand can justify — and its
     /// sections are the thing the hand-drawn lanes could not do. Up to two months every range keeps
     /// its own bar; beyond that a bar per project per day, because a year of single afternoons is a
-    /// thicket rather than a picture.
+    /// thicket rather than a picture. The frontmatter asks mermaid for compact mode, so a project's
+    /// bars share a row instead of each taking a lane of its own.
     /// </summary>
     private static string Gantt(RangeReport report)
     {
@@ -214,6 +215,9 @@ public static class ReportHtml
         var lines = new StringBuilder();
         var id = 0;
 
+        lines.AppendLine("---");
+        lines.AppendLine("displayMode: compact");
+        lines.AppendLine("---");
         lines.AppendLine("gantt");
         lines.AppendLine(CultureInfo.InvariantCulture, $"    title {Label(report.Range.Label)}");
         lines.AppendLine(CultureInfo.InvariantCulture, $"    dateFormat {(perEntry ? "YYYY-MM-DD HH:mm" : "YYYY-MM-DD")}");
