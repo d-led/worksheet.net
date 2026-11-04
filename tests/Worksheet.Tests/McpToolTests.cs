@@ -32,6 +32,25 @@ public sealed class McpToolTests
     private ToolOutcome LogEntry(string line, DateOnly? on = null) =>
         Call("log_entry", JsonSerializer.Serialize(new { line, date = on?.ToString("yyyy-MM-dd") }));
 
+    private ToolDefinition Definition(string name) => _tools.Tools.Single(tool => tool.Name == name);
+
+    [Fact]
+    public void Every_tool_says_what_it_is_for_in_a_title_and_whether_it_only_reads()
+    {
+        Assert.All(_tools.Tools, tool => Assert.False(string.IsNullOrWhiteSpace(tool.Title), tool.Name));
+
+        Assert.Equal(ToolAnnotations.Readings, Definition("day").Annotations);
+        Assert.Equal(ToolAnnotations.Readings, Definition("totals").Annotations);
+        Assert.Equal(ToolAnnotations.Writes, Definition("log_entry").Annotations);
+        Assert.Equal(ToolAnnotations.Removes, Definition("remove_project").Annotations);
+    }
+
+    [Fact]
+    public void Log_entry_says_that_one_call_records_one_range()
+    {
+        Assert.Contains("One call records one range", Definition("log_entry").Description);
+    }
+
     [Fact]
     public void A_line_is_logged_and_the_answer_names_the_range()
     {

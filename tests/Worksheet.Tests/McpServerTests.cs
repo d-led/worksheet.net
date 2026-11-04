@@ -32,7 +32,9 @@ public sealed class McpServerTests
                     type = "object",
                     properties = new { text = new { type = "string" } },
                     required = new[] { "text" },
-                }),
+                },
+                Title: "Echo something",
+                Annotations: ToolAnnotations.Readings),
         ];
 
         public ToolOutcome Call(ToolCall call)
@@ -56,6 +58,28 @@ public sealed class McpServerTests
 
         Assert.Equal("worksheet", result.GetProperty("serverInfo").GetProperty("name").GetString());
         Assert.True(result.GetProperty("capabilities").TryGetProperty("tools", out _));
+    }
+
+    [Fact]
+    public void The_handshake_tells_a_client_how_a_line_is_written_before_it_can_call_one()
+    {
+        var instructions = Asked(Handshake).GetProperty("result").GetProperty("instructions").GetString();
+
+        Assert.Contains("one call records one range", instructions, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("2026-11-03", instructions);
+        Assert.Contains("'Break 12:30 45m'", instructions);
+    }
+
+    [Fact]
+    public void A_tool_is_listed_with_its_title_and_whether_it_only_reads()
+    {
+        var listed = Asked("""{"jsonrpc":"2.0","id":2,"method":"tools/list"}""")
+            .GetProperty("result")
+            .GetProperty("tools")[0];
+
+        Assert.Equal("Echo something", listed.GetProperty("title").GetString());
+        Assert.True(listed.GetProperty("annotations").GetProperty("readOnlyHint").GetBoolean());
+        Assert.False(listed.GetProperty("annotations").GetProperty("destructiveHint").GetBoolean());
     }
 
     [Fact]

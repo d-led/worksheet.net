@@ -23,6 +23,22 @@ public sealed class McpServer(IToolkit toolkit)
     public const string ServerName = "worksheet";
 
     /// <summary>
+    /// What a client is told before it sees a single tool: the one thing the tool names cannot say —
+    /// that a range is one line of the application's own syntax, and that a refusal is the whole
+    /// answer, with nothing written. Terse on purpose: it is pasted into a prompt, not read as prose.
+    /// </summary>
+    private const string Manual =
+        "Log the working day: one line per time range, on projects and on the topics inside them. "
+        + "A range is written in the application's own syntax, for example 'Client portal (login) 08:30 2h30m', "
+        + "'Client portal (reports) 11:00-12:30' or 'Break 12:30 45m' — a pause is recorded under the project 'Break'. "
+        + "One call records one range, so a day of four ranges is four calls. "
+        + "A line may name its own day ('3.11. Reading 14:00 45m'); otherwise the call's date decides, and it is today "
+        + "when the call does not give one. Dates are written 2026-11-03. "
+        + "A range that cannot be recorded is refused with a sentence saying why, and nothing is written. "
+        + "Read back with 'day' and 'totals'; see the catalogue with 'list_projects' and 'list_topics'; "
+        + "take back the last change, whoever made it, with 'undo'.";
+
+    /// <summary>
     /// The answer to one request, or nothing when the request was a notification. A notification
     /// has no id and expects no body back, which the transport turns into an empty 202.
     /// </summary>
@@ -90,7 +106,7 @@ public sealed class McpServer(IToolkit toolkit)
                 ["title"] = "Worksheet",
                 ["version"] = typeof(McpServer).Assembly.GetName().Version?.ToString(3) ?? "0.1.0",
             },
-            ["instructions"] = "Log the working day: one line per time range, on projects and their topics.",
+            ["instructions"] = Manual,
         };
 
     private static string Negotiated(JsonElement request) =>
@@ -131,7 +147,18 @@ public sealed class McpServer(IToolkit toolkit)
     }
 
     private static object ToolJson(ToolDefinition tool) =>
-        new { name = tool.Name, description = tool.Description, inputSchema = tool.InputSchema };
+        new
+        {
+            name = tool.Name,
+            title = tool.Title ?? tool.Name,
+            description = tool.Description,
+            inputSchema = tool.InputSchema,
+            annotations = new
+            {
+                readOnlyHint = tool.Annotations?.ReadOnly ?? false,
+                destructiveHint = tool.Annotations?.Destructive ?? false,
+            },
+        };
 
     private static string? MethodOf(JsonElement request) =>
         request.ValueKind == JsonValueKind.Object

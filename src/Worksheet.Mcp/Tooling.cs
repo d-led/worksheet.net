@@ -7,8 +7,27 @@ using System.Text.Json;
 
 namespace Worksheet.Mcp;
 
-/// <summary>A tool as a client meets it: a name, when to reach for it, and the shape of its arguments.</summary>
-public sealed record ToolDefinition(string Name, string Description, object InputSchema);
+/// <summary>What a client may assume about a tool before calling one, as the specification names it.</summary>
+public sealed record ToolAnnotations(bool ReadOnly = false, bool Destructive = false)
+{
+    public static ToolAnnotations Readings { get; } = new(ReadOnly: true);
+
+    public static ToolAnnotations Writes { get; } = new();
+
+    public static ToolAnnotations Removes { get; } = new(Destructive: true);
+}
+
+/// <summary>
+/// A tool as a client meets it: a name, a title for a list of them, when to reach for it, the shape
+/// of its arguments, and whether it only reads. An agent that never spoke to this server before has
+/// nothing but these lines.
+/// </summary>
+public sealed record ToolDefinition(
+    string Name,
+    string Description,
+    object InputSchema,
+    string? Title = null,
+    ToolAnnotations? Annotations = null);
 
 /// <summary>
 /// One tool call as it arrived. Arguments stay JSON until a tool asks for a name, so a client that

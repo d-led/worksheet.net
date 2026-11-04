@@ -162,19 +162,23 @@ public sealed class WorksheetTools : IToolkit
     [
         new(
             "log_entry",
-            "Record one time range. The line is the application's own syntax, for example "
+            "Record exactly one time range. The line is the application's own syntax, for example "
             + "'Client portal (login) 08:30 2h30m', 'Client portal (reports) 11:00-12:30' or 'Break 12:30 45m'. "
-            + "A line may name its own day ('3.11. Reading 14:00 45m'); otherwise date is the day it belongs to.",
+            + "One call records one range: a day of four ranges is four calls. "
+            + "A line may name its own day ('3.11. Reading 14:00 45m'); otherwise date is the day it belongs to. "
+            + "A range that cannot be recorded is refused with a sentence saying why, and nothing is written.",
             new
             {
                 type = "object",
                 properties = new
                 {
-                    line = new { type = "string", description = "The entry line to record." },
+                    line = new { type = "string", description = "The entry line to record, in the application's own syntax." },
                     date = new { type = "string", description = "The day the line belongs to, 2026-11-03. Defaults to today." },
                 },
                 required = new[] { "line" },
-            }),
+            },
+            Title: "Log a time range",
+            Annotations: ToolAnnotations.Writes),
         new(
             "day",
             "One day as recorded: every range with its project and topic, then the total.",
@@ -185,7 +189,9 @@ public sealed class WorksheetTools : IToolkit
                 {
                     date = new { type = "string", description = "The day, 2026-11-03. Defaults to today." },
                 },
-            }),
+            },
+            Title: "Read a day",
+            Annotations: ToolAnnotations.Readings),
         new(
             "totals",
             "Hours per project between two days, both included, longest first.",
@@ -198,11 +204,15 @@ public sealed class WorksheetTools : IToolkit
                     to = new { type = "string", description = "The last day, 2026-11-03." },
                 },
                 required = new[] { "from", "to" },
-            }),
+            },
+            Title: "Totals for a range",
+            Annotations: ToolAnnotations.Readings),
         new(
             "list_projects",
             "Every project in use, with how many entries each holds.",
-            new { type = "object", properties = new { } }),
+            new { type = "object", properties = new { } },
+            Title: "List projects",
+            Annotations: ToolAnnotations.Readings),
         new(
             "list_topics",
             "The topics of one project, with how many entries each holds.",
@@ -211,7 +221,9 @@ public sealed class WorksheetTools : IToolkit
                 type = "object",
                 properties = new { project = new { type = "string", description = "The project's name, or enough of it to be the only one." } },
                 required = new[] { "project" },
-            }),
+            },
+            Title: "List the topics of a project",
+            Annotations: ToolAnnotations.Readings),
         new(
             "rename_project",
             "Give a project another name. Its entries follow, and the change is one undo.",
@@ -224,7 +236,9 @@ public sealed class WorksheetTools : IToolkit
                     name = new { type = "string", description = "The name it should answer to." },
                 },
                 required = new[] { "project", "name" },
-            }),
+            },
+            Title: "Rename a project",
+            Annotations: ToolAnnotations.Writes),
         new(
             "remove_project",
             "Take a project out of the catalogue. Refused while it holds entries, unless move_entries_to names "
@@ -238,7 +252,9 @@ public sealed class WorksheetTools : IToolkit
                     move_entries_to = new { type = "string", description = "The project its entries move to." },
                 },
                 required = new[] { "project" },
-            }),
+            },
+            Title: "Remove a project",
+            Annotations: ToolAnnotations.Removes),
         new(
             "rename_topic",
             "Give a topic of a project another name. Its entries follow, and the change is one undo.",
@@ -252,7 +268,9 @@ public sealed class WorksheetTools : IToolkit
                     name = new { type = "string", description = "The name it should answer to." },
                 },
                 required = new[] { "project", "topic", "name" },
-            }),
+            },
+            Title: "Rename a topic",
+            Annotations: ToolAnnotations.Writes),
         new(
             "remove_topic",
             "Take a topic out of a project. Its entries stay on their days without a topic.",
@@ -265,10 +283,14 @@ public sealed class WorksheetTools : IToolkit
                     topic = new { type = "string", description = "The topic to take out of use." },
                 },
                 required = new[] { "project", "topic" },
-            }),
+            },
+            Title: "Remove a topic",
+            Annotations: ToolAnnotations.Removes),
         new(
             "undo",
             "Undo the last change to the ledger, whoever made it: the person at the window or this caller.",
-            new { type = "object", properties = new { } }),
+            new { type = "object", properties = new { } },
+            Title: "Undo the last change",
+            Annotations: ToolAnnotations.Writes),
     ];
 }
