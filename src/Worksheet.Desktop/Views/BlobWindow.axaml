@@ -1,0 +1,32 @@
+<local:SecondaryWindow xmlns="https://github.com/avaloniaui"
+                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                       xmlns:local="using:Worksheet.Desktop.Views"
+                       xmlns:c="using:Worksheet.Desktop.Components"
+                       xmlns:vm="using:Worksheet.Desktop.ViewModels"
+                       x:Class="Worksheet.Desktop.Views.BlobWindow"
+                       x:DataType="vm:BlobViewModel"
+                       Title="One change"
+                       Width="820"
+                       Height="620"
+                       MinWidth="560"
+                       MinHeight="400"
+                       WindowStartupLocation="CenterOwner">
+
+  <!-- One stored change, entire: the kind it was written as, when, from where, and the body. -->
+  <Border Classes="page" Padding="20">
+    <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8">
+
+      <TextBlock Grid.Row="0" Classes="title" Text="{Binding Title}" />
+
+      <TextBlock Grid.Row="1" Classes="quiet" Text="{Binding Subtitle}" TextWrapping="Wrap" />
+
+      <Border Grid.Row="2" Classes="panel">
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+          <c:JsonView x:Name="Body" Body="{Binding Body}" />
+        </ScrollViewer>
+      </Border>
+
+    </Grid>
+  </Border>
+
+</local:SecondaryWindow>

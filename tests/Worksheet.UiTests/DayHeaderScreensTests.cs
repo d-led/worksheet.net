@@ -18,10 +18,10 @@ namespace Worksheet.UiTests;
 public sealed class DayHeaderScreensTests : UiTestBase
 {
     private static readonly string[] Screens =
-        ["Settings…", "Projects and topics…", "Connect an agent…", "Open data folder"];
+        ["Settings…", "Projects and topics…", "The journal…", "Connect an agent…", "Open data folder"];
 
     [AvaloniaFact]
-    public void The_heading_offers_the_four_screens_the_tray_also_offers()
+    public void The_heading_offers_the_five_screens_the_tray_also_offers()
     {
         var header = Show<DayHeader>(NewDay());
 
@@ -39,6 +39,7 @@ public sealed class DayHeaderScreensTests : UiTestBase
             () => opened.Add("settings"),
             () => opened.Add("manage"),
             () => opened.Add("connect"),
+            () => opened.Add("audit"),
             () => opened.Add("data"));
 
         var header = Show<DayHeader>(day);
@@ -48,7 +49,7 @@ public sealed class DayHeaderScreensTests : UiTestBase
             item.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
         }
 
-        Assert.Equal(["settings", "manage", "connect", "data"], opened);
+        Assert.Equal(["settings", "manage", "audit", "connect", "data"], opened);
     }
 
     [AvaloniaFact]

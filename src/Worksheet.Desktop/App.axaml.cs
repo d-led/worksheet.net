@@ -24,6 +24,7 @@ public sealed class App : Application
 
     private LocalLedger? _local;
     private MainWindow? _window;
+    private AuditWindow? _audit;
     private SingleInstance? _instance;
     private McpHttpHost? _mcp;
     private SettingsResolver? _resolver;
@@ -102,13 +103,13 @@ public sealed class App : Application
 
         _local = LocalLedger.Open(policy: SnapshotPolicy.EveryChanges(_resolved.Values.SnapshotEvery));
         var day = new DayViewModel(_local);
-        day.Screens = new WindowScreens(ShowSettings, ShowManage, ShowConnect, OpenDataFolder);
+        day.Screens = new WindowScreens(ShowSettings, ShowManage, ShowConnect, ShowAudit, OpenDataFolder);
         _window = new MainWindow { DataContext = day };
         desktop.MainWindow = _window;
 
         TrayHost.Attach(
             this,
-            new TrayActions(ShowWindow, ShowConnect, ShowSettings, ShowManage, OpenDataFolder, () => Quit(desktop)));
+            new TrayActions(ShowWindow, ShowConnect, ShowSettings, ShowManage, ShowAudit, OpenDataFolder, () => Quit(desktop)));
 
         StartListeningForReopen();
         StartMcp(day, _local);
@@ -215,6 +216,34 @@ public sealed class App : Application
         var window = new ManageWindow { DataContext = model };
 
         window.Closed += (_, _) => model.Dispose();
+
+        Dialog.ShowOver(window, _window);
+    }
+
+    /// <summary>
+    /// Opens the journal as an audit: what the file holds, filterable by any word in it, with one
+    /// change opened over the list when it is double clicked.
+    /// </summary>
+    private void ShowAudit()
+    {
+        if (_local is null)
+        {
+            return;
+        }
+
+        var model = new AuditViewModel(_local.Blobs, _local.Ledger)
+        {
+            Open = row => Dialog.ShowOver(new BlobWindow { DataContext = new BlobViewModel(row) }, _audit),
+        };
+
+        var window = new AuditWindow { DataContext = model };
+        _audit = window;
+
+        window.Closed += (_, _) =>
+        {
+            model.Dispose();
+            _audit = null;
+        };
 
         Dialog.ShowOver(window, _window);
     }

@@ -51,6 +51,29 @@ public sealed class LiteDbStore : IDisposable
 
     public ISnapshotStore Snapshots { get; }
 
+    /// <summary>The journal as it is written, oldest first: what an audit reads, unfolded.</summary>
+    public IReadOnlyList<JournalBlob> Blobs()
+    {
+        lock (_gate)
+        {
+            return
+            [
+                .. _database.GetCollection("journal")
+                    .FindAll()
+                    .OrderBy(document => document[Fields.Version].AsInt64)
+                    .Select(ToBlob),
+            ];
+        }
+    }
+
+    private static JournalBlob ToBlob(BsonDocument document) =>
+        new(
+            document[Fields.Version].AsInt64,
+            document[Fields.Kind].AsString,
+            document[Fields.Payload].AsString,
+            new DateTimeOffset(DateTime.SpecifyKind(document[Fields.RecordedAt].AsDateTime, DateTimeKind.Utc)),
+            Enum.Parse<ChangeOrigin>(document[Fields.Origin].AsString));
+
     /// <summary>
     /// Writes a copy another instance of the application can open. Every change has landed in the
     /// file before the copy starts and none runs while it does: the ledger has one writer, and this

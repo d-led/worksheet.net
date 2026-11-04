@@ -153,6 +153,25 @@ the project back with its topics.
 Moving a few hours from one project or topic to another, without renaming anything, is a separate
 decision and is not offered yet.
 
+## Read the journal
+
+*The journal…* in the heading's `⋯`, and in the tray menu, is every change the file holds, newest
+first: its version, its kind, who wrote it and when, beside the body it was written with.
+
+![The journal, filtered to the changes that hold one word](docs/screenshots/journal.png)
+
+The filter is free text, and every word typed has to appear somewhere in a change — its kind, its
+origin, its version, its time or its body. An empty filter holds everything. The words are looked
+for as text, so a project's name finds the change that opened it and a date finds that day's.
+
+Double click a change to read it whole: the body is written out with an indent, coloured by what
+each piece is, and can be selected and copied.
+
+![One change, opened: the stored body, indented and coloured](docs/screenshots/change.png)
+
+Nothing here is a second copy of the data — the audit reads the file as it was written, which is
+the same thing the day is folded from.
+
 ## The tray
 
 Closing the window hides it; the day keeps counting.
@@ -163,12 +182,13 @@ for an icon that carries a menu — and the window comes back either from *Show 
 first entry, or by starting the application again: the copy that is already running raises its
 window instead of a second one starting.
 
-The menu holds *Show window*, *Connect an agent…*, *Projects and topics…*, *Settings…*, *Open data
-folder* and *Quit*.
+The menu holds *Show window*, *Connect an agent…*, *Projects and topics…*, *The journal…*,
+*Settings…*, *Open data folder* and *Quit*.
 
-The window offers the same four screens without the tray: the *⋯* at the right of the heading opens
-*Settings…*, *Projects and topics…*, *Connect an agent…* and *Open data folder*. Only *Quit* lives in
-the tray alone, because it is not a screen. Each of those windows closes with `Esc`.
+The window offers the same screens without the tray: the *⋯* at the right of the heading opens
+*Settings…*, *Projects and topics…*, *The journal…*, *Connect an agent…* and *Open data folder*.
+Only *Quit* lives in the tray alone, because it is not a screen. Each of those windows closes with
+`Esc`.
 
 ## Where your data lives
 

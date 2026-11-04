@@ -15,6 +15,7 @@ internal sealed record TrayActions(
     Action Connect,
     Action Settings,
     Action Manage,
+    Action Audit,
     Action OpenDataFolder,
     Action Quit);
 
@@ -53,6 +54,7 @@ internal static class TrayHost
                 new NativeMenuItemSeparator(),
                 MenuItem("Connect an agent…", actions.Connect),
                 MenuItem("Projects and topics…", actions.Manage),
+                MenuItem("The journal…", actions.Audit),
                 MenuItem("Settings…", actions.Settings),
                 MenuItem("Open data folder", actions.OpenDataFolder),
                 new NativeMenuItemSeparator(),

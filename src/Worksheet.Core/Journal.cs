@@ -8,6 +8,17 @@ namespace Worksheet.Core;
 /// <summary>One appended change, as the store keeps it.</summary>
 public sealed record JournalRecord(long Version, LedgerEvent Change, DateTimeOffset RecordedAt, ChangeOrigin Origin);
 
+/// <summary>
+/// One change as the journal holds it: the kind and the body are the stored text rather than a
+/// re-encoding of the change, which is what an audit reads — what is in the file, not what the fold
+/// made of it.
+/// </summary>
+public sealed record JournalBlob(long Version, string Kind, string Payload, DateTimeOffset RecordedAt, ChangeOrigin Origin)
+{
+    /// <summary>Everything about the blob that a free-text filter may match.</summary>
+    public string Searchable => $"{Version} {Kind} {Origin} {RecordedAt:O} {Payload}";
+}
+
 /// <summary>The append-only port. The implementation decides how it is stored.</summary>
 public interface IEventJournal
 {

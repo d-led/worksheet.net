@@ -145,4 +145,22 @@ public sealed class LiteDbStoreTests : IDisposable
         Assert.Equal(TimeSpan.FromMinutes(90), copy.Ledger.State.TotalOn(Day));
         Assert.Equal("Website", Assert.Single(copy.Ledger.State.Projects).Value.Name);
     }
+
+    [Fact]
+    public void The_file_hands_out_its_blobs_as_they_were_written()
+    {
+        using var local = LocalLedger.Open(_temp.Path, SnapshotPolicy.Disabled);
+
+        Assert.True(new EntryComposer(local.Ledger).Compose(
+            EntryCommandParser.Parse("Website (login) 09:00 1h30m", Day).Command!).Created);
+
+        var blobs = local.Blobs();
+
+        Assert.Equal(3, blobs.Count);
+        Assert.Equal([1L, 2L, 3L], blobs.Select(blob => blob.Version));
+        Assert.Equal(["project.opened", "topic.added", "entry.logged"], blobs.Select(blob => blob.Kind));
+        Assert.All(blobs, blob => Assert.Contains(blob.Kind, blob.Searchable, StringComparison.Ordinal));
+        Assert.All(blobs, blob => Assert.Equal(ChangeOrigin.User, blob.Origin));
+        Assert.Contains("Website", blobs[0].Payload, StringComparison.Ordinal);
+    }
 }

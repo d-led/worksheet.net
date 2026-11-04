@@ -24,10 +24,13 @@ using Worksheet.Storage;
 //     dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/completion.png --typing "Client portal (" --only entry
 //     dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/break.png --only break
 //     dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/projects.png --only projects
+//     dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/journal.png --only journal
+//     dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/change.png --only change
 //
 // `--only` narrows what is drawn: `entry` is the line and its offers, `status` is the day's status
-// with one frozen row beside it, `break` is a hole before and after taking it as a break, and
-// `projects` is the panel that renames and merges them. Without it, the whole window.
+// with one frozen row beside it, `break` is a hole before and after taking it as a break,
+// `projects` is the panel that renames and merges them, `journal` is the audit of the file and
+// `change` is one change of it, opened. Without it, the whole window.
 
 var output = args.Length > 0 ? args[0] : "docs/screenshots/day.png";
 var only = ValueAfter("--only") ?? "window";
@@ -62,6 +65,8 @@ var frames = only switch
     "status" => [Capture(StatusAndOneRow(local, today))],
     "break" => BreakBeforeAndAfter(local, day),
     "projects" => [Capture(Projects(local))],
+    "journal" => [Capture(Journal(local))],
+    "change" => [Capture(Change(local))],
     _ => [Capture(FullWindow(day))],
 };
 
@@ -111,6 +116,22 @@ static void Compose(LocalLedger local, string line, DateOnly day)
         throw new InvalidOperationException(string.Join(" ", composed.Problems));
     }
 }
+
+// One change of the journal, entire, with its body written out and coloured.
+static Window Change(LocalLedger local) =>
+    new BlobWindow
+    {
+        DataContext = new BlobViewModel(new AuditRow(local.Blobs()[^1])),
+        IsTitleBarVisible = false,
+    };
+
+// The audit of the journal, with a filter half typed so the counting and the list are in the picture.
+static Window Journal(LocalLedger local) =>
+    new AuditWindow
+    {
+        DataContext = new AuditViewModel(local.Blobs, local.Ledger) { Filter = "entry" },
+        IsTitleBarVisible = false,
+    };
 
 // The panel that renames and merges projects, with a name half typed so the sentence that says
 // what Enter would do is in the picture.

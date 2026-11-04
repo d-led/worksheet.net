@@ -33,6 +33,12 @@ public sealed class LocalLedger : IDisposable
     public void CopyTo(string target) => _store.CopyTo(target);
 
     /// <summary>
+    /// The journal as the file holds it, oldest first. An audit reads this rather than the fold: the
+    /// point of looking is to see what was written, not what was made of it.
+    /// </summary>
+    public IReadOnlyList<JournalBlob> Blobs() => _store.Blobs();
+
+    /// <summary>
     /// Where the journal lives. <c>WORKSHEET_DATA_DIR</c> overrides the per-user location, which is
     /// what makes a portable copy and an isolated test run possible.
     /// </summary>

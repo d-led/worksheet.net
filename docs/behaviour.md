@@ -35,6 +35,11 @@ and records decisions; it is not a description of any other program's source.
    starting a second copy beside it.
 6. Follows the system's light or dark appearance, and its accent colour.
 7. Keeps everything in one file in the per-user data directory.
+8. Reads the journal as an audit when asked: every stored change newest first,
+   narrowed by free text — each word typed has to appear somewhere in a change,
+   its kind and its origin and its body included — with a change opened whole,
+   its body written out with an indent and coloured. The audit reads the file as
+   it was written; it is not a second copy of anything.
 
 ## Rules the application enforces
 

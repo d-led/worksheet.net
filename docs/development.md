@@ -58,7 +58,7 @@ per method, worst first, and exits non-zero if any method is over 10. It merges 
 generated XAML members, and skips the composition roots (`App`, `Program`) — they only wire parts
 together, and every part is measured where it lives.
 
-Current state: 678 methods, no method over CRAP 10, method-average coverage 94.4%. What stays
+Current state: 734 methods, no method over CRAP 10, method-average coverage 94.3%. What stays
 uncovered needs a window server session — the tray, the composition root, the save dialog's file
 picker — or is a guard against a state a test cannot reach on purpose.
 
@@ -123,11 +123,15 @@ dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/break.png --
 
 # the panel that renames and merges, with a name half typed so the sentence is in the picture
 dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/projects.png --only projects
+
+# the audit of the journal, filtered, and one change of it opened for its body
+dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/journal.png --only journal
+dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/change.png --only change
 ```
 
 The example day is eight hours over three projects plus a 45 minute break (525 minutes in total),
 on a fixed Monday so that the picture never depends on the day it is rendered — a weekend would
-freeze the very timetable it is meant to show. Regenerate all four after any layout change — it is
+freeze the very timetable it is meant to show. Regenerate all six after any layout change — it is
 how the clipped start column was found.
 
 ## Continuous integration

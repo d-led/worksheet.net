@@ -1,0 +1,77 @@
+<local:SecondaryWindow xmlns="https://github.com/avaloniaui"
+                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                       xmlns:local="using:Worksheet.Desktop.Views"
+                       xmlns:c="using:Worksheet.Desktop.Components"
+                       xmlns:vm="using:Worksheet.Desktop.ViewModels"
+                       x:Class="Worksheet.Desktop.Views.AuditWindow"
+                       x:DataType="vm:AuditViewModel"
+                       Title="The journal"
+                       Width="900"
+                       Height="640"
+                       MinWidth="640"
+                       MinHeight="440"
+                       WindowStartupLocation="CenterOwner">
+
+  <!--
+    The journal as the file holds it, newest first. The filter is free text: every word typed has to
+    appear somewhere in a change — its kind, its origin, its version, its time, its body — which is
+    the whole query language, because an audit is read by a person, not by a query planner.
+  -->
+  <Border Classes="page" Padding="20">
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="8">
+
+      <TextBlock Grid.Row="0" Classes="title" Text="The journal" />
+
+      <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+        <TextBox x:Name="Filter"
+                 Grid.Column="0"
+                 Classes="cell"
+                 Text="{Binding Filter}"
+                 PlaceholderText="words that must all appear — a project, a kind, a date" />
+        <TextBlock x:Name="Count"
+                   Grid.Column="1"
+                   Classes="quiet"
+                   Text="{Binding Count}"
+                   VerticalAlignment="Center"
+                   MinWidth="130"
+                   TextAlignment="Right" />
+      </Grid>
+
+      <TextBlock Grid.Row="2"
+                 Classes="caption"
+                 Text="EVERY CHANGE, NEWEST FIRST · DOUBLE CLICK ONE TO READ IT" />
+
+      <ListBox x:Name="Rows"
+               Grid.Row="3"
+               ItemsSource="{Binding Rows}"
+               Background="Transparent"
+               BorderThickness="0"
+               ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+               DoubleTapped="Row_DoubleTapped">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:AuditRow">
+            <Grid ColumnDefinitions="52,150,72,150,*" ColumnSpacing="8" Margin="0,2">
+              <TextBlock Grid.Column="0" Classes="numeric" Text="{Binding Version}" />
+              <TextBlock Grid.Column="1" Classes="body" Text="{Binding Kind}" />
+              <TextBlock Grid.Column="2" Classes="quiet" Text="{Binding Origin}" />
+              <TextBlock Grid.Column="3" Classes="quiet" Text="{Binding When}" />
+              <TextBlock Grid.Column="4" Classes="legend" Text="{Binding Glimpse}" TextTrimming="CharacterEllipsis" />
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+      <Grid Grid.Row="4" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+        <TextBlock x:Name="Empty"
+                   Grid.Column="0"
+                   Classes="quiet"
+                   Text="Nothing in the journal holds all of those words."
+                   IsVisible="{Binding !HasRows}"
+                   VerticalAlignment="Center" />
+        <Button x:Name="CloseButton" Grid.Column="1" Content="Close" Click="Close_Click" />
+      </Grid>
+
+    </Grid>
+  </Border>
+
+</local:SecondaryWindow>

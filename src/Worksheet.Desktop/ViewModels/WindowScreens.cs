@@ -14,13 +14,14 @@ namespace Worksheet.Desktop.ViewModels;
 /// A heading item carries the name of the screen it opens, because a flyout is outside the window's
 /// data context and so cannot bind to these actions.
 /// </remarks>
-public sealed record WindowScreens(Action Settings, Action Manage, Action Connect, Action DataFolder)
+public sealed record WindowScreens(Action Settings, Action Manage, Action Connect, Action Audit, Action DataFolder)
 {
     private readonly Dictionary<string, Action> _byName = new()
     {
         ["OpenSettings"] = Settings,
         ["OpenManage"] = Manage,
         ["OpenConnect"] = Connect,
+        ["OpenAudit"] = Audit,
         ["OpenDataFolder"] = DataFolder,
     };
 
