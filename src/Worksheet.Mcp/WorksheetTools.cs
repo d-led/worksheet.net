@@ -13,42 +13,54 @@ namespace Worksheet.Mcp;
 /// undo. Every answer is a sentence — a refusal is a sentence too — because that is what the caller
 /// can act on. Nothing here knows where the call came from.
 /// </summary>
-public sealed class WorksheetTools(Ledger ledger) : IToolkit
+public sealed class WorksheetTools : IToolkit
 {
-    private readonly EntryComposer _composer = new(ledger);
-    private readonly Catalogue _catalogue = new(ledger);
+    private readonly Ledger _ledger;
+    private readonly EntryComposer _composer;
+    private readonly Catalogue _catalogue;
+
+    /// <summary>What each tool name reaches. One line per name, so the list reads as the tool set.</summary>
+    private readonly Dictionary<string, Func<ToolCall, ToolOutcome>> _handlers;
+
+    public WorksheetTools(Ledger ledger)
+    {
+        ArgumentNullException.ThrowIfNull(ledger);
+
+        _ledger = ledger;
+        _composer = new EntryComposer(ledger);
+        _catalogue = new Catalogue(ledger);
+        _handlers = new Dictionary<string, Func<ToolCall, ToolOutcome>>(StringComparer.Ordinal)
+        {
+            ["log_entry"] = LogEntry,
+            ["day"] = Day,
+            ["totals"] = Totals,
+            ["list_projects"] = _ => ToolOutcome.Said(Reports.Projects(_ledger.State)),
+            ["list_topics"] = ListTopics,
+            ["rename_project"] = RenameProject,
+            ["remove_project"] = RemoveProject,
+            ["rename_topic"] = RenameTopic,
+            ["remove_topic"] = RemoveTopic,
+            ["undo"] = _ => Undo(),
+        };
+    }
 
     public IReadOnlyList<ToolDefinition> Tools => Definitions;
 
     public ToolOutcome Call(ToolCall call) =>
-        call.Name switch
-        {
-            "log_entry" => LogEntry(call),
-            "day" => Day(call),
-            "totals" => Totals(call),
-            "list_projects" => ToolOutcome.Said(Reports.Projects(ledger.State)),
-            "list_topics" => ListTopics(call),
-            "rename_project" => RenameProject(call),
-            "remove_project" => RemoveProject(call),
-            "rename_topic" => RenameTopic(call),
-            "remove_topic" => RemoveTopic(call),
-            "undo" => Undo(),
-            _ => ToolOutcome.Refused($"There is no tool called '{call.Name}'."),
-        };
+        _handlers.TryGetValue(call.Name, out var handler)
+            ? handler(call)
+            : ToolOutcome.Refused($"There is no tool called '{call.Name}'.");
 
     /// <summary>The line is the product: whatever the entry field accepts, a tool call accepts too.</summary>
-    private ToolOutcome LogEntry(ToolCall call)
+    private ToolOutcome LogEntry(ToolCall call) =>
+        call.Text("line") is not { } line
+            ? ToolOutcome.Refused("log_entry needs a line, such as 'Client portal (login) 08:30 2h30m'.")
+            : DayOf(call) is not { } day
+                ? BadDate(call.Text("date"))
+                : Log(line, day);
+
+    private ToolOutcome Log(string line, DateOnly day)
     {
-        if (call.Text("line") is not { } line)
-        {
-            return ToolOutcome.Refused("log_entry needs a line, such as 'Client portal (login) 08:30 2h30m'.");
-        }
-
-        if (DayOf(call) is not { } day)
-        {
-            return BadDate(call.Text("date"));
-        }
-
         var parse = EntryCommandParser.Parse(line, day);
 
         if (!parse.Succeeded)
@@ -59,12 +71,12 @@ public sealed class WorksheetTools(Ledger ledger) : IToolkit
         var composed = _composer.Compose(parse.Command!);
 
         return composed.Created
-            ? ToolOutcome.Said($"Logged {Reports.Describe(ledger.State, composed.Entry!)} on {Reports.ShortDate(composed.Entry!.Date)}.")
+            ? ToolOutcome.Said($"Logged {Reports.Describe(_ledger.State, composed.Entry!)} on {Reports.ShortDate(composed.Entry!.Date)}.")
             : ToolOutcome.Refused([.. composed.Problems]);
     }
 
     private ToolOutcome Day(ToolCall call) =>
-        DayOf(call) is { } day ? ToolOutcome.Said(Reports.Day(ledger.State, day)) : BadDate(call.Text("date"));
+        DayOf(call) is { } day ? ToolOutcome.Said(Reports.Day(_ledger.State, day)) : BadDate(call.Text("date"));
 
     private ToolOutcome Totals(ToolCall call)
     {
@@ -75,19 +87,19 @@ public sealed class WorksheetTools(Ledger ledger) : IToolkit
 
         return to < from
             ? ToolOutcome.Refused("A report cannot end before it starts.")
-            : ToolOutcome.Said(Reports.Totals(ledger.State, from, to));
+            : ToolOutcome.Said(Reports.Totals(_ledger.State, from, to));
     }
 
     private ToolOutcome ListTopics(ToolCall call)
     {
-        var match = ledger.State.MatchProject(Names.Trimmed(call.Text("project")));
+        var match = _ledger.State.MatchProject(Names.Trimmed(call.Text("project")));
 
         if (Names.Refusal(match, call.Text("project") ?? string.Empty, "project") is { } refusal)
         {
             return ToolOutcome.Refused(refusal);
         }
 
-        return ToolOutcome.Said(Reports.Topics(ledger.State, match.Value!));
+        return ToolOutcome.Said(Reports.Topics(_ledger.State, match.Value!));
     }
 
     private ToolOutcome RenameProject(ToolCall call) =>
@@ -124,15 +136,15 @@ public sealed class WorksheetTools(Ledger ledger) : IToolkit
             $"'{Names.Trimmed(call.Text("topic"))}' is out of {Names.Trimmed(call.Text("project"))}; its entries stay on their days without a topic.");
 
     private ToolOutcome Undo() =>
-        ledger.TryUndo(out var reason) ? ToolOutcome.Said("Undone.") : ToolOutcome.Refused(reason!);
+        _ledger.TryUndo(out var reason) ? ToolOutcome.Said("Undone.") : ToolOutcome.Refused(reason!);
 
     private static ToolOutcome Answered(CatalogueResult result, string done) =>
         result.Accepted ? ToolOutcome.Said(done) : ToolOutcome.Refused([.. result.Problems]);
 
     /// <summary>How many entries the project a name points at holds; nothing when the name points nowhere.</summary>
     private int Held(string projectName) =>
-        ledger.State.MatchProject(projectName) is { Found: true } match
-            ? ledger.State.Entries.Values.Count(entry => entry.ProjectId == match.Value!.Id)
+        _ledger.State.MatchProject(projectName) is { Found: true } match
+            ? _ledger.State.Entries.Values.Count(entry => entry.ProjectId == match.Value!.Id)
             : 0;
 
     /// <summary>The day a call speaks about: the one it named, or today.</summary>

@@ -92,6 +92,28 @@ again. Choosing a status is a change like any other, so undo takes it back too.
 journal wants them to: an undo is the inverse change *appended* to the history — never a rewrite,
 never a deletion — and anything recorded after an undo forgets what could have been redone.
 
+## Let an agent log for you
+
+While the application is running it answers MCP on `http://127.0.0.1:5317/mcp`, on the loopback
+only. *Connect an agent…* in the tray menu shows the two snippets a client needs — VS Code reads
+`servers` in `.vscode/mcp.json`, most other clients read `mcpServers`:
+
+```json
+{
+  "servers": {
+    "worksheet": {
+      "type": "http",
+      "url": "http://127.0.0.1:5317/mcp"
+    }
+  }
+}
+```
+
+An agent can log a line, read a day back, ask for totals per project, list the catalogue, rename or
+remove a project or a topic, and undo. Answers are sentences, refusals included, and every change it
+makes is one undo away in the window's own undo. `WORKSHEET_MCP_PORT` moves the port; `0` leaves the
+server off.
+
 ## It lives in the tray
 
 Closing the window hides it and the day keeps counting. A click on the tray icon brings the window

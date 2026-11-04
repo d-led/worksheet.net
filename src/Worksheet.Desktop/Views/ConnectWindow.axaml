@@ -1,0 +1,26 @@
+<suki:SukiWindow xmlns="https://github.com/avaloniaui"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:suki="clr-namespace:SukiUI.Controls;assembly=SukiUI"
+                 xmlns:c="using:Worksheet.Desktop.Components"
+                 xmlns:vm="using:Worksheet.Desktop.ViewModels"
+                 x:Class="Worksheet.Desktop.Views.ConnectWindow"
+                 x:DataType="vm:ConnectViewModel"
+                 Title="Connect an agent"
+                 Width="720"
+                 Height="600"
+                 MinWidth="560"
+                 MinHeight="480"
+                 WindowStartupLocation="CenterOwner">
+
+  <!-- The panel does the work; the window only gives it a frame and a way out. -->
+  <Grid RowDefinitions="*,Auto">
+    <c:ConnectPanel x:Name="Panel" Grid.Row="0" />
+    <Button x:Name="CloseButton"
+            Grid.Row="1"
+            Content="Close"
+            HorizontalAlignment="Right"
+            Margin="0,0,20,16"
+            Click="Close_Click" />
+  </Grid>
+
+</suki:SukiWindow>

@@ -211,6 +211,15 @@ public sealed class McpToolTests
     }
 
     [Fact]
+    public void Every_tool_an_agent_is_told_about_can_be_called()
+    {
+        foreach (var tool in _tools.Tools)
+        {
+            Assert.NotEqual($"There is no tool called '{tool.Name}'.", Call(tool.Name, "{}").Text);
+        }
+    }
+
+    [Fact]
     public void The_tools_are_the_ten_an_agent_is_told_about()
     {
         Assert.Equal(

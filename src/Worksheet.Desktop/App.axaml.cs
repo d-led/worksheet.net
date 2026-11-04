@@ -25,6 +25,8 @@ public sealed class App : Application
     private MainWindow? _window;
     private SingleInstance? _instance;
     private McpHttpHost? _mcp;
+    private McpSettings _mcpSettings = McpSettings.FromEnvironment();
+    private string? _mcpProblem;
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
@@ -65,7 +67,7 @@ public sealed class App : Application
         _window = new MainWindow { DataContext = day };
         desktop.MainWindow = _window;
 
-        TrayHost.Attach(this, ShowWindow, OpenDataFolder, () => Quit(desktop));
+        TrayHost.Attach(this, ShowWindow, ShowConnect, OpenDataFolder, () => Quit(desktop));
 
         StartMcp(day, _local);
 
@@ -84,7 +86,7 @@ public sealed class App : Application
     /// </summary>
     private void StartMcp(DayViewModel day, LocalLedger local)
     {
-        var settings = McpSettings.FromEnvironment();
+        var settings = _mcpSettings;
 
         if (!settings.Enabled)
         {
@@ -108,10 +110,34 @@ public sealed class App : Application
 
         _mcp = McpHttpHost.TryStart(new McpServer(toolkit), settings.Port, out var problem);
 
+        _mcpProblem = problem;
+
         if (problem is not null)
         {
             day.Say($"{problem} Set {McpSettings.PortVariable} to another port.", isProblem: true);
         }
+    }
+
+    /// <summary>Opens the window that says what to paste into a client, and whether the server is up.</summary>
+    private void ShowConnect()
+    {
+        var settings = _mcpSettings;
+        var status = settings.Enabled
+            ? _mcpProblem ?? $"Listening on {settings.Url}."
+            : $"The MCP server is off. Set {McpSettings.PortVariable} to a port and start the application again to turn it on.";
+
+        var window = new ConnectWindow
+        {
+            DataContext = new ConnectViewModel(settings, status, isProblem: _mcpProblem is not null),
+        };
+
+        if (_window is null)
+        {
+            window.Show();
+            return;
+        }
+
+        window.Show(_window);
     }
 
     private void ShowWindow()

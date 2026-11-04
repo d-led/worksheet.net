@@ -1,0 +1,54 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Worksheet.Desktop.ViewModels"
+             x:Class="Worksheet.Desktop.Components.ConnectPanel"
+             x:DataType="vm:ConnectViewModel">
+
+  <!--
+    What to paste, where. The text is selectable as well as copyable: a person who pastes into a
+    terminal instead of a file is not doing anything wrong.
+  -->
+  <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="8" Margin="20">
+
+    <TextBlock Grid.Row="0" Classes="title" Text="Connect an agent" />
+
+    <TextBlock x:Name="Status"
+               Grid.Row="1"
+               Classes="meta"
+               Classes.problem="{Binding IsProblem}"
+               Text="{Binding Status}"
+               TextWrapping="Wrap" />
+
+    <TextBlock Grid.Row="2" Classes="quiet" Text="VS CODE — .vscode/mcp.json" Margin="0,8,0,0" />
+
+    <TextBox x:Name="VsCodeConfig"
+             Grid.Row="3"
+             Text="{Binding VsCodeConfig}"
+             IsReadOnly="True"
+             AcceptsReturn="True"
+             FontFamily="monospace"
+             MinHeight="104" />
+
+    <TextBlock Grid.Row="4" Classes="quiet" Text="OTHER CLIENTS — under &quot;mcpServers&quot;" Margin="0,8,0,0" />
+
+    <TextBox x:Name="OtherConfig"
+             Grid.Row="5"
+             Text="{Binding OtherConfig}"
+             IsReadOnly="True"
+             AcceptsReturn="True"
+             FontFamily="monospace"
+             MinHeight="104" />
+
+    <StackPanel Grid.Row="6" Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+      <Button x:Name="CopyVsCode" Content="Copy VS Code config" Click="CopyVsCode_Click" />
+      <Button x:Name="CopyOther" Content="Copy the other one" Click="CopyOther_Click" />
+      <TextBlock x:Name="Copied" Classes="quiet" VerticalAlignment="Center" />
+    </StackPanel>
+
+    <TextBlock Grid.Row="7"
+               Classes="quiet"
+               TextWrapping="Wrap"
+               Text="The server listens on the loopback only, while this application is running. Undo works on whatever changed last, whoever changed it." />
+
+  </Grid>
+</UserControl>

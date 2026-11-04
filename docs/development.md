@@ -58,8 +58,9 @@ per method, worst first, and exits non-zero if any method is over 10. It merges 
 generated XAML members, and skips the composition roots (`App`, `Program`) — they only wire parts
 together, and every part is measured where it lives.
 
-Current state: 219 methods, no method over CRAP 10, method-average coverage 97.7%. The only
-uncovered surfaces are the tray icon and the composition root, which need a window server session.
+Current state: 431 methods, no method over CRAP 10, method-average coverage 95.8%. What stays
+uncovered needs a window server session — the tray, the composition root, the click handlers of the
+connect panel — or is a guard against a state a test cannot reach on purpose.
 
 ## Building what a person installs
 
@@ -142,9 +143,10 @@ unsigned download carries the quarantine flag; `install.sh` clears it after copy
 
 | path | responsibility |
 |---|---|
-| `src/Worksheet.Core` | model, journal changes, the fold, undo/redo planning, the entry language |
+| `src/Worksheet.Core` | model, journal changes, the fold, undo/redo planning, the catalogue, the entry language |
 | `src/Worksheet.Storage` | LiteDB journal and snapshots, the JSON codec, the data directory |
-| `src/Worksheet.Desktop` | SukiUI theme, `SukiWindow`, five components, view models, tray |
+| `src/Worksheet.Mcp` | JSON-RPC over the MCP shape, the ten tools, the loopback transport |
+| `src/Worksheet.Desktop` | SukiUI theme, `SukiWindow`, the components, view models, tray |
 | `tools/Worksheet.Screenshot` | headless render of the window to a PNG |
 
 `src/Worksheet.Desktop/Styles/Tokens.axaml` is the only place a font size, weight or surface colour

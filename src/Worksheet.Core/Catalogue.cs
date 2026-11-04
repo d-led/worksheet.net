@@ -196,12 +196,17 @@ public sealed class Catalogue(Ledger ledger)
     {
         destination = null;
 
-        if (string.IsNullOrWhiteSpace(entriesGoTo))
-        {
-            return entries == 0
+        return string.IsNullOrWhiteSpace(entriesGoTo)
+            ? entries == 0
                 ? null
-                : CatalogueResult.Refused($"{project.Name} still has {Count(entries, "entry", "entries")}; name the project they move to.");
-        }
+                : CatalogueResult.Refused($"{project.Name} still has {Count(entries, "entry", "entries")}; name the project they move to.")
+            : Destination(project, entriesGoTo, out destination);
+    }
+
+    /// <summary>The project the hours go to: in use, not the one going away, and not the place breaks go.</summary>
+    private CatalogueResult? Destination(Project project, string entriesGoTo, out Project? destination)
+    {
+        destination = null;
 
         var match = ledger.State.MatchProject(entriesGoTo);
 
