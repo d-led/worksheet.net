@@ -527,18 +527,20 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     {
         Suggestions.Clear();
 
-        for (var index = 0; index < _proposals.Names.Count; index++)
+        foreach (var suggestion in Offers())
         {
-            var name = _proposals.Names[index];
-
-            Suggestions.Add(
-                new SuggestionViewModel(name, index == _chosen, new RelayCommand(() => Take(name))));
+            Suggestions.Add(suggestion);
         }
 
         SuggestionCaption = _proposals.Field == EntryStep.Topic ? "TOPICS" : "PROJECTS";
 
         OnPropertyChanged(nameof(HasSuggestions));
     }
+
+    /// <summary>One chip per offer, the one the arrows are on marked as the chosen one.</summary>
+    private IEnumerable<SuggestionViewModel> Offers() =>
+        _proposals.Names.Select((name, index) =>
+            new SuggestionViewModel(name, index == _chosen, new RelayCommand(() => Take(name))));
 
     /// <summary>
     /// Says what to write next, and complains as soon as the line is complete enough to be wrong —

@@ -300,18 +300,13 @@ public sealed class EntryComposer(Ledger ledger)
         }
     }
 
-    private static IEnumerable<string> ShapeProblems(Entry before, Entry after)
-    {
-        foreach (var problem in ShapeRefusals(after))
-        {
-            yield return problem;
-        }
+    /// <summary>The shape's own objections, and the one a move to another day adds.</summary>
+    private static IEnumerable<string> ShapeProblems(Entry before, Entry after) =>
+        [.. ShapeRefusals(after), .. MoveRefusal(before, after)];
 
-        if (after.Date != before.Date)
-        {
-            yield return "An entry cannot be moved to another day; log a new one instead.";
-        }
-    }
+    /// <summary>A correction stays on its day; moving a range is logging another one.</summary>
+    private static IEnumerable<string> MoveRefusal(Entry before, Entry after) =>
+        after.Date != before.Date ? ["An entry cannot be moved to another day; log a new one instead."] : [];
 
     private (Guid Id, string Name)? ResolveProject(string name, List<LedgerEvent> changes, List<string> problems)
     {

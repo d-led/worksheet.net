@@ -4,7 +4,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using System.Globalization;
-using System.Text;
+using Worksheet.Core;
 
 namespace Worksheet.Export;
 
@@ -20,186 +20,160 @@ public static class ReportHtml
 
     private const string Mermaid = "https://cdn.jsdelivr.net/npm/mermaid@12.3.0/dist/mermaid.esm.min.mjs";
 
+    /// <summary>What a card says when it has nothing to show; each is a sentence of its own.</summary>
+    private const string NothingLogged = """<p class="text-body-secondary mb-0">Nothing was logged in this range.</p>""";
+
+    private const string NoProjectsYet = """<p class="text-body-secondary mb-0">No project was used yet in this range.</p>""";
+
+    private const string NothingToDraw = """<p class="text-body-secondary mb-0">Nothing to draw.</p>""";
+
+    /// <summary>The page, block by block in the order it is read; each block ends with its line end.</summary>
     public static string Of(RangeReport report, DateTimeOffset generatedAt)
     {
         ArgumentNullException.ThrowIfNull(report);
 
-        var page = new StringBuilder();
-
-        page.AppendLine("<!doctype html>");
-        page.AppendLine("<html lang=\"en\">");
-        page.Append(Head(report));
-        page.AppendLine("<body>");
-        page.AppendLine("<main class=\"container py-4\">");
-        page.Append(Header(report));
-        page.Append(Summary(report, generatedAt));
-        page.Append(ProjectCard(report));
-        page.Append(TopicCard(report));
-        page.Append(TimelineCard(report));
-        page.Append(Detail(report));
-        page.Append(Footer(report));
-        page.AppendLine("</main>");
-        page.Append(Scripts());
-        page.AppendLine("</body>");
-        page.AppendLine("</html>");
-
-        return page.ToString();
+        return string.Concat(Blocks(report, generatedAt));
     }
 
-    private static string Head(RangeReport report) =>
-        $$"""
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>Worksheet — {{Esc(report.Range.Label)}}</title>
-            <link href="{{Bootstrap}}" rel="stylesheet">
-          </head>
+    private static IEnumerable<string> Blocks(RangeReport report, DateTimeOffset generatedAt) =>
+    [
+        "<!doctype html>\n<html lang=\"en\">\n",
+        Head(report),
+        "<body>\n<main class=\"container py-4\">\n",
+        Header(report),
+        Summary(report, generatedAt),
+        ProjectCard(report),
+        TopicCard(report),
+        TimelineCard(report),
+        Detail(report),
+        Footer,
+        "</main>\n",
+        Scripts(),
+        "</body>\n</html>\n",
+    ];
 
-          """;
+    private static string Head(RangeReport report) =>
+        $"""
+         <head>
+           <meta charset="utf-8">
+           <meta name="viewport" content="width=device-width, initial-scale=1">
+           <title>Worksheet — {Esc(report.Range.Label)}</title>
+           <link href="{Bootstrap}" rel="stylesheet">
+         </head>
+
+         """;
 
     private static string Header(RangeReport report) =>
-        $$"""
-          <header class="mb-3">
-            <p class="text-body-secondary text-uppercase small mb-1">Worksheet · {{Esc(Word(report.Range.Period))}}</p>
-            <h1 class="h3 mb-0">{{Esc(report.Range.Label)}}</h1>
-          </header>
+        $"""
+         <header class="mb-3">
+           <p class="text-body-secondary text-uppercase small mb-1">Worksheet · {Esc(Word(report.Range.Period))}</p>
+           <h1 class="h3 mb-0">{Esc(report.Range.Label)}</h1>
+         </header>
 
-          """;
+         """;
 
     /// <summary>
     /// Four figures on one line, the way Bootstrap's own typography puts them: a muted label and a
     /// value, no boxes. The dates and the time of generation are small print below.
     /// </summary>
     private static string Summary(RangeReport report, DateTimeOffset generatedAt) =>
-        $$"""
-          <section class="mb-4">
-            <p class="mb-1">
-              <span class="text-body-secondary">Total</span> <span class="fs-5 fw-semibold">{{Esc(Shares.Hours(report.TotalMinutes))}}</span>
-              <span class="text-body-secondary ms-4">Days logged</span> <span class="fs-5 fw-semibold">{{report.DaysLogged}}</span>
-              <span class="text-body-secondary ms-4">Projects</span> <span class="fs-5 fw-semibold">{{report.Projects.Count}}</span>
-              <span class="text-body-secondary ms-4">Busiest day</span> <span class="fs-5 fw-semibold">{{Esc(Busiest(report))}}</span>
-            </p>
-            <p class="text-body-secondary small mb-0">
-              {{Esc(DayText(report.Range.From))}} – {{Esc(DayText(report.Range.To))}} · generated {{Esc(Moment(generatedAt))}}
-            </p>
-          </section>
+        $"""
+         <section class="mb-4">
+           <p class="mb-1">
+             <span class="text-body-secondary">Total</span> <span class="fs-5 fw-semibold">{Esc(Shares.Hours(report.TotalMinutes))}</span>
+             <span class="text-body-secondary ms-4">Days logged</span> <span class="fs-5 fw-semibold">{report.DaysLogged}</span>
+             <span class="text-body-secondary ms-4">Projects</span> <span class="fs-5 fw-semibold">{report.Projects.Count}</span>
+             <span class="text-body-secondary ms-4">Busiest day</span> <span class="fs-5 fw-semibold">{Esc(Busiest(report))}</span>
+           </p>
+           <p class="text-body-secondary small mb-0">
+             {Esc(DayText(report.Range.From))} – {Esc(DayText(report.Range.To))} · generated {Esc(Moment(generatedAt))}
+           </p>
+         </section>
 
-          """;
+         """;
 
     /// <summary>
     /// One bar per project on the row that names it: a share is a length, and a bar of that length
     /// under the number says more in less width than a circle cut into slices.
     /// </summary>
     private static string ProjectCard(RangeReport report) =>
-        $$"""
-          <section class="card mb-4">
-            <div class="card-body">
-              <h2 class="h5 mb-3">Where the time went</h2>
-              {{(report.Projects.Count == 0
-                  ? "<p class=\"text-body-secondary mb-0\">Nothing was logged in this range.</p>\n"
-                  : ProjectBars(report))}}
-            </div>
-          </section>
+        $"""
+         <section class="card mb-4">
+           <div class="card-body">
+             <h2 class="h5 mb-3">Where the time went</h2>
+             {(report.Projects.Count == 0 ? NothingLogged : ProjectBars(report))}
+           </div>
+         </section>
 
-          """;
+         """;
 
-    private static string ProjectBars(RangeReport report)
-    {
-        var rows = new StringBuilder();
+    private static string ProjectBars(RangeReport report) =>
+        Table(
+            ["Project"],
+            Rows(report.Projects.Select(project => BarRow([project.Project], project.Minutes, report.TotalMinutes))),
+            $"""<tr class="table-light fw-semibold"><td>Total</td><td></td><td class="text-end">{Esc(Shares.Hours(report.TotalMinutes))}</td><td class="text-end">100.0 %</td></tr>""");
 
-        foreach (var project in report.Projects)
-        {
-            rows.AppendLine(BarRow([project.Project], project.Minutes, report.TotalMinutes));
-        }
+    private static string TopicCard(RangeReport report) =>
+        $"""
+         <section class="card mb-4">
+           <div class="card-body">
+             <h2 class="h5 mb-3">By project and topic</h2>
+             {(report.Projects.Count == 0 ? NoProjectsYet : Table(["Project", "Topic"], TopicRows(report)))}
+           </div>
+         </section>
 
-        var total =
-            $"    <tr class=\"table-light fw-semibold\"><td>Total</td><td></td>"
-            + $"<td class=\"text-end\">{Esc(Shares.Hours(report.TotalMinutes))}</td>"
-            + "<td class=\"text-end\">100.0 %</td></tr>\n";
-
-        return Table(["Project"], rows.ToString(), total);
-    }
-
-    private static string TopicCard(RangeReport report)
-    {
-        var rows = TopicRows(report);
-
-        return $$"""
-          <section class="card mb-4">
-            <div class="card-body">
-              <h2 class="h5 mb-3">By project and topic</h2>
-              {{(rows.Length == 0
-                  ? "<p class=\"text-body-secondary mb-0\">No project was used yet in this range.</p>\n"
-                  : Table(["Project", "Topic"], rows))}}
-            </div>
-          </section>
-
-          """;
-    }
+         """;
 
     /// <summary>A project is named once, on the first of its rows, so the bars start close to the names.</summary>
-    private static string TopicRows(RangeReport report)
-    {
-        var rows = new StringBuilder();
-        string? named = null;
-
-        foreach (var project in report.Projects)
-        {
-            foreach (var topic in project.Topics)
-            {
-                var cell = project.Project == named ? string.Empty : project.Project;
-                named = project.Project;
-
-                rows.AppendLine(BarRow([cell, topic.Label], topic.Minutes, report.TotalMinutes));
-            }
-        }
-
-        return rows.ToString();
-    }
+    private static string TopicRows(RangeReport report) =>
+        Rows(
+            report.Projects.SelectMany(project => project.Topics.Select((topic, index) => BarRow(
+                [index == 0 ? project.Project : string.Empty, topic.Label],
+                topic.Minutes,
+                report.TotalMinutes))));
 
     /// <summary>
     /// A table of bars: the cells that name a row, the bar, the time it stands for, its share. Every
     /// heading but the bar sorts, and the footer stays where it is while the rows move.
     /// </summary>
     private static string Table(string[] headings, string rows, string footer = "") =>
-        "<table class=\"table table-sm align-middle mb-0\" data-sortable>\n"
-        + "  <thead><tr>"
-        + string.Concat(headings.Select(heading => $"<th scope=\"col\">{Sorting(heading, "text", string.Empty)}</th>"))
-        + "<th scope=\"col\" style=\"width:45%\"></th>"
-        + $"<th scope=\"col\" class=\"text-end\">{Sorting("Time", "number", "text-end")}</th>"
-        + $"<th scope=\"col\" class=\"text-end\">{Sorting("Share", "number", "text-end")}</th>"
-        + "</tr></thead>\n"
-        + $"  <tbody>\n{rows}  </tbody>\n"
-        + (footer.Length == 0 ? string.Empty : $"  <tfoot>\n{footer}  </tfoot>\n")
-        + "</table>\n";
+        $"""
+         <table class="table table-sm align-middle mb-0" data-sortable>
+           <thead><tr>{string.Concat(headings.Select(heading => Column(heading, "text", string.Empty)))}<th scope="col" style="width:45%"></th>{Column("Time", "number", "text-end")}{Column("Share", "number", "text-end")}</tr></thead>
+           <tbody>
+         {rows}  </tbody>
+         {(footer.Length == 0 ? string.Empty : $"<tfoot>\n{footer}\n</tfoot>\n")}</table>
+
+         """;
+
+    /// <summary>A heading cell, carrying the classes of a number's column when it has any.</summary>
+    private static string Column(string heading, string kind, string classes) =>
+        classes.Length == 0
+            ? $"""<th scope="col">{Sorting(heading, kind, classes)}</th>"""
+            : $"""<th scope="col" class="{classes}">{Sorting(heading, kind, classes)}</th>""";
 
     /// <summary>A heading that sorts its column when pressed, and says which way it is sorted now.</summary>
     private static string Sorting(string heading, string kind, string classes) =>
-        $"<button type=\"button\" class=\"btn btn-link p-0 fw-semibold text-reset {classes}\""
-        + $" data-sort=\"{kind}\">{Esc(heading)}</button>";
+        $"""<button type="button" class="btn btn-link p-0 fw-semibold text-reset {classes}" data-sort="{kind}">{Esc(heading)}</button>""";
+
+    /// <summary>Rows as a page writes them: one per line, each with its own line end.</summary>
+    private static string Rows(IEnumerable<string> rows) => string.Concat(rows.Select(row => $"{row}\n"));
 
     private static string BarRow(string[] cells, int minutes, int total) =>
-        "    <tr>"
-        + string.Concat(cells.Select(cell => $"<td>{Esc(cell)}</td>"))
-        + $"<td><div class=\"progress\" role=\"progressbar\" aria-valuenow=\"{Esc(Shares.Percent(minutes, total))}\""
-        + " aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"height:10px\">"
-        + $"<div class=\"progress-bar\" style=\"width:{Shares.Width(minutes, total)}\"></div></div></td>"
-        + $"<td class=\"text-end text-nowrap\" data-value=\"{minutes}\">{Esc(Shares.Hours(minutes))}</td>"
-        + $"<td class=\"text-end text-nowrap\" data-value=\"{minutes}\">{Esc(Shares.Percent(minutes, total))}</td>"
-        + "</tr>";
+        $"""
+         <tr>{string.Concat(cells.Select(cell => $"<td>{Esc(cell)}</td>"))}<td><div class="progress" role="progressbar" aria-valuenow="{Esc(Shares.Percent(minutes, total))}" aria-valuemin="0" aria-valuemax="100" style="height:10px"><div class="progress-bar" style="width:{Shares.Width(minutes, total)}"></div></div></td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Hours(minutes))}</td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Percent(minutes, total))}</td></tr>
+         """;
 
     private static string TimelineCard(RangeReport report) =>
-        $$"""
-          <section class="card mb-4">
-            <div class="card-body">
-              <h2 class="h5 mb-3">The range as it was worked</h2>
-              {{(report.Days.Count == 0 || report.Projects.Count == 0
-                  ? "<p class=\"text-body-secondary mb-0\">Nothing to draw.</p>\n"
-                  : Gantt(report))}}
-            </div>
-          </section>
+        $"""
+         <section class="card mb-4">
+           <div class="card-body">
+             <h2 class="h5 mb-3">The range as it was worked</h2>
+             {(report.Days.Count == 0 || report.Projects.Count == 0 ? NothingToDraw : Gantt(report))}
+           </div>
+         </section>
 
-          """;
+         """;
 
     /// <summary>
     /// The range as a gantt, one swimlane per project: mermaid draws the bars, the axis and the
@@ -212,32 +186,36 @@ public static class ReportHtml
     private static string Gantt(RangeReport report)
     {
         var perEntry = report.Range.Days <= 62;
-        var lines = new StringBuilder();
-        var id = 0;
 
-        lines.AppendLine("---");
-        lines.AppendLine("displayMode: compact");
-        lines.AppendLine("---");
-        lines.AppendLine("gantt");
-        lines.AppendLine(CultureInfo.InvariantCulture, $"    title {Label(report.Range.Label)}");
-        lines.AppendLine(CultureInfo.InvariantCulture, $"    dateFormat {(perEntry ? "YYYY-MM-DD HH:mm" : "YYYY-MM-DD")}");
-        lines.AppendLine(CultureInfo.InvariantCulture, $"    axisFormat {(report.Range.Days == 1 ? "%H:%M" : "%d %b")}");
-        lines.AppendLine("    todayMarker off");
+        // The bars are numbered before they are grouped, so a section's tasks keep one running id.
+        var numbered = Bars(report, perEntry)
+            .Select((bar, index) => (bar.Project, Line: $"        {Label(bar.Label)} :e{index + 1}, {bar.Start}, {bar.Minutes}m"));
 
-        foreach (var project in report.Projects)
-        {
-            lines.AppendLine(CultureInfo.InvariantCulture, $"    section {Label(project.Project)}");
+        var sections = numbered
+            .GroupBy(bar => bar.Project)
+            .SelectMany(project => new[] { $"    section {Label(project.Key)}" }.Concat(project.Select(bar => bar.Line)));
 
-            foreach (var bar in Bars(report, project.Project, perEntry))
-            {
-                lines.AppendLine(CultureInfo.InvariantCulture, $"        {Label(bar.Label)} :e{++id}, {bar.Start}, {bar.Minutes}m");
-            }
-        }
-
-        return MermaidBlock(lines.ToString());
+        return MermaidBlock(
+            Rows(
+            [
+                "---",
+                "displayMode: compact",
+                "---",
+                "gantt",
+                $"    title {Label(report.Range.Label)}",
+                $"    dateFormat {(perEntry ? "YYYY-MM-DD HH:mm" : "YYYY-MM-DD")}",
+                $"    axisFormat {(report.Range.Days == 1 ? "%H:%M" : "%d %b")}",
+                "    todayMarker off",
+                .. sections,
+            ]));
     }
 
-    private static IEnumerable<(string Label, string Start, int Minutes)> Bars(RangeReport report, string project, bool perEntry) =>
+    /// <summary>Every bar of the chart in section order, each still knowing its project.</summary>
+    private static IEnumerable<(string Project, string Label, string Start, int Minutes)> Bars(RangeReport report, bool perEntry) =>
+        report.Projects.SelectMany(project => BarsOf(report, project.Project, perEntry)
+            .Select(bar => (Project: project.Project, bar.Label, bar.Start, bar.Minutes)));
+
+    private static IEnumerable<(string Label, string Start, int Minutes)> BarsOf(RangeReport report, string project, bool perEntry) =>
         perEntry ? EntryBars(report, project) : DayBars(report, project);
 
     /// <summary>One bar per range, named for its topic and its length: the picture the day itself makes.</summary>
@@ -247,7 +225,7 @@ public static class ReportHtml
             .Where(pair => pair.Entry.Project == project)
             .Select(pair => (
                 $"{pair.Entry.Topic ?? pair.Entry.Project} {Shares.Hours(pair.Entry.Minutes)}",
-                $"{IsoDay(pair.Day)} {Clock(pair.Entry.Start)}",
+                $"{IsoDay(pair.Day)} {ClockText.Format(pair.Entry.Start)}",
                 pair.Entry.Minutes));
 
     /// <summary>One bar per day the project was worked on, for a range too long to show every range in.</summary>
@@ -270,8 +248,6 @@ public static class ReportHtml
     /// <summary>A day as mermaid parses it, in the format the chart declares.</summary>
     private static string IsoDay(DateOnly day) => day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-    private static string Clock(TimeOnly time) => time.ToString("HH:mm", CultureInfo.InvariantCulture);
-
     private static string Detail(RangeReport report) =>
         report.Days.Count == 0
             ? string.Empty
@@ -279,67 +255,51 @@ public static class ReportHtml
                 ? Days(report)
                 : Entries(report.Days[0]);
 
-    private static string Days(RangeReport report)
-    {
-        var page = new StringBuilder();
+    /// <summary>The days, folded: each date and its total on the summary, the ranges inside it.</summary>
+    private static string Days(RangeReport report) =>
+        $"""
+         <section class="mb-4">
+           <h2 class="h5">Days</h2>
+         {string.Concat(report.Days.Select(Fold))}</section>
 
-        page.AppendLine("  <section class=\"mb-4\">");
-        page.AppendLine("    <h2 class=\"h5\">Days</h2>");
+         """;
 
-        foreach (var day in report.Days)
-        {
-            page.AppendLine($"    <details class=\"card mb-1\"><summary class=\"card-body py-2\">");
-            page.AppendLine(
-                CultureInfo.InvariantCulture,
-                $"      <span class=\"fw-semibold\">{Esc(day.Date.ToString("dddd MMM yyyy", CultureInfo.InvariantCulture))}</span>");
-            page.AppendLine(
-                CultureInfo.InvariantCulture,
-                $"      <span class=\"text-body-secondary\">· {Esc(day.Kind)} · {Esc(Shares.Hours(day.Minutes))}</span>");
-            page.AppendLine("    </summary>");
-            page.AppendLine("    <div class=\"card-body py-2\">");
-            page.Append(Entries(day));
-            page.AppendLine("    </div></details>");
-        }
+    private static string Fold(DayLine day) =>
+        $"""
+         <details class="card mb-1"><summary class="card-body py-2">
+           <span class="fw-semibold">{Esc(day.Date.ToString("dddd MMM yyyy", CultureInfo.InvariantCulture))}</span>
+           <span class="text-body-secondary">· {Esc(day.Kind)} · {Esc(Shares.Hours(day.Minutes))}</span>
+         </summary>
+         <div class="card-body py-2">
+         {Entries(day)}</div></details>
 
-        page.AppendLine("  </section>");
+         """;
 
-        return page.ToString();
-    }
+    private static string Entries(DayLine day) =>
+        $"""
+         <table class="table table-sm align-middle mb-0">
+           <thead>
+             <tr><th scope="col">From–to</th><th scope="col">Project</th><th scope="col">Topic</th><th scope="col" class="text-end">Time</th><th scope="col">Note</th></tr>
+           </thead>
+           <tbody>
+         {Rows(day.Entries.Select(EntryRow))}</tbody>
+         </table>
 
-    private static string Entries(DayLine day)
-    {
-        var rows = new StringBuilder();
+         """;
 
-        foreach (var entry in day.Entries)
-        {
-            rows.AppendLine(
-                CultureInfo.InvariantCulture,
-                $"      <tr><td class=\"text-nowrap\">{Clock(entry.Start)}–{Clock(entry.End)}</td>"
-                + $"<td>{Esc(entry.Project)}</td><td>{Esc(entry.Topic ?? string.Empty)}</td>"
-                + $"<td class=\"text-end\">{Esc(Shares.Hours(entry.Minutes))}</td>"
-                + $"<td class=\"text-body-secondary\">{Esc(entry.Note ?? string.Empty)}</td></tr>");
-        }
+    private static string EntryRow(EntryLine entry) =>
+        $"""
+         <tr><td class="text-nowrap">{ClockText.Format(entry.Start)}–{ClockText.Format(entry.End)}</td><td>{Esc(entry.Project)}</td><td>{Esc(entry.Topic ?? string.Empty)}</td><td class="text-end">{Esc(Shares.Hours(entry.Minutes))}</td><td class="text-body-secondary">{Esc(entry.Note ?? string.Empty)}</td></tr>
+         """;
 
-        return $$"""
-                   <table class="table table-sm align-middle mb-0">
-                     <thead>
-                       <tr><th scope="col">From–to</th><th scope="col">Project</th><th scope="col">Topic</th><th scope="col" class="text-end">Time</th><th scope="col">Note</th></tr>
-                     </thead>
-                     <tbody>
-                 {{rows.ToString()}}    </tbody>
-                   </table>
+    /// <summary>The page's last word: where the numbers come from, and what the page needs from the net.</summary>
+    private const string Footer = """
+        <footer class="text-body-secondary small mt-5">
+          <p class="mb-1">Made by Worksheet from its journal. Days that hold nothing are left out; the total is what the journal says, not a guess at a working day.</p>
+          <p class="mb-0">This page loads Bootstrap and mermaid from jsDelivr. Without a connection it still reads, unstyled; the gantt is then not drawn.</p>
+        </footer>
 
-                 """;
-    }
-
-    private static string Footer(RangeReport report) =>
-        $$"""
-          <footer class="text-body-secondary small mt-5">
-            <p class="mb-1">Made by Worksheet from its journal. Days that hold nothing are left out; the total is what the journal says, not a guess at a working day.</p>
-            <p class="mb-0">This page loads Bootstrap and mermaid from jsDelivr. Without a connection it still reads, unstyled; the gantt is then not drawn.</p>
-          </footer>
-
-          """;
+        """;
 
     /// <summary>
     /// The two scripts: mermaid, which draws the gantt, and the page's own, which sorts a table by the
@@ -356,63 +316,59 @@ public static class ReportHtml
               gantt: { barHeight: 16, barGap: 6, topPadding: 40, gridLineStartPadding: 20, fontSize: 11, sectionFontSize: 13 }
             });
           </script>
-          {{Sorter()}}
+          {{Sorter}}
 
           """;
 
     /// <summary>Pressing a heading sorts its column, by the number in the cell when it is time or share.</summary>
-    private static string Sorter() =>
-        $$"""
-          <script>
-            for (const table of document.querySelectorAll('table[data-sortable]')) {
-              const body = table.tBodies[0];
+    private const string Sorter = """
+        <script>
+          for (const table of document.querySelectorAll('table[data-sortable]')) {
+            const body = table.tBodies[0];
 
-              for (const button of table.tHead.querySelectorAll('th button')) {
-                button.addEventListener('click', () => {
-                  const column = button.parentElement.cellIndex;
-                  const numeric = button.dataset.sort === 'number';
-                  const direction = button.dataset.direction === 'ascending' ? 'descending' : 'ascending';
-                  const value = row => {
-                    const cell = row.cells[column];
+            for (const button of table.tHead.querySelectorAll('th button')) {
+              button.addEventListener('click', () => {
+                const column = button.parentElement.cellIndex;
+                const numeric = button.dataset.sort === 'number';
+                const direction = button.dataset.direction === 'ascending' ? 'descending' : 'ascending';
+                const value = row => {
+                  const cell = row.cells[column];
 
-                    return numeric ? Number(cell.dataset.value ?? 0) : cell.textContent.trim().toLowerCase();
-                  };
+                  return numeric ? Number(cell.dataset.value ?? 0) : cell.textContent.trim().toLowerCase();
+                };
 
-                  for (const other of table.tHead.querySelectorAll('th button')) {
-                    delete other.dataset.direction;
-                  }
+                for (const other of table.tHead.querySelectorAll('th button')) {
+                  delete other.dataset.direction;
+                }
 
-                  button.dataset.direction = direction;
+                button.dataset.direction = direction;
 
-                  [...body.rows]
-                    .sort((one, other) => {
-                      const order = numeric
-                        ? value(one) - value(other)
-                        : value(one).localeCompare(value(other));
+                [...body.rows]
+                  .sort((one, other) => {
+                    const order = numeric
+                      ? value(one) - value(other)
+                      : value(one).localeCompare(value(other));
 
-                      return direction === 'ascending' ? order : -order;
-                    })
-                    .forEach(row => body.append(row));
+                    return direction === 'ascending' ? order : -order;
+                  })
+                  .forEach(row => body.append(row));
 
-                  for (const cell of table.tHead.querySelectorAll('th')) {
-                    cell.removeAttribute('aria-sort');
-                  }
+                for (const cell of table.tHead.querySelectorAll('th')) {
+                  cell.removeAttribute('aria-sort');
+                }
 
-                  button.parentElement.setAttribute('aria-sort', direction);
-                });
-              }
+                button.parentElement.setAttribute('aria-sort', direction);
+              });
             }
-          </script>
+          }
+        </script>
 
-          """;
+        """;
 
     private static string Busiest(RangeReport report) =>
-        report.Days.Count == 0
-            ? "—"
-            : report.Days
-                .OrderByDescending(day => day.Minutes)
-                .Select(day => $"{day.Date.ToString("ddd d MMM", CultureInfo.InvariantCulture)} · {Shares.Hours(day.Minutes)}")
-                .First();
+        report.Days.MaxBy(day => day.Minutes) is { } busiest
+            ? $"{busiest.Date.ToString("ddd d MMM", CultureInfo.InvariantCulture)} · {Shares.Hours(busiest.Minutes)}"
+            : "—";
 
     private static string Reports(DateOnly day) => day.ToString("d MMM", CultureInfo.InvariantCulture);
 
