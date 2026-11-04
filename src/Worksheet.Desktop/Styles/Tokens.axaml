@@ -1,87 +1,97 @@
 <Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:suki="clr-namespace:SukiUI.Controls;assembly=SukiUI">
 
   <!--
     The only place a font size, a row height or a surface is decided. Controls and views use these
-    classes and never set a size inline. The scale is deliberately small: a working day is ten
-    rows, and they should fit.
+    classes and never set a size inline. Secondary text is a colour, not a transparency: a grey at
+    half opacity over a grey page is what made the day unreadable.
   -->
+  <Style Selector="suki|SukiWindow">
+    <Setter Property="Background" Value="{DynamicResource PageBrush}" />
+  </Style>
+
   <Style Selector="TextBlock.title">
-    <Setter Property="FontSize" Value="22" />
+    <Setter Property="FontSize" Value="26" />
     <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 
   <Style Selector="TextBlock.total">
-    <Setter Property="FontSize" Value="20" />
+    <Setter Property="FontSize" Value="24" />
     <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
     <Setter Property="VerticalAlignment" Value="Center" />
     <Setter Property="HorizontalAlignment" Value="Right" />
   </Style>
 
   <Style Selector="TextBlock.body">
-    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontSize" Value="15" />
+    <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
   </Style>
 
   <Style Selector="TextBlock.numeric">
-    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontSize" Value="14" />
     <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 
   <Style Selector="TextBlock.caption">
-    <Setter Property="FontSize" Value="10" />
+    <Setter Property="FontSize" Value="12" />
     <Setter Property="FontWeight" Value="SemiBold" />
-    <Setter Property="Opacity" Value="0.5" />
+    <Setter Property="Foreground" Value="{DynamicResource MutedInkBrush}" />
   </Style>
 
   <Style Selector="TextBlock.meta">
-    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Foreground" Value="{DynamicResource MutedInkBrush}" />
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 
   <Style Selector="TextBlock.meta.problem">
-    <Setter Property="Foreground" Value="#E5484D" />
+    <Setter Property="Foreground" Value="#C0272D" />
   </Style>
 
   <Style Selector="TextBlock.quiet">
-    <Setter Property="FontSize" Value="12" />
-    <Setter Property="Opacity" Value="0.55" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Foreground" Value="{DynamicResource MutedInkBrush}" />
   </Style>
 
   <Style Selector="TextBlock.legend">
-    <Setter Property="FontSize" Value="11" />
-    <Setter Property="Opacity" Value="0.45" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource MutedInkBrush}" />
   </Style>
 
   <Style Selector="TextBlock.hint">
-    <Setter Property="FontSize" Value="11" />
-    <Setter Property="Opacity" Value="0.8" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Foreground" Value="{DynamicResource MutedInkBrush}" />
   </Style>
 
   <Style Selector="TextBlock.gap-span">
-    <Setter Property="FontSize" Value="13" />
-    <Setter Property="Opacity" Value="0.45" />
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="Foreground" Value="{DynamicResource MutedInkBrush}" />
   </Style>
 
   <Style Selector="TextBlock.gap-note">
-    <Setter Property="FontSize" Value="12" />
-    <Setter Property="Opacity" Value="0.35" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Foreground" Value="{DynamicResource MutedInkBrush}" />
   </Style>
 
   <Style Selector="Button.nav">
     <Setter Property="Width" Value="44" />
     <Setter Property="Height" Value="44" />
     <Setter Property="Padding" Value="0" />
-    <Setter Property="FontSize" Value="18" />
+    <Setter Property="FontSize" Value="20" />
     <Setter Property="CornerRadius" Value="12" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
   </Style>
 
   <Style Selector="Button.chip">
-    <Setter Property="Padding" Value="10,3" />
-    <Setter Property="FontSize" Value="11" />
+    <Setter Property="Padding" Value="11,4" />
+    <Setter Property="FontSize" Value="12" />
     <Setter Property="CornerRadius" Value="12" />
   </Style>
 
@@ -92,10 +102,10 @@
   </Style>
 
   <Style Selector="Button.row-action">
-    <Setter Property="Width" Value="26" />
-    <Setter Property="Height" Value="26" />
+    <Setter Property="Width" Value="28" />
+    <Setter Property="Height" Value="28" />
     <Setter Property="Padding" Value="0" />
-    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontSize" Value="12" />
     <Setter Property="CornerRadius" Value="6" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -104,22 +114,52 @@
 
   <Style Selector="TextBox.entry">
     <Setter Property="CornerRadius" Value="9" />
-    <Setter Property="Padding" Value="11,7" />
-    <Setter Property="FontSize" Value="14" />
+    <Setter Property="Padding" Value="12,8" />
+    <Setter Property="FontSize" Value="16" />
   </Style>
 
   <Style Selector="TextBox.cell">
-    <Setter Property="MinHeight" Value="26" />
-    <Setter Property="Padding" Value="7,1" />
-    <Setter Property="FontSize" Value="13" />
+    <Setter Property="MinHeight" Value="30" />
+    <Setter Property="Padding" Value="8,2" />
+    <Setter Property="FontSize" Value="14" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
   </Style>
 
   <Style Selector="ComboBox.cell">
-    <Setter Property="MinHeight" Value="26" />
-    <Setter Property="Padding" Value="7,1" />
-    <Setter Property="FontSize" Value="13" />
+    <Setter Property="MinHeight" Value="30" />
+    <Setter Property="Padding" Value="8,2" />
+    <Setter Property="FontSize" Value="14" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+
+  <!--
+    A disabled field still has something to say: on a frozen day the row is what was worked, so it
+    keeps a readable ink instead of the theme's washed-out one. The field being disabled is what
+    says it cannot be changed.
+  -->
+  <Style Selector="TextBox.cell:disabled">
+    <Setter Property="Foreground" Value="{DynamicResource MutedInkBrush}" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="ComboBox.cell:disabled">
+    <Setter Property="Foreground" Value="{DynamicResource MutedInkBrush}" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="Border.cell-frame AutoCompleteBox:disabled">
+    <Setter Property="Foreground" Value="{DynamicResource MutedInkBrush}" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="Border.cell-frame AutoCompleteBox /template/ TextBox">
+    <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Border.cell-frame AutoCompleteBox /template/ TextBox:disabled">
+    <Setter Property="Foreground" Value="{DynamicResource MutedInkBrush}" />
+    <Setter Property="Opacity" Value="1" />
   </Style>
 
   <!--
@@ -130,22 +170,22 @@
     <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="5" />
-    <Setter Property="MinHeight" Value="26" />
-    <Setter Property="Padding" Value="5,0" />
+    <Setter Property="MinHeight" Value="30" />
+    <Setter Property="Padding" Value="6,0" />
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 
   <Style Selector="Border.cell-frame AutoCompleteBox">
-    <Setter Property="Height" Value="24" />
+    <Setter Property="Height" Value="28" />
     <Setter Property="MinHeight" Value="0" />
-    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontSize" Value="14" />
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
   </Style>
 
   <Style Selector="Border.row">
     <Setter Property="CornerRadius" Value="8" />
-    <Setter Property="Padding" Value="4,2" />
+    <Setter Property="Padding" Value="5,3" />
     <Setter Property="Margin" Value="0,0,0,2" />
     <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
     <Setter Property="BorderThickness" Value="1" />
@@ -160,15 +200,6 @@
     <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
   </Style>
 
-  <!-- A frozen day keeps its rows on screen, and they have to look as frozen as they are. -->
-  <Style Selector="Border.row:disabled">
-    <Setter Property="Opacity" Value="0.5" />
-  </Style>
-
-  <Style Selector="Border.gap:disabled">
-    <Setter Property="Opacity" Value="0.5" />
-  </Style>
-
   <!--
     The day's status: five small radios, each with its own colour once chosen. They are drawn as
     pills rather than as the skin's radio button — the bullet is there to say "one of these", and
@@ -176,8 +207,8 @@
     green for a day that works, red for one that does not.
   -->
   <Style Selector="RadioButton.kind">
-    <Setter Property="Padding" Value="11,4" />
-    <Setter Property="FontSize" Value="11" />
+    <Setter Property="Padding" Value="12,5" />
+    <Setter Property="FontSize" Value="13" />
     <Setter Property="FontWeight" Value="Medium" />
     <Setter Property="CornerRadius" Value="11" />
     <Setter Property="MinWidth" Value="0" />

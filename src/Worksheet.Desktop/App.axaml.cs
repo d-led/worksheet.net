@@ -147,13 +147,7 @@ public sealed class App : Application
             DataContext = new ConnectViewModel(settings, status, isProblem: _mcpProblem is not null),
         };
 
-        if (_window is null)
-        {
-            window.Show();
-            return;
-        }
-
-        window.Show(_window);
+        Dialog.ShowOver(window, _window);
     }
 
     /// <summary>Opens the knobs: the port the server listens on, and how often the fold is rewritten.</summary>
@@ -170,13 +164,7 @@ public sealed class App : Application
             Applied = ApplySettings,
         };
 
-        if (_window is null)
-        {
-            window.Show();
-            return;
-        }
-
-        window.Show(_window);
+        Dialog.ShowOver(window, _window);
     }
 
     /// <summary>Opens the catalogue: what is in use, and the four decisions a person makes about it.</summary>
@@ -190,13 +178,7 @@ public sealed class App : Application
         var model = new ManageViewModel(_local.Ledger) { Changed = () => CurrentDay?.Reload() };
         var window = new ManageWindow { DataContext = model };
 
-        if (_window is null)
-        {
-            window.Show();
-            return;
-        }
-
-        window.Show(_window);
+        Dialog.ShowOver(window, _window);
     }
 
     /// <summary>

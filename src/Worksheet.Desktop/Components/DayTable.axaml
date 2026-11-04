@@ -8,7 +8,9 @@
     The day as it reads on a clock: when a block started, when it ended. The length is derived and
     never shown as a column, and the holes between blocks sit in the same list so a day is one
     continuous picture. A row is two short fields high; ten of them fit without scrolling. On a
-    frozen day every row is shown and none of them can be changed.
+    frozen day every row is shown and none of them can be changed — shown at full contrast, because
+    what was worked is history worth reading; the fields being disabled and the sentence naming the
+    day's status are what say it cannot be edited.
   -->
   <Grid RowDefinitions="Auto,*" RowSpacing="2">
 

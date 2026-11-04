@@ -8,12 +8,18 @@
     <ResourceDictionary>
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
-          <SolidColorBrush x:Key="SurfaceBrush" Color="#B8FFFFFF" />
-          <SolidColorBrush x:Key="HairlineBrush" Color="#1F000000" />
+          <SolidColorBrush x:Key="PageBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="HairlineBrush" Color="#24000000" />
+          <SolidColorBrush x:Key="InkBrush" Color="#111827" />
+          <SolidColorBrush x:Key="MutedInkBrush" Color="#4B5563" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
-          <SolidColorBrush x:Key="SurfaceBrush" Color="#1FFFFFFF" />
-          <SolidColorBrush x:Key="HairlineBrush" Color="#26FFFFFF" />
+          <SolidColorBrush x:Key="PageBrush" Color="#101215" />
+          <SolidColorBrush x:Key="SurfaceBrush" Color="#181B1F" />
+          <SolidColorBrush x:Key="HairlineBrush" Color="#33FFFFFF" />
+          <SolidColorBrush x:Key="InkBrush" Color="#F3F4F6" />
+          <SolidColorBrush x:Key="MutedInkBrush" Color="#B4BAC3" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>

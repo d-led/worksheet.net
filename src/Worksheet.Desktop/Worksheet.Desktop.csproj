@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Worksheet.Tests" />
+    <InternalsVisibleTo Include="Worksheet.UiTests" />
   </ItemGroup>
 
   <ItemGroup>
