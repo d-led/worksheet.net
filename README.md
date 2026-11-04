@@ -118,14 +118,21 @@ remove a project or a topic, and undo. Answers are sentences, refusals included,
 makes is one undo away in the window's own undo. The port is chosen in *Settings…* in the tray menu;
 `WORKSHEET_MCP_PORT` sets it too, and `0` leaves the server off.
 
+## Rename or retire a project
+
+*Projects and topics…* in the tray menu lists every project in use with how many entries each holds,
+and the topics of the one you choose. Renaming keeps the entries where they are. Retiring a project
+sends its hours to a project you pick and its topics go out of use with it; retiring a topic leaves
+its hours on their days with no topic. Each of those is one change, so undo takes it back in one step.
+
 ## It lives in the tray
 
 Closing the window hides it and the day keeps counting. A click on the tray icon brings the window
 back — it never hides it, so a double click is just two raises — and the menu behind it (a right
-click on Windows and Linux, the icon itself on macOS) holds *Show window*, *Open data folder* and the
-one way to quit. Undo and redo are deliberately not there: they change the day, and a change made
-without the day on screen is a change nobody can see. A second copy leaves quietly instead of
-fighting the first over the same data file.
+click on Windows and Linux, the icon itself on macOS) holds *Show window*, *Connect an agent…*,
+*Projects and topics…*, *Settings…*, *Open data folder* and the one way to quit. Undo and redo are
+deliberately not there: they change the day, and a change made without the day on screen is a change
+nobody can see. A second copy leaves quietly instead of fighting the first over the same data file.
 
 ## Where your data lives
 

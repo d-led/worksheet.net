@@ -69,11 +69,7 @@ public abstract class UiTestBase : IDisposable
     /// <summary>A real click at the middle of the control, so hit testing and bindings both run.</summary>
     protected void Click(Control target)
     {
-        var centre = target.TranslatePoint(new Point(target.Bounds.Width / 2, target.Bounds.Height / 2), Window)
-            ?? throw new InvalidOperationException($"{target.GetType().Name} is not laid out.");
-
-        Window.MouseDown(centre, MouseButton.Left);
-        Window.MouseUp(centre, MouseButton.Left);
+        Mouse.Click(Window, target);
         Settle();
     }
 

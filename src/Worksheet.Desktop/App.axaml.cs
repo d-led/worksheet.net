@@ -75,7 +75,9 @@ public sealed class App : Application
         _window = new MainWindow { DataContext = day };
         desktop.MainWindow = _window;
 
-        TrayHost.Attach(this, ShowWindow, ShowConnect, ShowSettings, OpenDataFolder, () => Quit(desktop));
+        TrayHost.Attach(
+            this,
+            new TrayActions(ShowWindow, ShowConnect, ShowSettings, ShowManage, OpenDataFolder, () => Quit(desktop)));
 
         StartMcp(day, _local);
 
@@ -167,6 +169,26 @@ public sealed class App : Application
             DataContext = new SettingsViewModel(_resolver, LocalLedger.DefaultDirectory),
             Applied = ApplySettings,
         };
+
+        if (_window is null)
+        {
+            window.Show();
+            return;
+        }
+
+        window.Show(_window);
+    }
+
+    /// <summary>Opens the catalogue: what is in use, and the four decisions a person makes about it.</summary>
+    private void ShowManage()
+    {
+        if (_local is null)
+        {
+            return;
+        }
+
+        var model = new ManageViewModel(_local.Ledger) { Changed = () => CurrentDay?.Reload() };
+        var window = new ManageWindow { DataContext = model };
 
         if (_window is null)
         {

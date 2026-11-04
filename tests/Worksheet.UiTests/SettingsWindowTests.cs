@@ -40,15 +40,7 @@ public sealed class SettingsWindowTests
         return window;
     }
 
-    private static void Click(Window window, Button button)
-    {
-        var centre = button.TranslatePoint(new Point(button.Bounds.Width / 2, button.Bounds.Height / 2), window)
-            ?? throw new InvalidOperationException("The button is not laid out.");
-
-        window.MouseDown(centre, MouseButton.Left);
-        window.MouseUp(centre, MouseButton.Left);
-        Dispatcher.UIThread.RunJobs();
-    }
+    private static void Click(Window window, Button button) => Mouse.Click(window, button);
 
     [AvaloniaFact]
     public void The_window_shows_the_values_in_force_and_where_they_came_from()
