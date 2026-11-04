@@ -28,6 +28,7 @@ public sealed class App : Application
     private McpHttpHost? _mcp;
     private SettingsResolver? _resolver;
     private ResolvedSettings? _resolved;
+    private ManageViewModel? _manage;
     private string? _mcpProblem;
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
@@ -117,6 +118,7 @@ public sealed class App : Application
                 if (local.Ledger.Version != version)
                 {
                     day.Reload();
+                    _manage?.Reload();
                 }
 
                 return outcome;
@@ -177,6 +179,10 @@ public sealed class App : Application
 
         var model = new ManageViewModel(_local.Ledger) { Changed = () => CurrentDay?.Reload() };
         var window = new ManageWindow { DataContext = model };
+
+        // Kept while it is open, so a write from an agent reaches the lists as well as the day.
+        _manage = model;
+        window.Closed += (_, _) => _manage = null;
 
         Dialog.ShowOver(window, _window);
     }

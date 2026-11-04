@@ -84,6 +84,9 @@ public sealed partial class ManageViewModel : ObservableObject
     /// <summary>Called after a change, so the day behind this window can read the fold again.</summary>
     public Action? Changed { get; set; }
 
+    /// <summary>Reads the catalogue again after something else wrote to the journal.</summary>
+    public void Reload() => Refresh();
+
     [RelayCommand]
     private void RenameProject()
     {

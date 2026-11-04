@@ -44,6 +44,18 @@ public sealed class ManageViewModelTests
     }
 
     [Fact]
+    public void The_panel_shows_a_rename_made_behind_the_window()
+    {
+        Opened();
+        var panel = new ManageViewModel(_ledger);
+
+        Assert.True(new Catalogue(_ledger).RenameProject("Website", "Client portal").Accepted);
+        panel.Reload();
+
+        Assert.Contains(panel.Projects, row => row.Label == "Client portal (2 entries)");
+    }
+
+    [Fact]
     public void The_chosen_project_shows_its_topics_with_what_each_holds()
     {
         Opened();

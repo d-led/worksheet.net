@@ -63,6 +63,31 @@ public sealed class DayViewModelTests : IDisposable
     }
 
     [Fact]
+    public void A_write_on_another_day_leaves_the_rows_a_person_is_typing_in_alone()
+    {
+        var day = DayWith("Website 09:00 1h");
+        var shown = Assert.Single(day.Rows);
+
+        new EntryComposer(_local.Ledger).Compose(
+            new EntryCommand(Today.AddDays(1), "Website", Topic: null, new TimeOnly(10, 0), TimeSpan.FromHours(1), Note: null));
+        day.Reload();
+
+        Assert.Same(shown, Assert.Single(day.Rows));
+    }
+
+    [Fact]
+    public void A_project_renamed_behind_the_window_reaches_the_rows()
+    {
+        var day = DayWith("Website 09:00 1h");
+
+        Assert.True(new Catalogue(_local.Ledger).RenameProject("Website", "Client portal").Accepted);
+        day.Reload();
+
+        Assert.Contains("Client portal", day.Projects);
+        Assert.Equal("Client portal", EntryRow(day).ProjectText);
+    }
+
+    [Fact]
     public void The_window_can_say_what_went_wrong_at_start_up()
     {
         var day = DayWith();

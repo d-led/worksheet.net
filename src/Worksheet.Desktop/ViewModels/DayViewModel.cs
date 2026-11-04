@@ -107,6 +107,9 @@ public sealed partial class DayViewModel : ObservableObject
 
     private DateOnly Day => DateOnly.FromDateTime(SelectedDate ?? _today.ToDateTime(TimeOnly.MinValue));
 
+    /// <summary>What the window showed after the last refresh, to know whether a reload would differ.</summary>
+    private string _shown = string.Empty;
+
     /// <summary>The day on screen, as a plain date.</summary>
     public DateOnly Date => Day;
 
@@ -255,6 +258,29 @@ public sealed partial class DayViewModel : ObservableObject
         UpdateGuide();
 
         OnPropertyChanged(nameof(IsEmpty));
+
+        _shown = Signature();
+    }
+
+    /// <summary>
+    /// Everything this window shows that comes out of the fold: the day, its kind, the names the
+    /// editors offer, and each entry as an editor would read it. Equal signatures mean a reload
+    /// would rebuild the same rows.
+    /// </summary>
+    private string Signature()
+    {
+        var state = _local.Ledger.State;
+        var layout = DayLayout.Of(state.EntriesOn(Day));
+
+        return string.Join(
+            '\n',
+            new[]
+            {
+                Day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                state.KindOf(Day).ToString(),
+                string.Join('|', ProjectNames(state)),
+            }.Concat(layout.Entries.Select(entry =>
+                $"{entry.Id.Value} {entry.Start:HH:mm} {entry.Duration} {entry.ProjectId} {entry.TopicId} {entry.Note}")));
     }
 
     /// <summary>
@@ -531,7 +557,20 @@ public sealed partial class DayViewModel : ObservableObject
     /// Reads the fold again after something outside this view changed it — an agent through the
     /// MCP server, or the tray. What is on screen is always the fold, so it is re-read, not patched.
     /// </summary>
-    public void Reload() => Refresh();
+    /// <summary>
+    /// Reads the fold again after something else wrote to the journal. A change that cannot be seen
+    /// here — an agent logging on another day, a project renamed — leaves the rows alone, because
+    /// rebuilding them would take the cell a person is typing in with it.
+    /// </summary>
+    public void Reload()
+    {
+        if (Signature() == _shown)
+        {
+            return;
+        }
+
+        Refresh();
+    }
 
     /// <summary>Says something to the person at the window: a start-up problem, or news from elsewhere.</summary>
     public void Say(string message, bool isProblem) => Report(message, isProblem);
