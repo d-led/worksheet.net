@@ -28,7 +28,6 @@ public sealed class App : Application
     private McpHttpHost? _mcp;
     private SettingsResolver? _resolver;
     private ResolvedSettings? _resolved;
-    private ManageViewModel? _manage;
     private WeeklyBackups? _backups;
     private DispatcherTimer? _backupPoll;
     private string? _mcpProblem;
@@ -109,9 +108,8 @@ public sealed class App : Application
 
     /// <summary>
     /// Starts the MCP server on the loopback. Every call is run on the UI thread, because the ledger
-    /// has one writer and the window is reading the same fold; the day is re-read only when a call
-    /// changed the journal. A port someone else holds is said in the window, and the application
-    /// keeps working without its server.
+    /// has one writer and the windows are reading the same fold. A port someone else holds is said in
+    /// the window, and the application keeps working without its server.
     /// </summary>
     private void StartMcp(DayViewModel day, LocalLedger local)
     {
@@ -128,19 +126,7 @@ public sealed class App : Application
 
         var toolkit = new SerialToolkit(
             new WorksheetTools(local.Ledger),
-            work => Dispatcher.UIThread.Invoke(() =>
-            {
-                var version = local.Ledger.Version;
-                var outcome = work();
-
-                if (local.Ledger.Version != version)
-                {
-                    day.Reload();
-                    _manage?.Reload();
-                }
-
-                return outcome;
-            }));
+            work => Dispatcher.UIThread.Invoke(work));
 
         _mcp = McpHttpHost.TryStart(new McpServer(toolkit), settings.Port, out var problem);
 
@@ -195,12 +181,10 @@ public sealed class App : Application
             return;
         }
 
-        var model = new ManageViewModel(_local.Ledger) { Changed = () => CurrentDay?.Reload() };
+        var model = new ManageViewModel(_local.Ledger);
         var window = new ManageWindow { DataContext = model };
 
-        // Kept while it is open, so a write from an agent reaches the lists as well as the day.
-        _manage = model;
-        window.Closed += (_, _) => _manage = null;
+        window.Closed += (_, _) => model.Dispose();
 
         Dialog.ShowOver(window, _window);
     }
@@ -259,6 +243,7 @@ public sealed class App : Application
 
     private void Release()
     {
+        CurrentDay?.Dispose();
         _backupPoll?.Stop();
         _backupPoll = null;
         _backups = null;

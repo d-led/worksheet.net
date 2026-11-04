@@ -57,15 +57,32 @@ public sealed class JournalConcurrencyException(long expectedVersion, long actua
 public sealed class JournalIntegrityException(string message) : Exception(message);
 
 /// <summary>
+/// An observer that runs an action, which is the whole of what a window needs from the stream.
+/// </summary>
+public sealed class Watch(Action<LedgerState> changed) : IObserver<LedgerState>
+{
+    public void OnCompleted()
+    {
+    }
+
+    public void OnError(Exception error)
+    {
+    }
+
+    public void OnNext(LedgerState value) => changed(value);
+}
+
+/// <summary>
 /// The ledger: a fold of a journal, plus the only way to change it. Opening reads a snapshot if
 /// there is one and replays the tail; committing appends and then folds.
 /// </summary>
-public sealed class Ledger
+public sealed class Ledger : IObservable<LedgerState>
 {
     private readonly IEventJournal _journal;
     private readonly ISnapshotStore? _snapshots;
     private readonly SnapshotPolicy _policy;
     private readonly Stack<LedgerEvent> _redo = new();
+    private readonly List<IObserver<LedgerState>> _observers = [];
     private long _snapshottedVersion;
 
     private Ledger(
@@ -85,6 +102,22 @@ public sealed class Ledger
     public LedgerState State { get; }
 
     public long Version => State.Version;
+
+    /// <summary>
+    /// The fold as a stream: the state as it stands when a call subscribes, then once for every
+    /// change. A window that subscribes learns of a change the moment it lands, whoever made it —
+    /// the person at the keyboard, an agent over MCP, an undo — so nothing is refreshed by hand.
+    /// Changes are published on the thread that commits them, which is the one that reads the fold.
+    /// </summary>
+    public IDisposable Subscribe(IObserver<LedgerState> observer)
+    {
+        ArgumentNullException.ThrowIfNull(observer);
+
+        _observers.Add(observer);
+        observer.OnNext(State);
+
+        return new Unsubscriber(this, observer);
+    }
 
     public bool CanUndo => Version > 0;
 
@@ -148,7 +181,22 @@ public sealed class Ledger
 
         TakeSnapshotIfDue();
 
+        Published();
+
         return State;
+    }
+
+    private void Published()
+    {
+        foreach (var observer in _observers.ToArray())
+        {
+            observer.OnNext(State);
+        }
+    }
+
+    private sealed class Unsubscriber(Ledger ledger, IObserver<LedgerState> observer) : IDisposable
+    {
+        public void Dispose() => ledger._observers.Remove(observer);
     }
 
     /// <summary>

@@ -56,7 +56,6 @@ public sealed class DayViewModelTests : IDisposable
 
         new EntryComposer(_local.Ledger).Compose(
             new EntryCommand(Today, "Mobile", Topic: null, new TimeOnly(10, 0), TimeSpan.FromHours(1), Note: null));
-        day.Reload();
 
         Assert.Equal(2, day.Rows.Count);
         Assert.Equal("2h", day.Total);
@@ -70,7 +69,6 @@ public sealed class DayViewModelTests : IDisposable
 
         new EntryComposer(_local.Ledger).Compose(
             new EntryCommand(Today.AddDays(1), "Website", Topic: null, new TimeOnly(10, 0), TimeSpan.FromHours(1), Note: null));
-        day.Reload();
 
         Assert.Same(shown, Assert.Single(day.Rows));
     }
@@ -81,7 +79,6 @@ public sealed class DayViewModelTests : IDisposable
         var day = DayWith("Website 09:00 1h");
 
         Assert.True(new Catalogue(_local.Ledger).RenameProject("Website", "Client portal").Accepted);
-        day.Reload();
 
         Assert.Contains("Client portal", day.Projects);
         Assert.Equal("Client portal", EntryRow(day).ProjectText);

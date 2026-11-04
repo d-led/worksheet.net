@@ -19,13 +19,14 @@ namespace Worksheet.Desktop.ViewModels;
 /// text, or a correction of a row. It never holds entries of its own; what is shown is always the
 /// fold of the journal.
 /// </summary>
-public sealed partial class DayViewModel : ObservableObject
+public sealed partial class DayViewModel : ObservableObject, IDisposable
 {
     private readonly LocalLedger _local;
     private readonly EntryComposer _composer;
     private readonly DayCalendar _calendar;
     private readonly DateOnly _today;
     private readonly Func<DateTimeOffset> _now;
+    private readonly IDisposable _untilTheLedgerChanges;
 
     [ObservableProperty]
     private DateTime? _selectedDate;
@@ -86,7 +87,11 @@ public sealed partial class DayViewModel : ObservableObject
         _selectedDate = _today.ToDateTime(TimeOnly.MinValue);
 
         Refresh();
+
+        _untilTheLedgerChanges = local.Ledger.Subscribe(new Watch(_ => Reload()));
     }
+
+    public void Dispose() => _untilTheLedgerChanges.Dispose();
 
     /// <summary>Entries and the holes between them, in start order.</summary>
     public ObservableCollection<object> Rows { get; } = [];
@@ -561,11 +566,11 @@ public sealed partial class DayViewModel : ObservableObject
     /// MCP server, or the tray. What is on screen is always the fold, so it is re-read, not patched.
     /// </summary>
     /// <summary>
-    /// Reads the fold again after something else wrote to the journal. A change that cannot be seen
-    /// here — an agent logging on another day, a project renamed — leaves the rows alone, because
-    /// rebuilding them would take the cell a person is typing in with it.
+    /// Reads the fold again after a change landed. A change that cannot be seen here — an agent
+    /// logging on another day, a project renamed — leaves the rows alone, because rebuilding them
+    /// would take the cell a person is typing in with it.
     /// </summary>
-    public void Reload()
+    private void Reload()
     {
         if (Signature() == _shown)
         {

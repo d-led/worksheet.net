@@ -26,6 +26,20 @@ public sealed class LedgerTests
         Core.Ledger.Open(journal, snapshots, policy);
 
     [Fact]
+    public void A_subscriber_hears_the_state_it_finds_and_every_change_after_it()
+    {
+        var ledger = Opened(new InMemoryJournal());
+        var heard = new List<long>();
+
+        using var until = ledger.Subscribe(new Watch(state => heard.Add(state.Version)));
+
+        ledger.Commit(new ProjectOpened(Project, "Website"));
+        ledger.Commit(new EntryLogged(EntryAt("09:00", 90)));
+
+        Assert.Equal([0, 1, 2], heard);
+    }
+
+    [Fact]
     public void Undo_puts_the_ledger_back_where_it_was()
     {
         var ledger = Opened(new InMemoryJournal());

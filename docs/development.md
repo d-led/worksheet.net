@@ -58,7 +58,7 @@ per method, worst first, and exits non-zero if any method is over 10. It merges 
 generated XAML members, and skips the composition roots (`App`, `Program`) — they only wire parts
 together, and every part is measured where it lives.
 
-Current state: 611 methods, no method over CRAP 10, method-average coverage 94.6%. What stays
+Current state: 621 methods, no method over CRAP 10, method-average coverage 94.0%. What stays
 uncovered needs a window server session — the tray, the composition root, the save dialog's file
 picker — or is a guard against a state a test cannot reach on purpose.
 
@@ -167,6 +167,11 @@ Three choices in the window look like omissions and are not:
   hidden is one nobody can see. The footer carries both, with their key combinations.
 - **A second copy of the process exits at start-up** instead of opening the same data file twice,
   because one process is the only writer (`docs/adr/0001-event-sourced-ledger.md`).
+- **The ledger is the stream.** `Ledger` implements `IObservable<LedgerState>`: subscribing hands
+  over the state as it stands, then every version after it, published on the thread that committed.
+  Windows subscribe instead of being told to reload — that tells are what left the catalogue window
+  stale when an agent wrote through MCP. The fold stays a live single-writer object, so an observer
+  reads it on the thread that changed it and nothing needs a lock.
 - **`settings.json` is a file of its own**, apart from the journal, so that a preference is never part
   of the undo history.
 - **The weekly copy is noticed by an hourly poll**, not by an alarm at midnight: the application may

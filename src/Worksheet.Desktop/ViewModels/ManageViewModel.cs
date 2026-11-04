@@ -26,10 +26,11 @@ public sealed record CatalogueRow(string Name, int Entries)
 /// decisions — rename a project, drop it with somewhere for its hours to go, rename a topic, drop a
 /// topic. Every decision is one journal change, so undo takes any of them back in one step.
 /// </summary>
-public sealed partial class ManageViewModel : ObservableObject
+public sealed partial class ManageViewModel : ObservableObject, IDisposable
 {
     private readonly Ledger _ledger;
     private readonly Catalogue _catalogue;
+    private readonly IDisposable _untilTheLedgerChanges;
 
     [ObservableProperty]
     private CatalogueRow? _selectedProject;
@@ -61,7 +62,11 @@ public sealed partial class ManageViewModel : ObservableObject
         _catalogue = new Catalogue(ledger);
 
         Refresh();
+
+        _untilTheLedgerChanges = ledger.Subscribe(new Watch(_ => Refresh()));
     }
+
+    public void Dispose() => _untilTheLedgerChanges.Dispose();
 
     /// <summary>Every project in use, with what it holds.</summary>
     public ObservableCollection<CatalogueRow> Projects { get; } = [];
@@ -80,12 +85,6 @@ public sealed partial class ManageViewModel : ObservableObject
     partial void OnMessageChanged(string? value) => OnPropertyChanged(nameof(HasMessage));
 
     partial void OnSelectedProjectChanged(CatalogueRow? value) => RefreshTopics();
-
-    /// <summary>Called after a change, so the day behind this window can read the fold again.</summary>
-    public Action? Changed { get; set; }
-
-    /// <summary>Reads the catalogue again after something else wrote to the journal.</summary>
-    public void Reload() => Refresh();
 
     [RelayCommand]
     private void RenameProject()
@@ -170,7 +169,6 @@ public sealed partial class ManageViewModel : ObservableObject
         Message = message;
 
         Refresh();
-        Changed?.Invoke();
     }
 
     private void Refuse(string? reason)

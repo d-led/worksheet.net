@@ -50,7 +50,6 @@ public sealed class ManageViewModelTests
         var panel = new ManageViewModel(_ledger);
 
         Assert.True(new Catalogue(_ledger).RenameProject("Website", "Client portal").Accepted);
-        panel.Reload();
 
         Assert.Contains(panel.Projects, row => row.Label == "Client portal (2 entries)");
     }
@@ -152,20 +151,19 @@ public sealed class ManageViewModelTests
     }
 
     [Fact]
-    public void The_panel_says_when_the_ledger_changed()
+    public void The_panel_itself_says_what_it_did()
     {
         Opened();
-        var told = 0;
         var panel = new ManageViewModel(_ledger)
         {
             SelectedProject = Row("Website"),
             NewProjectName = "Portal",
-            Changed = () => told++,
         };
 
         panel.RenameProjectCommand.Execute(null);
 
-        Assert.Equal(1, told);
+        Assert.Equal("The project is called 'Portal' now.", panel.Message);
+        Assert.Contains(panel.Projects, row => row.Name == "Portal");
     }
 
     [Fact]
