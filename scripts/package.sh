@@ -80,9 +80,10 @@ publish() {
   rm -f "$output"/*.pdb
 }
 
-# The executable comes out as Worksheet.Desktop; every artefact calls it worksheet.
+# The executable comes out as Worksheet.Desktop; every artefact calls it worksheet, inside the
+# folder of its platform — the platform is said once, by the folder, not by every file name.
 single_file() {
-  local rid=$1 output="$staging/$1/publish" name="worksheet-$rid"
+  local rid=$1 output="$staging/$1/publish" name=worksheet
   local binary="$output/Worksheet.Desktop"
 
   [ -f "$binary.exe" ] && binary="$binary.exe" && name="$name.exe"
@@ -96,8 +97,8 @@ single_file() {
     exit 1
   fi
 
-  mv "$binary" "$artifacts/$name"
-  echo "  $artifacts/$name"
+  mv "$binary" "$artifacts/$rid/$name"
+  echo "  $artifacts/$rid/$name"
 }
 
 # An .icns built from the same picture the window uses: the sizes Finder asks for, upscaled
@@ -119,12 +120,12 @@ app_icon() {
 
 # A bundle that can be dragged into /Applications, and a disk image that shows where to drag it.
 macos_app() {
-  local rid=$1 app="$artifacts/worksheet-$rid.app"
+  local rid=$1 app="$artifacts/$rid/Worksheet.app"
 
   rm -rf "$app"
   mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 
-  cp "$artifacts/worksheet-$rid" "$app/Contents/MacOS/worksheet"
+  cp "$artifacts/$rid/worksheet" "$app/Contents/MacOS/worksheet"
   chmod +x "$app/Contents/MacOS/worksheet"
   sed "s/@VERSION@/$version/" packaging/macos/Info.plist.in > "$app/Contents/Info.plist"
 
@@ -138,10 +139,12 @@ macos_app() {
     plutil -lint "$app/Contents/Info.plist" >/dev/null
   fi
 
-  rm -f "$artifacts/worksheet-$rid.app.zip"
-  (cd "$artifacts" && zip -qry "worksheet-$rid.app.zip" "worksheet-$rid.app" -x '*/.DS_Store')
+  rm -f "$artifacts/$rid/Worksheet.zip"
+  (cd "$artifacts/$rid" && zip -qry "Worksheet.zip" "Worksheet.app" -x '*/.DS_Store')
+
+  register "$app"
   echo "  $app"
-  echo "  $artifacts/worksheet-$rid.app.zip"
+  echo "  $artifacts/$rid/Worksheet.zip"
 
   [ "$make_dmg" = true ] || return 0
 
@@ -152,34 +155,51 @@ macos_app() {
 
   local stage="$staging/dmg-$rid"
 
-  rm -rf "$stage" "$artifacts/worksheet-$rid.dmg"
+  rm -rf "$stage" "$artifacts/$rid/Worksheet.dmg"
   mkdir -p "$stage"
   cp -R "$app" "$stage/"
   ln -s /Applications "$stage/Applications"
 
   hdiutil create -quiet -volname "Worksheet $version" -srcfolder "$stage" \
-    -format UDZO -ov "$artifacts/worksheet-$rid.dmg"
-  echo "  $artifacts/worksheet-$rid.dmg"
+    -format UDZO -ov "$artifacts/$rid/Worksheet.dmg"
+  echo "  $artifacts/$rid/Worksheet.dmg"
+}
+
+# Finder draws a bundle's icon from the LaunchServices record, and a bundle assembled by a script
+# has none until something reads its Info.plist — which is why an app built here shows a blank icon
+# until it has been launched once. Reading it now is the whole fix.
+register() {
+  local lsregister=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+
+  touch "$1"
+
+  if [ -x "$lsregister" ]; then
+    "$lsregister" -f "$1" >/dev/null 2>&1 || echo "  could not register $1 with LaunchServices" >&2
+  fi
 }
 
 # A tarball that unpacks to /opt/worksheet and carries the entry that puts it in the app menu.
 linux_tar() {
   local rid=$1 stage="$staging/linux-$rid/worksheet"
 
-  rm -rf "$staging/linux-$rid" "$artifacts/worksheet-$rid.tar.gz"
+  rm -rf "$staging/linux-$rid" "$artifacts/$rid/worksheet.tar.gz"
   mkdir -p "$stage"
 
-  cp "$artifacts/worksheet-$rid" "$stage/worksheet"
+  cp "$artifacts/$rid/worksheet" "$stage/worksheet"
   chmod +x "$stage/worksheet"
   cp src/Worksheet.Desktop/Assets/app.png "$stage/worksheet.png"
   cp packaging/linux/worksheet.desktop "$stage/"
 
-  tar -czf "$artifacts/worksheet-$rid.tar.gz" -C "$staging/linux-$rid" worksheet
-  echo "  $artifacts/worksheet-$rid.tar.gz"
+  tar -czf "$artifacts/$rid/worksheet.tar.gz" -C "$staging/linux-$rid" worksheet
+  echo "  $artifacts/$rid/worksheet.tar.gz"
 }
 
 for rid in "${rids[@]}"; do
   echo "$rid"
+
+  rm -rf "$artifacts/$rid"
+  mkdir -p "$artifacts/$rid"
+
   publish "$rid"
   single_file "$rid"
 
@@ -190,4 +210,4 @@ for rid in "${rids[@]}"; do
   esac
 done
 
-echo "done: $(ls "$artifacts" | wc -l | tr -d ' ') artefacts in $artifacts/"
+echo "done: $(find "$artifacts" -mindepth 2 -maxdepth 2 | wc -l | tr -d ' ') artefacts in $artifacts/<platform>/"

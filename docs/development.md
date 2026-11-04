@@ -69,19 +69,31 @@ scripts/package.sh osx-arm64        # one named runtime
 scripts/package.sh all              # every runtime, or --no-dmg to skip the disk image
 ```
 
-It publishes with the same flags the workflow uses and then shapes the artefact:
+It publishes with the same flags the workflow uses and then shapes the artefact. Each platform gets
+its own folder, so the platform is said once instead of in every file name:
 
-| platform | what lands in `artifacts/` |
+| folder | what is in it |
 |---|---|
-| macOS | `worksheet-<rid>` (the bare binary), `worksheet-<rid>.app` to drag into `/Applications`, the same as `.app.zip`, and a `.dmg` holding the app beside a link to `/Applications` |
-| Linux | `worksheet-<rid>`, and `worksheet-<rid>.tar.gz` with the binary, its icon and a desktop entry that expects `/opt/worksheet` |
-| Windows | `worksheet-<rid>.exe` — copying it somewhere is the installation |
+| `artifacts/osx-arm64/` (and `osx-x64`) | `worksheet` (the bare binary, as the installer downloads it), `Worksheet.app` to drag into `/Applications`, `Worksheet.zip`, `Worksheet.dmg` (the app beside a link to `/Applications`) |
+| `artifacts/linux-x64/` (and `linux-arm64`) | `worksheet`, and `worksheet.tar.gz` with the binary, its icon and a desktop entry that expects `/opt/worksheet` |
+| `artifacts/win-x64/` | `worksheet.exe` — copying it somewhere is the installation |
 
 `IncludeNativeLibrariesForSelfExtract` is what makes it *one* file: without it Skia and HarfBuzz
 stay beside the executable. The script drops the `.pdb`s those libraries leave behind and refuses to
 ship a directory holding more than one file. Compression stays off — slow to start, unvalidated with
 Avalonia. An unsigned `.app` runs on the machine that built it; a downloaded one needs
 `xattr -d com.apple.quarantine` or a signature.
+
+Two macOS details look like bugs the first time and are not:
+
+- the bundle sets `LSUIElement`, so the application has **no Dock icon** by design — it lives in the
+  menu bar, and the menu-bar item is the only icon it is meant to show;
+- Finder draws a bundle's icon from the *LaunchServices record*, and a bundle assembled by a script
+  has none until something reads its `Info.plist`. That is why a freshly built `.app` shows a blank
+  icon until it has been launched once. `scripts/package.sh` now registers the bundle with
+  `lsregister -f` after assembling it, so the icon is there before the first launch. Moving the
+  bundle afterwards leaves the old record behind, so a copy in `/Applications` can still look
+  iconless until it is launched once or registered with `lsregister -f`.
 
 RIDs: `osx-arm64`, `osx-x64`, `win-x64`, `linux-x64`, `linux-arm64`. Binaries are 96–113 MB.
 
