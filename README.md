@@ -155,10 +155,16 @@ decision and is not offered yet.
 
 ## The tray
 
-Closing the window hides it; the day keeps counting. A click on the tray icon raises the window. The
-menu — a right click on Windows and Linux, the icon itself on macOS — holds *Show window*, *Connect
-an agent…*, *Projects and topics…*, *Settings…*, *Open data folder* and *Quit*. A second copy exits
-at start-up.
+Closing the window hides it; the day keeps counting.
+
+On Windows and Linux a click on the tray icon raises the window, and a right click opens the menu.
+On macOS a click on the icon opens that menu — the platform gives an application no click of its own
+for an icon that carries a menu — and the window comes back either from *Show window*, the menu's
+first entry, or by starting the application again: the copy that is already running raises its
+window instead of a second one starting.
+
+The menu holds *Show window*, *Connect an agent…*, *Projects and topics…*, *Settings…*, *Open data
+folder* and *Quit*.
 
 The window offers the same four screens without the tray: the *⋯* at the right of the heading opens
 *Settings…*, *Projects and topics…*, *Connect an agent…* and *Open data folder*. Only *Quit* lives in

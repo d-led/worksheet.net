@@ -10,7 +10,8 @@ namespace Worksheet.Tests;
 /// <summary>A second copy of the application must not fight the first over the store.</summary>
 public sealed class SingleInstanceTests
 {
-    private static string NewName() => $"Worksheet.Tests.{Guid.NewGuid():N}";
+    /// <summary>A short name per test: a pipe's path carries the temporary folder, and macOS caps it.</summary>
+    private static string NewName() => $"W{Guid.NewGuid():N}"[..12];
 
     [Fact]
     public void The_first_copy_takes_the_instance()
@@ -53,5 +54,26 @@ public sealed class SingleInstanceTests
 
         Assert.NotNull(first);
         Assert.NotNull(second);
+    }
+
+    [Fact]
+    public void A_second_copy_asks_the_running_one_for_its_window()
+    {
+        var name = NewName();
+        using var first = SingleInstance.TryAcquire(name);
+        using var heard = new ManualResetEventSlim();
+
+        Assert.NotNull(first);
+        first.Summoned += (_, _) => heard.Set();
+
+        SingleInstance.Summon(name);
+
+        Assert.True(heard.Wait(TimeSpan.FromSeconds(10)), "the running copy heard the second");
+    }
+
+    [Fact]
+    public void Summoning_a_window_that_is_not_there_is_not_an_error()
+    {
+        Assert.Null(Record.Exception(() => SingleInstance.Summon(NewName())));
     }
 }

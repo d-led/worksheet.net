@@ -44,8 +44,9 @@ public sealed class App : Application
             }
             else
             {
-                // The store is single-writer, so a second instance would fail on the lock anyway.
-                // Handing the window to the running instance is a later slice.
+                // The store is single-writer, so a second copy would fail on the lock anyway; it
+                // asks the copy that is running for its window instead, and leaves.
+                SingleInstance.Summon(InstanceName);
                 desktop.Shutdown();
             }
         }
@@ -57,7 +58,34 @@ public sealed class App : Application
     {
         _instance = SingleInstance.TryAcquire(InstanceName);
 
-        return _instance is not null;
+        if (_instance is null)
+        {
+            return false;
+        }
+
+        // Raised on a pool thread, so the window is raised where windows live.
+        _instance.Summoned += (_, _) => Dispatcher.UIThread.Post(ShowWindow);
+
+        return true;
+    }
+
+    /// <summary>
+    /// macOS asks the running application to reopen when its icon is opened again — a double click
+    /// on the bundle. That arrives here rather than as a second process, so it is the only way a
+    /// click outside the running window can bring it back on that platform.
+    /// </summary>
+    private void StartListeningForReopen()
+    {
+        if (ApplicationLifetime is IActivatableLifetime activatable)
+        {
+            activatable.Activated += (_, e) =>
+            {
+                if (e.Kind is ActivationKind.Reopen)
+                {
+                    ShowWindow();
+                }
+            };
+        }
     }
 
     private void Start(IClassicDesktopStyleApplicationLifetime desktop)
@@ -82,6 +110,7 @@ public sealed class App : Application
             this,
             new TrayActions(ShowWindow, ShowConnect, ShowSettings, ShowManage, OpenDataFolder, () => Quit(desktop)));
 
+        StartListeningForReopen();
         StartMcp(day, _local);
         StartWeeklyBackups(_local);
 

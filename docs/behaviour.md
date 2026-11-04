@@ -30,7 +30,9 @@ and records decisions; it is not a description of any other program's source.
    screens — settings, projects and topics, the agent connection, the data
    folder — so a platform without a tray icon loses only *Quit*. Each of those
    windows leaves on Escape; in the catalogue, a name that differs from the
-   journal is put back first, and the next Escape leaves.
+   journal is put back first, and the next Escape leaves. Starting the
+   application again raises the window of the copy that is running, rather than
+   starting a second copy beside it.
 6. Follows the system's light or dark appearance, and its accent colour.
 7. Keeps everything in one file in the per-user data directory.
 

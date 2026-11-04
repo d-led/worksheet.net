@@ -58,7 +58,7 @@ per method, worst first, and exits non-zero if any method is over 10. It merges 
 generated XAML members, and skips the composition roots (`App`, `Program`) — they only wire parts
 together, and every part is measured where it lives.
 
-Current state: 673 methods, no method over CRAP 10, method-average coverage 94.5%. What stays
+Current state: 678 methods, no method over CRAP 10, method-average coverage 94.4%. What stays
 uncovered needs a window server session — the tray, the composition root, the save dialog's file
 picker — or is a guard against a state a test cannot reach on purpose.
 
@@ -181,6 +181,18 @@ Some choices in the window look like omissions and are not:
   run for days without being restarted, and may not be running at midnight at all. The copy is taken
   on the UI thread, with the store's own gate held and after a checkpoint, because the ledger has one
   writer and the file it has open is the only consistent thing there is to copy.
+- **The second copy asks the first for its window.** The store is single-writer, so a second copy is
+  refused the mutex; it used to leave silently, which made starting the application again do
+  nothing visible. It now connects to a named pipe the running copy holds and leaves, and the running
+  copy raises its window. A named pipe rather than a named event, because .NET implements named
+  synchronization primitives only on Windows. The pipe's path carries the temporary folder and macOS
+  caps a socket path at 104 characters, so the name is short and a pipe that cannot be had simply
+  means no summons rather than a failure to start. macOS asks a running application to *reopen*
+  rather than starting a second process, so `ActivationKind.Reopen` raises the window too.
+- **On macOS a click on the tray icon cannot raise the window.** Avalonia's own documentation says
+  `TrayIcon.Clicked` is never raised on macOS, and an icon that carries a menu opens the menu instead;
+  so the way in on that platform is the menu's first entry, or starting the application again. The
+  tray menu's *Show window* is first for that reason.
 - **A merge is one journal change.** Renaming a project or a topic onto a name already in use
   rewrites entries and re-homes or retires topics, which is several changes; they travel as one
   `Batch`, so the journal records one decision and one undo takes the whole of it back. The
