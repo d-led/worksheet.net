@@ -10,13 +10,15 @@ namespace Worksheet.Export;
 
 /// <summary>
 /// The report as one page: totals with their shares, a bar per project and a bar per project and
-/// topic, a lane per project and topic over the days of the range, and a foldable list of the days.
-/// Bootstrap from a CDN gives it its typography and its bars; the one script is the page's own and
-/// sorts a table when a heading is pressed.
+/// topic, a gantt of the range as it was worked, and a foldable list of the days. Bootstrap from a
+/// CDN gives it its typography and its bars, mermaid from a CDN draws the gantt, and the one script
+/// of the page's own sorts a table when a heading is pressed.
 /// </summary>
 public static class ReportHtml
 {
     private const string Bootstrap = "https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css";
+
+    private const string Mermaid = "https://cdn.jsdelivr.net/npm/mermaid@12.3.0/dist/mermaid.esm.min.mjs";
 
     public static string Of(RangeReport report, DateTimeOffset generatedAt)
     {
@@ -193,148 +195,78 @@ public static class ReportHtml
               <h2 class="h5 mb-3">The range as it was worked</h2>
               {{(report.Days.Count == 0 || report.Projects.Count == 0
                   ? "<p class=\"text-body-secondary mb-0\">Nothing to draw.</p>\n"
-                  : Timeline(report))}}
+                  : Gantt(report))}}
             </div>
           </section>
 
           """;
 
     /// <summary>
-    /// A lane per project and topic, one column per day worked, and a mark in the column for every
-    /// range: the picture is read down a lane instead of down one line per range, which is what a
-    /// gantt of the same data would spend its height on.
+    /// The range as a gantt, one swimlane per project: mermaid draws the bars, the axis and the
+    /// section bands, which is more picture than a page carried by hand can justify — and its
+    /// sections are the thing the hand-drawn lanes could not do. Up to two months every range keeps
+    /// its own bar; beyond that a bar per project per day, because a year of single afternoons is a
+    /// thicket rather than a picture.
     /// </summary>
-    private static string Timeline(RangeReport report)
+    private static string Gantt(RangeReport report)
     {
-        var days = report.Days.Select(day => day.Date).ToArray();
-        var lanes = Lanes(report);
-        var (from, span) = Window(report);
-        var table = new StringBuilder();
+        var perEntry = report.Range.Days <= 62;
+        var lines = new StringBuilder();
+        var id = 0;
 
-        table.AppendLine("<table class=\"table table-sm align-middle mb-0\">");
-        table.AppendLine(
-            "  <thead><tr><th scope=\"col\">Project and topic</th><th scope=\"col\" class=\"text-end\">Time</th>"
-            + $"<th scope=\"col\" style=\"width:55%\">{DayHeadings(days, from, span)}</th></tr></thead>");
-        table.AppendLine("  <tbody>");
+        lines.AppendLine("gantt");
+        lines.AppendLine(CultureInfo.InvariantCulture, $"    title {Label(report.Range.Label)}");
+        lines.AppendLine(CultureInfo.InvariantCulture, $"    dateFormat {(perEntry ? "YYYY-MM-DD HH:mm" : "YYYY-MM-DD")}");
+        lines.AppendLine(CultureInfo.InvariantCulture, $"    axisFormat {(report.Range.Days == 1 ? "%H:%M" : "%d %b")}");
+        lines.AppendLine("    todayMarker off");
 
-        foreach (var lane in lanes)
+        foreach (var project in report.Projects)
         {
-            table.AppendLine(LaneRow(lane, report, days, from, span));
-        }
+            lines.AppendLine(CultureInfo.InvariantCulture, $"    section {Label(project.Project)}");
 
-        table.Append("  </tbody>\n</table>\n");
-
-        return table.ToString();
-    }
-
-    /// <summary>
-    /// The hours the range was actually worked in — from the earliest start to the latest end. A day
-    /// column is scaled to that window rather than to midnight, which is what keeps an hour from
-    /// being a hair on a wide column.
-    /// </summary>
-    private static (double From, double Span) Window(RangeReport report)
-    {
-        var entries = report.Days.SelectMany(day => day.Entries).ToArray();
-
-        if (entries.Length == 0)
-        {
-            return (0, 24 * 60);
-        }
-
-        var from = entries.Min(entry => entry.Start.ToTimeSpan().TotalMinutes);
-        var to = entries.Max(entry => entry.Start.ToTimeSpan().TotalMinutes + entry.Minutes);
-
-        return (from, Math.Max(to - from, 60));
-    }
-
-    /// <summary>One lane: a project, one of its topics, and the hours that topic holds in the range.</summary>
-    private sealed record Lane(string Project, string Topic, int Minutes, string Colour)
-    {
-        public bool Holds(EntryLine entry) =>
-            entry.Project == Project && (entry.Topic ?? TopicLine.WithoutTopic) == Topic;
-    }
-
-    /// <summary>The lanes in the order the tables name them, each with a colour that tells it apart.</summary>
-    private static Lane[] Lanes(RangeReport report)
-    {
-        string[] colours = ["primary", "success", "info", "warning", "secondary"];
-        var lanes = new List<Lane>();
-
-        for (var index = 0; index < report.Projects.Count; index++)
-        {
-            var project = report.Projects[index];
-            var colour = colours[index % colours.Length];
-
-            foreach (var topic in project.Topics)
+            foreach (var bar in Bars(report, project.Project, perEntry))
             {
-                lanes.Add(new Lane(project.Project, topic.Label, topic.Minutes, colour));
+                lines.AppendLine(CultureInfo.InvariantCulture, $"        {Label(bar.Label)} :e{++id}, {bar.Start}, {bar.Minutes}m");
             }
         }
 
-        return [.. lanes];
+        return MermaidBlock(lines.ToString());
     }
 
-    private static string DayHeadings(DateOnly[] days, double from, double span) =>
-        "<div class=\"d-flex gap-1 small text-body-secondary\">"
-        + $"<span class=\"flex-fill text-end pe-1\">{Esc(Clock(from))}</span>"
-        + string.Concat(days.Select(day => $"<span class=\"flex-fill text-center\">{Esc(Reports(day))}</span>"))
-        + $"<span class=\"flex-fill ps-1\">{Esc(Clock(from + span))}</span>"
-        + "</div>";
+    private static IEnumerable<(string Label, string Start, int Minutes)> Bars(RangeReport report, string project, bool perEntry) =>
+        perEntry ? EntryBars(report, project) : DayBars(report, project);
 
-    private static string Clock(double minutes) =>
-        TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(minutes % (24 * 60)))
-            .ToString("HH:mm", CultureInfo.InvariantCulture);
+    /// <summary>One bar per range, named for its topic and its length: the picture the day itself makes.</summary>
+    private static IEnumerable<(string Label, string Start, int Minutes)> EntryBars(RangeReport report, string project) =>
+        report.Days
+            .SelectMany(day => day.Entries.Select(entry => (Day: day.Date, Entry: entry)))
+            .Where(pair => pair.Entry.Project == project)
+            .Select(pair => (
+                $"{pair.Entry.Topic ?? pair.Entry.Project} {Shares.Hours(pair.Entry.Minutes)}",
+                $"{IsoDay(pair.Day)} {Clock(pair.Entry.Start)}",
+                pair.Entry.Minutes));
 
-    private static string LaneRow(Lane lane, RangeReport report, DateOnly[] days, double from, double span)
-    {
-        var cells = new StringBuilder();
+    /// <summary>One bar per day the project was worked on, for a range too long to show every range in.</summary>
+    private static IEnumerable<(string Label, string Start, int Minutes)> DayBars(RangeReport report, string project) =>
+        report.Days
+            .Select(day => (day.Date, Minutes: day.Entries.Where(entry => entry.Project == project).Sum(entry => entry.Minutes)))
+            .Where(day => day.Minutes > 0)
+            .Select(day => (
+                $"{Reports(day.Date)} ({Shares.Hours(day.Minutes)})",
+                IsoDay(day.Date),
+                Math.Min(day.Minutes, 24 * 60)));
 
-        foreach (var day in days)
-        {
-            cells.Append(
-                "<div class=\"flex-fill position-relative rounded-1\" style=\"height:22px;background:#EEF1F4\">"
-                + Marks(lane, report, day, from, span)
-                + "</div>");
-        }
+    private static string MermaidBlock(string diagram) =>
+        $"<div class=\"overflow-auto\"><pre class=\"mermaid\">\n{diagram.Replace("<", "&lt;").Replace(">", "&gt;")}</pre></div>\n";
 
-        return "    <tr>"
-            + $"<td>{Esc(lane.Project)} · {Esc(lane.Topic)}</td>"
-            + $"<td class=\"text-end text-nowrap\">{Esc(Shares.Hours(lane.Minutes))}</td>"
-            + $"<td><div class=\"d-flex gap-1\">{cells}</div></td>"
-            + "</tr>";
-    }
+    /// <summary>A label mermaid reads: no colon, which starts a task's data, no quote, and one line.</summary>
+    private static string Label(string text) =>
+        text.Replace("\r", " ").Replace("\n", " ").Replace(":", "·").Replace("\"", "'").Trim();
 
-    /// <summary>Every range of one lane on one day, placed on the hours that were worked.</summary>
-    private static string Marks(Lane lane, RangeReport report, DateOnly date, double from, double span)
-    {
-        var marks = new StringBuilder();
-
-        foreach (var entry in report.Days.Where(day => day.Date == date).SelectMany(day => day.Entries).Where(lane.Holds))
-        {
-            marks.Append(
-                CultureInfo.InvariantCulture,
-                $"<span class=\"position-absolute top-0 bottom-0 bg-{lane.Colour} rounded-1\""
-                + $" style=\"{Place(entry, from, span)}\" title=\"{Esc(When(entry))}\"></span>");
-        }
-
-        return marks.ToString();
-    }
-
-    /// <summary>Where a range sits in that window, as left and width, and never thinner than a hair.</summary>
-    private static string Place(EntryLine entry, double from, double span)
-    {
-        var left = (entry.Start.ToTimeSpan().TotalMinutes - from) / span * 100;
-        var width = Math.Max(entry.Minutes / span * 100, 2);
-
-        return $"left:{Frac(left)}%;width:{Frac(width)}%";
-    }
-
-    private static string When(EntryLine entry) =>
-        $"{Clock(entry.Start)}–{Clock(entry.End)} · {Shares.Hours(entry.Minutes)}";
+    /// <summary>A day as mermaid parses it, in the format the chart declares.</summary>
+    private static string IsoDay(DateOnly day) => day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     private static string Clock(TimeOnly time) => time.ToString("HH:mm", CultureInfo.InvariantCulture);
-
-    private static string Frac(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
 
     private static string Detail(RangeReport report) =>
         report.Days.Count == 0
@@ -400,17 +332,32 @@ public static class ReportHtml
         $$"""
           <footer class="text-body-secondary small mt-5">
             <p class="mb-1">Made by Worksheet from its journal. Days that hold nothing are left out; the total is what the journal says, not a guess at a working day.</p>
-            <p class="mb-0">This page loads Bootstrap from jsDelivr. Without a connection it still reads, unstyled.</p>
+            <p class="mb-0">This page loads Bootstrap and mermaid from jsDelivr. Without a connection it still reads, unstyled; the gantt is then not drawn.</p>
           </footer>
 
           """;
 
     /// <summary>
-    /// The page's one script: pressing a heading sorts its column, by the number in the cell when the
-    /// column is time or share and by the name otherwise. It is inline and it is all there is, so the
-    /// page sorts itself from a file with no connection.
+    /// The two scripts: mermaid, which draws the gantt, and the page's own, which sorts a table by the
+    /// number in the cell when the column is time or share and by the name otherwise. The sorter is
+    /// inline, so the tables work from a file with no connection; the gantt does not.
     /// </summary>
     private static string Scripts() =>
+        $$"""
+          <script type="module">
+            import mermaid from '{{Mermaid}}';
+            mermaid.initialize({
+              startOnLoad: true,
+              securityLevel: 'strict',
+              gantt: { barHeight: 16, barGap: 6, topPadding: 40, gridLineStartPadding: 20, fontSize: 11, sectionFontSize: 13 }
+            });
+          </script>
+          {{Sorter()}}
+
+          """;
+
+    /// <summary>Pressing a heading sorts its column, by the number in the cell when it is time or share.</summary>
+    private static string Sorter() =>
         $$"""
           <script>
             for (const table of document.querySelectorAll('table[data-sortable]')) {

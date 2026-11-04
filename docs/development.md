@@ -263,8 +263,12 @@ Some choices in the window look like omissions and are not:
 
 Two export details that come from the same kind of reasoning: the JSON opens with a `version`
 (`ReportJson.FormatVersion`) that counts up only when a reader of the older file would read the newer
-one wrongly — a field merely added does not move it — and the page's Bootstrap comes from a CDN,
-which is why its typography and bars need a connection and its tables and marks do not.
+one wrongly — a field merely added does not move it — and the page's pictures are not drawn by this
+code: Bootstrap comes from a CDN and gives it its typography and its bars, and mermaid comes from
+another and draws the gantt, one `section` per project. That was tried the other way round — bars
+and a lane table drawn by hand — and the hand-drawn timeline was a lot of code for what mermaid's
+sections do better; what stays ours is the tables, which sort themselves from an inline script and
+so work from a file with no connection.
 
 ## Licence and provenance
 

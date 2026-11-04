@@ -212,12 +212,13 @@ public sealed class ExportTests
     }
 
     [Fact]
-    public void The_page_draws_nothing_that_has_to_be_fetched_beyond_bootstrap()
+    public void The_page_draws_nothing_that_has_to_be_fetched_but_bootstrap_and_mermaid()
     {
         var page = Html(Report(ExportPeriod.Month));
 
         Assert.Single(Regex.Matches(page, "rel=\"stylesheet\""));
         Assert.DoesNotContain("src=", page);
+        Assert.Equal(2, Regex.Count(page, "https://cdn.jsdelivr.net/npm/"));
     }
 
     [Fact]
@@ -248,17 +249,33 @@ public sealed class ExportTests
     }
 
     [Fact]
-    public void The_timeline_has_one_lane_per_project_and_topic_not_one_per_range()
+    public void The_timeline_is_a_gantt_in_a_swimlane_per_project()
     {
         Logged("Website (login) 09:00 1h");
         Logged("Website (login) 10:00 1h");
-        Logged("Website (reports) 11:00 1h");
+        Logged("Mobile (checkout) 11:00 1h");
 
         var page = Html(Report(ExportPeriod.Day));
 
-        Assert.Single(Regex.Matches(page, ">Website · login</td>"));
-        Assert.Single(Regex.Matches(page, ">Website · reports</td>"));
-        Assert.Equal(3, Regex.Count(page, "position-absolute top-0 bottom-0"));
+        Assert.Contains("https://cdn.jsdelivr.net/npm/mermaid@12.3.0/dist/mermaid.esm.min.mjs", page);
+        Assert.Contains("<pre class=\"mermaid\">", page);
+        Assert.Contains("gantt", page);
+
+        // One swimlane per project, and a bar per range inside it — not a row per range, and not a
+        // lane per range either.
+        Assert.Contains("    section Website", page);
+        Assert.Contains("    section Mobile", page);
+        Assert.Equal(2, Regex.Count(page, "\n    section "));
+        Assert.Equal(3, Regex.Count(page, " :e"));
+
+        // A day's axis is its clocks; a range's is its days.
+        Assert.Contains("axisFormat %H:%M", page);
+
+        // A swimlane per project, and inside it a bar per range, in the order the day holds them.
+        Assert.Matches(
+            "section Website\n +login 1h :e\\d+, 2026-11-03 09:00, 60m\n +login 1h :e\\d+, 2026-11-03 10:00, 60m",
+            page);
+        Assert.Matches("section Mobile\n +checkout 1h :e\\d+, 2026-11-03 11:00, 60m", page);
     }
 
     [Fact]
