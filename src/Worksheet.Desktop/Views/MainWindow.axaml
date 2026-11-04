@@ -18,13 +18,17 @@
     <KeyBinding Gesture="Meta+Shift+Z" Command="{Binding RedoCommand}" />
   </suki:SukiWindow.KeyBindings>
 
-  <!-- The window is a composition of five components and nothing else. -->
-  <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="12" Margin="20,12,20,16">
-    <c:DayHeader x:Name="Header" Grid.Row="0" />
-    <c:DayStatus x:Name="DayKind" Grid.Row="1" />
-    <c:QuickEntry x:Name="Entry" Grid.Row="2" IsVisible="{Binding !IsFrozen}" />
-    <c:DayTable x:Name="Table" Grid.Row="3" />
-    <c:StatusLine x:Name="Status" Grid.Row="4" />
-  </Grid>
+  <!--
+    The window is a composition of five components and nothing else, on one flat page.
+  -->
+  <Border Classes="page" Padding="20,12,20,16">
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="12">
+      <c:DayHeader x:Name="Header" Grid.Row="0" />
+      <c:DayStatus x:Name="DayKind" Grid.Row="1" />
+      <c:QuickEntry x:Name="Entry" Grid.Row="2" IsVisible="{Binding !IsFrozen}" />
+      <c:DayTable x:Name="Table" Grid.Row="3" />
+      <c:StatusLine x:Name="Status" Grid.Row="4" />
+    </Grid>
+  </Border>
 
 </suki:SukiWindow>

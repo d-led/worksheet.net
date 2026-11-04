@@ -11,6 +11,14 @@
     <Setter Property="Background" Value="{DynamicResource PageBrush}" />
   </Style>
 
+  <!--
+    The page itself. SukiUI's template paints its own background over the window's, so the colour
+    that is actually seen is on the content's own border, not on the window.
+  -->
+  <Style Selector="Border.page">
+    <Setter Property="Background" Value="{DynamicResource PageBrush}" />
+  </Style>
+
   <Style Selector="TextBlock.title">
     <Setter Property="FontSize" Value="26" />
     <Setter Property="FontWeight" Value="SemiBold" />

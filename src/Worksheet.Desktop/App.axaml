@@ -12,7 +12,7 @@
           <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="HairlineBrush" Color="#24000000" />
           <SolidColorBrush x:Key="InkBrush" Color="#111827" />
-          <SolidColorBrush x:Key="MutedInkBrush" Color="#4B5563" />
+          <SolidColorBrush x:Key="MutedInkBrush" Color="#374151" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="PageBrush" Color="#101215" />

@@ -6,6 +6,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using SukiUI.Controls;
@@ -169,7 +170,7 @@ static Window Surface(DayViewModel day, double height, params Control[] content)
         Width = 940,
         Height = height,
         IsTitleBarVisible = false,
-        Content = new Border { Padding = new Thickness(20, 16), Child = stack },
+        Content = new Border { Classes = { "page" }, Padding = new Thickness(20, 16), Child = stack },
     };
 }
 
