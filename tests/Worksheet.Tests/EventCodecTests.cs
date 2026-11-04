@@ -41,6 +41,7 @@ public sealed class EventCodecTests
             new DayKindChanged(Day, DayKind.Working, DayKind.Sick),
             new ProjectRenamed(Project, "Website", "Web"),
             new TopicRenamed(Topic, "login", "sign-in"),
+            new TopicMoved(Topic, Project, Guid.NewGuid()),
         ];
     }
 
@@ -60,6 +61,7 @@ public sealed class EventCodecTests
             new ProjectRestored(project, [topic], before, after),
             new TopicRemoved(topic, before, unTopiced),
             new TopicRestored(topic, before, unTopiced),
+            new Batch([new TopicRemoved(topic, before, unTopiced), new TopicMoved(Topic, Project, Guid.NewGuid())]),
         ];
     }
 

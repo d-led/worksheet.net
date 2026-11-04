@@ -205,6 +205,18 @@ public sealed class McpToolTests
     }
 
     [Fact]
+    public void Renaming_a_project_onto_a_name_in_use_says_the_two_merged()
+    {
+        LogEntry("Client portal (login) 08:30 2h30m", Tuesday);
+        LogEntry("Mobile 11:00 1h", Tuesday);
+
+        Assert.Equal(
+            "'Client portal' merged into 'Mobile'; its entry moved there.",
+            Call("rename_project", """{"project":"Client portal","name":"mobile"}""").Text);
+        Assert.Equal("Mobile (2 entries)", Call("list_projects", "{}").Text);
+    }
+
+    [Fact]
     public void Removing_a_topic_says_that_its_entries_keep_it()
     {
         LogEntry("Client portal (login) 08:30 2h30m", Tuesday);

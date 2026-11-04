@@ -62,6 +62,14 @@ and records decisions; it is not a description of any other program's source.
   name they were logged under. Typing the name again brings it back, with the
   topics that went with the project. Moving hours to another name is a remap —
   a decision of its own, not a side effect of retiring.
+- Renaming a project or a topic onto a name that is already in use merges the
+  two instead of refusing. The entries of the name that goes away keep their
+  hours and take the name that stays; a topic the survivor does not have moves
+  under it, and a topic it already has absorbs the entries of the one that came.
+  A name retired earlier comes back when something is merged into it. The whole
+  merge is one journal change, so one undo takes it back — a merge is a decision,
+  not a sequence of side effects. The panel says in one sentence what pressing
+  Enter would do, with what would move, before it is pressed.
 
 ## Deliberately not included
 

@@ -27,8 +27,8 @@ public sealed class Catalogue(Ledger ledger)
 {
     /// <summary>
     /// A project keeps its identity when it changes its name, so its entries follow without being
-    /// rewritten. A name another project already answers to is refused: names are how people and
-    /// agents point at a project, and the first of two equal names would be unreachable.
+    /// rewritten. A name another project already answers to is not a refusal: it is the same
+    /// decision taken further — the two become one — so the rename merges.
     /// </summary>
     public CatalogueResult RenameProject(string projectName, string newName)
     {
@@ -46,12 +46,9 @@ public sealed class Catalogue(Ledger ledger)
             return gone;
         }
 
-        return Rename(
-            project.Name,
-            newName,
-            "project",
-            ledger.State.Projects.Values.Where(other => other.Id != project.Id).Select(other => other.Name),
-            (before, after) => new ProjectRenamed(project.Id, before, after));
+        return TwinProject(project.Id, newName) is { } into
+            ? MergeProject(project, into)
+            : Rename(project.Name, newName, "project", (before, after) => new ProjectRenamed(project.Id, before, after));
     }
 
     /// <summary>
@@ -107,15 +104,100 @@ public sealed class Catalogue(Ledger ledger)
             return gone;
         }
 
-        return Rename(
-            topic.Name,
-            newName,
-            $"topic in {project.Value.Name}",
-            ledger.State.Topics.Values
-                .Where(other => other.ProjectId == topic.ProjectId && other.Id != topic.Id)
-                .Select(other => other.Name),
-            (before, after) => new TopicRenamed(topic.Id, before, after));
+        return TwinTopic(topic.ProjectId, newName, topic.Id) is { } into
+            ? MergeTopic(topic, into)
+            : Rename(topic.Name, newName, $"topic in {project.Value.Name}", (before, after) => new TopicRenamed(topic.Id, before, after));
     }
+
+    /// <summary>
+    /// Two projects become one. Every entry of the source keeps its hours and gains the target's
+    /// name; a topic the target does not have moves under it, a topic it does have joins that one,
+    /// and the source name goes out of the catalogue. It is one change, so it is one undo.
+    /// </summary>
+    private CatalogueResult MergeProject(Project from, Project into)
+    {
+        var twins = Twins(from.Id, into.Id);
+        ledger.Commit([new Batch(Merging(from, into, twins))]);
+
+        return CatalogueResult.Done;
+    }
+
+    /// <summary>Everything a project merge changes, gathered so that one undo takes the lot back.</summary>
+    private LedgerEvent[] Merging(Project from, Project into, Dictionary<Guid, Topic> twins) =>
+        [
+            .. Revival(into),
+            .. TopicsOf(from.Id).SelectMany(topic => twins.TryGetValue(topic.Id, out var twin)
+                ? Joining(topic, twin)
+                : [new TopicMoved(topic.Id, from.Id, into.Id)]),
+            .. EntriesOf(from.Id).Select(entry => (LedgerEvent)new EntryRevised(entry, Moved(entry, into, twins))),
+            new ProjectRemoved(from, [], [], []),
+        ];
+
+    /// <summary>Merging into a name that was retired brings it back, since the name is what was asked for.</summary>
+    private LedgerEvent[] Revival(Project into) =>
+        into.Archived ? [new ProjectRestored(into, TopicsOf(into.Id).ToArray(), [], [])] : [];
+
+    /// <summary>An entry of the project that goes away, now naming the one that stays.</summary>
+    private static Entry Moved(Entry entry, Project into, Dictionary<Guid, Topic> twins) =>
+        entry with
+        {
+            ProjectId = into.Id,
+            TopicId = entry.TopicId is { } id && twins.TryGetValue(id, out var twin) ? twin.Id : entry.TopicId,
+        };
+
+    /// <summary>Two topics become one: the entries of the source move onto the target, and it goes.</summary>
+    private CatalogueResult MergeTopic(Topic from, Topic into)
+    {
+        var changes = new List<LedgerEvent>();
+
+        if (into.Archived)
+        {
+            changes.Add(new TopicRestored(into, [], []));
+        }
+
+        foreach (var entry in EntriesOn(from.Id))
+        {
+            changes.Add(new EntryRevised(entry, entry with { TopicId = into.Id }));
+        }
+
+        changes.Add(new TopicRemoved(from, [], []));
+
+        ledger.Commit([new Batch([.. changes])]);
+
+        return CatalogueResult.Done;
+    }
+
+    /// <summary>A source topic taken out in favour of the target's topic of the same name.</summary>
+    private static LedgerEvent[] Joining(Topic topic, Topic twin) =>
+        twin.Archived
+            ? [new TopicRestored(twin, [], []), new TopicRemoved(topic, [], [])]
+            : [new TopicRemoved(topic, [], [])];
+
+    /// <summary>
+    /// Which of the source's topics already exist under the target, by name. Archived ones count: two
+    /// topics of one project may not share a name, whether one of them is out of use or not.
+    /// </summary>
+    private Dictionary<Guid, Topic> Twins(Guid fromProjectId, Guid intoProjectId) =>
+        TopicsOf(fromProjectId)
+            .Select(topic => (topic, twin: TwinTopic(intoProjectId, topic.Name)))
+            .Where(pair => pair.twin is not null)
+            .ToDictionary(pair => pair.topic.Id, pair => pair.twin!);
+
+    /// <summary>The project already answering to that name, which a rename into it merges with.</summary>
+    private Project? TwinProject(Guid sourceId, string name) =>
+        ledger.State.Projects.Values.FirstOrDefault(other =>
+            other.Id != sourceId && SameName(other.Name, name));
+
+    /// <summary>
+    /// The topic of that project already answering to that name, unless it is the one being renamed.
+    /// A topic out of use counts: two topics of one project may not share a name.
+    /// </summary>
+    private Topic? TwinTopic(Guid projectId, string name, Guid? except = null) =>
+        ledger.State.Topics.Values.FirstOrDefault(other =>
+            other.ProjectId == projectId && other.Id != except && SameName(other.Name, name));
+
+    private static bool SameName(string name, string other) =>
+        string.Equals(name.Trim(), Names.Trimmed(other), StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Taking a topic away leaves its entries on the day with the topic they had.</summary>
     public CatalogueResult RemoveTopic(string projectName, string topicName)
@@ -153,7 +235,6 @@ public sealed class Catalogue(Ledger ledger)
         string currentName,
         string newName,
         string what,
-        IEnumerable<string> taken,
         Func<string, string, LedgerEvent> change)
     {
         if (string.IsNullOrWhiteSpace(newName))
@@ -162,11 +243,6 @@ public sealed class Catalogue(Ledger ledger)
         }
 
         var trimmed = newName.Trim();
-
-        if (taken.Any(name => string.Equals(name.Trim(), trimmed, StringComparison.OrdinalIgnoreCase)))
-        {
-            return CatalogueResult.Refused($"There is already a {what} called '{trimmed}'.");
-        }
 
         // Names are matched without regard to case, so a rename that only changes the case is no change.
         if (string.Equals(trimmed, currentName.Trim(), StringComparison.OrdinalIgnoreCase))
@@ -181,6 +257,12 @@ public sealed class Catalogue(Ledger ledger)
 
     private Entry[] EntriesOf(Guid projectId) =>
         [.. ledger.State.Entries.Values.Where(entry => entry.ProjectId == projectId)];
+
+    private IEnumerable<Entry> EntriesOn(Guid topicId) =>
+        ledger.State.Entries.Values.Where(entry => entry.TopicId == topicId);
+
+    private IEnumerable<Topic> TopicsOf(Guid projectId) =>
+        ledger.State.Topics.Values.Where(topic => topic.ProjectId == projectId);
 
     /// <summary>An archived project or topic is still in the ledger — it is simply not an answer any more.</summary>
     private static CatalogueResult? Gone(Project project) =>

@@ -9,8 +9,8 @@ using Worksheet.Desktop.ViewModels;
 namespace Worksheet.Tests;
 
 /// <summary>
-/// The manage panel: what is in use and what it holds, the four decisions it offers, and undo —
-/// each decision being one journal change is what makes the last one reversible from here.
+/// The projects and topics panel: a name typed into its own row, the sentence that says what Enter
+/// will do before it is pressed, and undo — one decision, one journal change, one step back.
 /// </summary>
 public sealed class ManageViewModelTests
 {
@@ -21,149 +21,208 @@ public sealed class ManageViewModelTests
 
     public ManageViewModelTests() => _composer = new EntryComposer(_ledger);
 
+    /// <summary>Website with two topics and two entries, Mobile with one entry.</summary>
+    private ManageViewModel Opened()
+    {
+        Logged("Website (login) 09:00 1h");
+        Logged("Website (reports) 10:00 30m");
+        Logged("Mobile 11:00 1h");
+
+        return new ManageViewModel(_ledger);
+    }
+
     private void Logged(string line) =>
         Assert.True(
             _composer.Compose(EntryCommandParser.Parse(line, Day).Command!).Created,
             line);
 
-    private void Opened()
-    {
-        Logged("Website (login) 09:00 1h");
-        Logged("Website (reports) 10:00 30m");
-        Logged("Mobile 11:00 1h");
-    }
+    private static string[] Names(IEnumerable<CatalogueRow> rows) =>
+        [.. rows.Select(row => row.Name)];
+
+    private static CatalogueRow Row(ManageViewModel panel, string name) =>
+        panel.Projects.Single(project => project.Name == name);
+
+    private static void Typed(CatalogueRow row, string name) => row.Draft = name;
 
     [Fact]
     public void The_panel_lists_the_projects_in_use_with_what_each_holds()
     {
-        Opened();
+        var panel = Opened();
 
-        var panel = new ManageViewModel(_ledger);
-
-        Assert.Equal(["Mobile (1 entry)", "Website (2 entries)"], panel.Projects.Select(project => project.Label));
-    }
-
-    [Fact]
-    public void The_panel_shows_a_rename_made_behind_the_window()
-    {
-        Opened();
-        var panel = new ManageViewModel(_ledger);
-
-        Assert.True(new Catalogue(_ledger).RenameProject("Website", "Client portal").Accepted);
-
-        Assert.Contains(panel.Projects, row => row.Label == "Client portal (2 entries)");
+        Assert.Equal(["Mobile", "Website"], Names(panel.Projects));
+        Assert.Equal("1 entry · 1h", Row(panel, "Mobile").Holds);
+        Assert.Equal("2 entries · 1h30m", Row(panel, "Website").Holds);
     }
 
     [Fact]
     public void The_chosen_project_shows_its_topics_with_what_each_holds()
     {
-        Opened();
+        var panel = Opened();
+        panel.SelectedProject = Row(panel, "Website");
 
-        var panel = new ManageViewModel(_ledger) { SelectedProject = Row("Website") };
-
-        Assert.Equal(["login (1 entry)", "reports (1 entry)"], panel.Topics.Select(topic => topic.Label));
+        Assert.Equal(["login", "reports"], Names(panel.Topics));
+        Assert.Equal("1 entry · 1h", panel.Topics[0].Holds);
     }
 
     [Fact]
-    public void Renaming_the_chosen_project_keeps_it_chosen_and_says_so()
+    public void A_name_typed_into_its_row_renames_it()
     {
-        Opened();
-        var panel = new ManageViewModel(_ledger) { SelectedProject = Row("Website"), NewProjectName = "Client portal" };
+        var panel = Opened();
+        var website = Row(panel, "Website");
 
-        panel.RenameProjectCommand.Execute(null);
+        Typed(website, "Client portal");
+        website.CommitCommand.Execute(null);
 
-        Assert.Equal("Client portal", panel.SelectedProject!.Name);
+        Assert.Equal(["Client portal", "Mobile"], Names(panel.Projects));
         Assert.Equal("The project is called 'Client portal' now.", panel.Message);
         Assert.False(panel.MessageIsProblem);
     }
 
     [Fact]
+    public void A_name_another_project_answers_to_merges_the_two_and_says_what_moved()
+    {
+        var panel = Opened();
+        var mobile = Row(panel, "Mobile");
+
+        Typed(mobile, "Website");
+        mobile.CommitCommand.Execute(null);
+
+        Assert.Equal(["Website"], Names(panel.Projects));
+        Assert.Equal("3 entries · 2h30m", Row(panel, "Website").Holds);
+        Assert.Equal("'Mobile' merged into 'Website'; its 1 entry · 1h moved there.", panel.Message);
+    }
+
+    [Fact]
+    public void The_panel_says_what_enter_would_do_before_it_is_pressed()
+    {
+        var panel = Opened();
+
+        Typed(Row(panel, "Website"), "Client portal");
+        Assert.Equal("Enter renames 'Website' to 'Client portal'.", panel.Proposal);
+
+        Typed(Row(panel, "Website"), "  ");
+        Assert.Equal("A project needs a name.", panel.Proposal);
+    }
+
+    [Fact]
+    public void A_name_that_is_already_there_is_announced_as_a_merge()
+    {
+        var panel = Opened();
+
+        Typed(Row(panel, "Website"), "mobile");
+
+        Assert.Equal("Enter merges 'Website' into 'Mobile' — its 2 entries · 1h30m move there.", panel.Proposal);
+    }
+
+    [Fact]
+    public void A_row_left_as_it_was_says_nothing()
+    {
+        var panel = Opened();
+
+        Typed(Row(panel, "Website"), "Website");
+
+        Assert.Null(panel.Proposal);
+        Assert.False(panel.HasProposal);
+    }
+
+    [Fact]
+    public void Escape_puts_the_name_back_and_writes_nothing()
+    {
+        var panel = Opened();
+        var before = _ledger.Version;
+        var website = Row(panel, "Website");
+
+        Typed(website, "Something else");
+        website.RevertCommand.Execute(null);
+
+        Assert.Equal("Website", website.Draft);
+        Assert.Equal(before, _ledger.Version);
+        Assert.Null(panel.Message);
+    }
+
+    [Fact]
+    public void A_row_settled_once_is_not_renamed_again_by_leaving_the_field()
+    {
+        var panel = Opened();
+        var website = Row(panel, "Website");
+
+        Typed(website, "Portal");
+        website.CommitCommand.Execute(null);
+        website.CommitCommand.Execute(null);
+
+        Assert.Equal(["Mobile", "Portal"], Names(panel.Projects));
+        Assert.Equal("The project is called 'Portal' now.", panel.Message);
+    }
+
+    [Fact]
     public void Archiving_a_project_leaves_its_hours_where_they_are()
     {
-        Opened();
-        var panel = new ManageViewModel(_ledger) { SelectedProject = Row("Website") };
+        var panel = Opened();
 
-        panel.RemoveProjectCommand.Execute(null);
+        Row(panel, "Website").ArchiveCommand.Execute(null);
 
         Assert.Equal("'Website' is out of the catalogue; its entries stay as they are.", panel.Message);
         Assert.False(panel.MessageIsProblem);
+        Assert.Equal(["Mobile"], Names(panel.Projects));
         Assert.Equal(2, _ledger.State.Entries.Values.Count(entry => _ledger.State.ProjectName(entry.ProjectId) == "Website"));
     }
 
     [Fact]
-    public void Dropping_the_chosen_project_takes_it_out_of_the_list()
+    public void A_topic_is_renamed_in_its_own_row()
     {
-        Opened();
-        var panel = new ManageViewModel(_ledger) { SelectedProject = Row("Website") };
+        var panel = Opened();
+        panel.SelectedProject = Row(panel, "Website");
+        var login = panel.Topics.Single(topic => topic.Name == "login");
 
-        panel.RemoveProjectCommand.Execute(null);
+        Typed(login, "sign-in");
+        login.CommitCommand.Execute(null);
 
-        Assert.Equal(["Mobile (1 entry)"], panel.Projects.Select(project => project.Label));
+        Assert.Equal(["reports", "sign-in"], Names(panel.Topics));
+        Assert.Equal("The topic is called 'sign-in' now.", panel.Message);
     }
 
     [Fact]
-    public void A_topic_can_be_renamed_from_the_panel()
+    public void A_topic_typing_the_name_of_its_neighbour_merges_the_two()
     {
-        Opened();
-        var panel = new ManageViewModel(_ledger) { SelectedProject = Row("Website"), NewTopicName = "sign-in" };
-        panel.SelectedTopic = panel.Topics.Single(topic => topic.Name == "login");
+        var panel = Opened();
+        panel.SelectedProject = Row(panel, "Website");
+        var login = panel.Topics.Single(topic => topic.Name == "login");
 
-        panel.RenameTopicCommand.Execute(null);
+        Typed(login, "Reports");
+        Assert.Equal("Enter merges 'login' into 'reports' — its 1 entry · 1h move there.", panel.Proposal);
 
-        Assert.Equal(["reports", "sign-in"], panel.Topics.Select(topic => topic.Name));
+        login.CommitCommand.Execute(null);
+
+        Assert.Equal(["reports"], Names(panel.Topics));
+        Assert.Equal("'login' merged into 'reports'; its 1 entry · 1h moved there.", panel.Message);
     }
 
     [Fact]
-    public void A_topic_can_be_dropped_from_the_panel_and_its_entries_stay()
+    public void A_topic_can_be_removed_and_its_entries_stay()
     {
-        Opened();
-        var panel = new ManageViewModel(_ledger) { SelectedProject = Row("Website") };
-        panel.SelectedTopic = panel.Topics.Single(topic => topic.Name == "login");
+        var panel = Opened();
+        panel.SelectedProject = Row(panel, "Website");
 
-        panel.RemoveTopicCommand.Execute(null);
+        panel.Topics.Single(topic => topic.Name == "login").ArchiveCommand.Execute(null);
 
-        Assert.Equal(["reports (1 entry)"], panel.Topics.Select(topic => topic.Label));
+        Assert.Equal(["reports"], Names(panel.Topics));
         Assert.Equal("'login' is out of Website; its entries stay as they are.", panel.Message);
     }
 
     [Fact]
-    public void Undo_from_the_panel_puts_a_dropped_project_back()
+    public void Undo_takes_a_merge_back_in_one_step()
     {
-        Opened();
-        var panel = new ManageViewModel(_ledger) { SelectedProject = Row("Website") };
-        panel.RemoveProjectCommand.Execute(null);
+        var panel = Opened();
+        var mobile = Row(panel, "Mobile");
 
+        Typed(mobile, "Website");
+        mobile.CommitCommand.Execute(null);
         panel.UndoCommand.Execute(null);
 
-        Assert.Equal(["Mobile (1 entry)", "Website (2 entries)"], panel.Projects.Select(project => project.Label));
+        Assert.Equal(["Mobile", "Website"], Names(panel.Projects));
+        Assert.Equal("1 entry · 1h", Row(panel, "Mobile").Holds);
+        Assert.Equal("2 entries · 1h30m", Row(panel, "Website").Holds);
         Assert.Equal("Undone.", panel.Message);
-    }
-
-    [Fact]
-    public void The_panel_itself_says_what_it_did()
-    {
-        Opened();
-        var panel = new ManageViewModel(_ledger)
-        {
-            SelectedProject = Row("Website"),
-            NewProjectName = "Portal",
-        };
-
-        panel.RenameProjectCommand.Execute(null);
-
-        Assert.Equal("The project is called 'Portal' now.", panel.Message);
-        Assert.Contains(panel.Projects, row => row.Name == "Portal");
-    }
-
-    [Fact]
-    public void Without_a_choice_the_panel_asks_for_one()    {
-        Opened();
-        var panel = new ManageViewModel(_ledger) { SelectedProject = null, NewProjectName = "Anything" };
-
-        panel.RenameProjectCommand.Execute(null);
-
-        Assert.Equal("Choose a project first.", panel.Message);
-        Assert.True(panel.MessageIsProblem);
     }
 
     [Fact]
@@ -177,6 +236,13 @@ public sealed class ManageViewModelTests
         Assert.False(panel.CanUndo);
     }
 
-    private CatalogueRow Row(string name) =>
-        new ManageViewModel(_ledger).Projects.Single(project => project.Name == name);
+    [Fact]
+    public void A_rename_made_behind_the_window_reaches_the_panel()
+    {
+        var panel = Opened();
+
+        Assert.True(new Catalogue(_ledger).RenameProject("Website", "Client portal").Accepted);
+
+        Assert.Equal(["Client portal", "Mobile"], Names(panel.Projects));
+    }
 }

@@ -102,10 +102,25 @@ public sealed class WorksheetTools : IToolkit
         return ToolOutcome.Said(Reports.Topics(_ledger.State, match.Value!));
     }
 
-    private ToolOutcome RenameProject(ToolCall call) =>
-        Answered(
-            _catalogue.RenameProject(Names.Trimmed(call.Text("project")), Names.Trimmed(call.Text("name"))),
-            $"'{Names.Trimmed(call.Text("project"))}' answers to '{Names.Trimmed(call.Text("name"))}' now.");
+    private ToolOutcome RenameProject(ToolCall call)
+    {
+        var project = Names.Trimmed(call.Text("project"));
+        var name = Names.Trimmed(call.Text("name"));
+        var held = Held(project);
+        var result = _catalogue.RenameProject(project, name);
+
+        if (!result.Accepted)
+        {
+            return ToolOutcome.Refused([.. result.Problems]);
+        }
+
+        var into = Merged(project) ? Surviving(name) : null;
+
+        return ToolOutcome.Said(
+            into is null
+                ? $"'{project}' answers to '{name}' now."
+                : $"'{project}' merged into '{into}'; {held switch { 0 => "it held no entries", 1 => "its entry moved there", _ => $"its {held} entries moved there" }}.");
+    }
 
     private ToolOutcome RemoveProject(ToolCall call)
     {
@@ -122,13 +137,23 @@ public sealed class WorksheetTools : IToolkit
             });
     }
 
-    private ToolOutcome RenameTopic(ToolCall call) =>
-        Answered(
-            _catalogue.RenameTopic(
-                Names.Trimmed(call.Text("project")),
-                Names.Trimmed(call.Text("topic")),
-                Names.Trimmed(call.Text("name"))),
-            $"{Names.Trimmed(call.Text("project"))} / '{Names.Trimmed(call.Text("topic"))}' is '{Names.Trimmed(call.Text("name"))}' now.");
+    private ToolOutcome RenameTopic(ToolCall call)
+    {
+        var project = Names.Trimmed(call.Text("project"));
+        var topic = Names.Trimmed(call.Text("topic"));
+        var name = Names.Trimmed(call.Text("name"));
+        var result = _catalogue.RenameTopic(project, topic, name);
+
+        if (!result.Accepted)
+        {
+            return ToolOutcome.Refused([.. result.Problems]);
+        }
+
+        return ToolOutcome.Said(
+            Merged(topic, project)
+                ? $"{project} / '{topic}' merged into '{name}'."
+                : $"{project} / '{topic}' is '{name}' now.");
+    }
 
     private ToolOutcome RemoveTopic(ToolCall call) =>
         Answered(
@@ -146,6 +171,24 @@ public sealed class WorksheetTools : IToolkit
         _ledger.State.MatchProject(projectName) is { Found: true } match
             ? _ledger.State.Entries.Values.Count(entry => entry.ProjectId == match.Value!.Id)
             : 0;
+
+    /// <summary>
+    /// Whether the project a rename started from is now out of the catalogue, which is what a merge
+    /// does to it — the answer a caller gets has to say so, since the two are no longer apart.
+    /// </summary>
+    private bool Merged(string projectName) =>
+        _ledger.State.MatchProject(projectName) is { Found: true } match && match.Value!.Archived;
+
+    private bool Merged(string topicName, string projectName) =>
+        _ledger.State.MatchProject(projectName) is not { Found: true } match
+        || _ledger.State.MatchTopic(match.Value!.Id, topicName) is not { Found: true } topic
+        || topic.Value!.Archived;
+
+    /// <summary>The name a merged project answers to, as the journal spells it rather than as it was typed.</summary>
+    private string Surviving(string name) =>
+        _ledger.State.Projects.Values
+            .FirstOrDefault(project => !project.Archived && string.Equals(project.Name.Trim(), name, StringComparison.OrdinalIgnoreCase))
+            ?.Name ?? name;
 
     /// <summary>The day a call speaks about: the one it named, or today.</summary>
     private static DateOnly? DayOf(ToolCall call) =>
@@ -226,7 +269,9 @@ public sealed class WorksheetTools : IToolkit
             Annotations: ToolAnnotations.Readings),
         new(
             "rename_project",
-            "Give a project another name. Its entries follow, and the change is one undo.",
+            "Give a project another name. Its entries follow, and the change is one undo. A name that "
+            + "another project already answers to merges the two into that one, with the entries of both; "
+            + "the answer says when that happened.",
             new
             {
                 type = "object",
@@ -256,7 +301,8 @@ public sealed class WorksheetTools : IToolkit
             Annotations: ToolAnnotations.Removes),
         new(
             "rename_topic",
-            "Give a topic of a project another name. Its entries follow, and the change is one undo.",
+            "Give a topic of a project another name. Its entries follow, and the change is one undo. A "
+            + "name another topic of that project already answers to merges the two, and the answer says so.",
             new
             {
                 type = "object",

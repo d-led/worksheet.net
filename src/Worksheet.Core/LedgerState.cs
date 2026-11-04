@@ -97,6 +97,18 @@ public sealed class LedgerState
                 RecordRemoval(restored.Topic, restored.Before, restored.After, archived: false);
                 break;
 
+            case TopicMoved moved:
+                _topics[moved.TopicId] = _topics[moved.TopicId] with { ProjectId = moved.ToProjectId };
+                break;
+
+            case Batch batch:
+                foreach (var part in batch.Changes)
+                {
+                    Record(part);
+                }
+
+                break;
+
             default:
                 throw new NotSupportedException($"{change.GetType().Name} is not a known journal change.");
         }

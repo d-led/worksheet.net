@@ -136,14 +136,22 @@ the server off.
 
 ## Rename or retire a project
 
-*Projects and topics…* in the tray menu lists every project in use with how many entries each holds,
-and the topics of the one you choose. A rename keeps the entries where they are. Retiring a project
-leaves every entry exactly as it was, under the name it was logged with — the history is not
-rewritten — and simply stops offering that name; typing it again brings the project back with its
-topics. A topic retires the same way. Each is one change, so one undo reverts it.
+*Projects and topics…* in the heading's `⋯` (or in the tray menu) lists every project in use with
+what each holds, and the topics of the one you choose. A name is edited where it stands: `Enter` or
+leaving the field keeps the new name, `Esc` puts the old one back.
 
-Moving hours from one project or topic to another is a separate decision, not a side effect of
-retiring, and is not offered yet.
+![Renaming in place, with the merge the typed name would make stated before it is made](docs/screenshots/projects.png)
+
+A name another row already answers to is not refused — it merges the two. The line above the message
+says so while the name is still being typed, with what would move; `Enter` then makes it one name,
+with the entries of both, in one change. So one undo takes a merge back as readily as a rename.
+
+Retiring a project or a topic leaves every entry exactly as it was, under the name it was logged
+with — the history is not rewritten — and simply stops offering that name; typing it again brings
+the project back with its topics.
+
+Moving a few hours from one project or topic to another, without renaming anything, is a separate
+decision and is not offered yet.
 
 ## The tray
 

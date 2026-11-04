@@ -5,81 +5,107 @@
                  x:Class="Worksheet.Desktop.Views.ManageWindow"
                  x:DataType="vm:ManageViewModel"
                  Title="Projects and topics"
-                 Width="780"
-                 Height="600"
-                 MinWidth="620"
-                 MinHeight="480"
+                 Width="820"
+                 Height="640"
+                 MinWidth="660"
+                 MinHeight="520"
                  WindowStartupLocation="CenterOwner">
 
   <!--
-    The catalogue in two lists: what is in use with what it holds, then the topics of the one chosen.
-    Every button here is one journal change, so the day's own undo takes any of them back.
+    Every row carries its own name, so renaming is typing into the row and pressing Enter: no second
+    box, no dialog and no confirmation step. The line above the message says what Enter will do while
+    the name is still being typed, which is what makes a merge — the same keystroke, one name fewer —
+    something a person chooses rather than something that happens to them.
   -->
   <Border Classes="page" Padding="20">
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto" RowSpacing="10">
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,*,Auto,Auto" RowSpacing="8">
 
       <TextBlock Grid.Row="0" Classes="title" Text="Projects and topics" />
 
       <TextBlock Grid.Row="1"
                  Classes="quiet"
                  TextWrapping="Wrap"
-                 Text="Renaming keeps the entries where they are. Archiving a project stops offering its name and leaves every entry exactly as it was — typing the name again brings it back. A topic archives the same way." />
+                 Text="A name is typed where it stands: Enter or leaving the field keeps it, Escape puts the old one back. A name another row already answers to merges the two, hours and all, into one name." />
+
+      <TextBlock Grid.Row="2" Classes="caption" Text="PROJECTS" />
 
       <ListBox x:Name="ProjectList"
-               Grid.Row="2"
-               Height="150"
+               Grid.Row="3"
                ItemsSource="{Binding Projects}"
-               SelectedItem="{Binding SelectedProject}">
+               SelectedItem="{Binding SelectedProject}"
+               Background="Transparent"
+               BorderThickness="0"
+               ScrollViewer.HorizontalScrollBarVisibility="Disabled">
         <ListBox.ItemTemplate>
           <DataTemplate x:DataType="vm:CatalogueRow">
-            <TextBlock Text="{Binding Label}" />
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,2">
+              <TextBox x:Name="ProjectName"
+                       Classes="cell"
+                       Text="{Binding Draft}"
+                       GotFocus="Row_Focused"
+                       LostFocus="Row_Left">
+                <TextBox.KeyBindings>
+                  <KeyBinding Gesture="Enter" Command="{Binding CommitCommand}" />
+                  <KeyBinding Gesture="Escape" Command="{Binding RevertCommand}" />
+                </TextBox.KeyBindings>
+              </TextBox>
+              <TextBlock Grid.Column="1"
+                         Classes="quiet"
+                         Text="{Binding Holds}"
+                         MinWidth="130"
+                         VerticalAlignment="Center" />
+              <Button Grid.Column="2"
+                      Classes="row-word"
+                      Content="Archive"
+                      Command="{Binding ArchiveCommand}"
+                      ToolTip.Tip="Stop offering this name; every entry keeps it" />
+            </Grid>
           </DataTemplate>
         </ListBox.ItemTemplate>
       </ListBox>
-
-      <Grid Grid.Row="3" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-        <TextBox x:Name="NewProjectName"
-                 Grid.Column="0"
-                 Text="{Binding NewProjectName}"
-                 PlaceholderText="the name it should answer to" />
-        <Button x:Name="RenameProject"
-                Grid.Column="1"
-                Content="Rename"
-                Command="{Binding RenameProjectCommand}" />
-        <Button x:Name="RemoveProject"
-                Grid.Column="2"
-                Content="Archive"
-                Command="{Binding RemoveProjectCommand}" />
-      </Grid>
 
       <TextBlock Grid.Row="4" Classes="caption" Text="TOPICS OF THE CHOSEN PROJECT" />
 
       <ListBox x:Name="TopicList"
                Grid.Row="5"
-               Height="120"
                ItemsSource="{Binding Topics}"
-               SelectedItem="{Binding SelectedTopic}">
+               Background="Transparent"
+               BorderThickness="0"
+               ScrollViewer.HorizontalScrollBarVisibility="Disabled">
         <ListBox.ItemTemplate>
           <DataTemplate x:DataType="vm:CatalogueRow">
-            <TextBlock Text="{Binding Label}" />
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,2">
+              <TextBox x:Name="TopicName"
+                       Classes="cell"
+                       Text="{Binding Draft}"
+                       GotFocus="Row_Focused"
+                       LostFocus="Row_Left">
+                <TextBox.KeyBindings>
+                  <KeyBinding Gesture="Enter" Command="{Binding CommitCommand}" />
+                  <KeyBinding Gesture="Escape" Command="{Binding RevertCommand}" />
+                </TextBox.KeyBindings>
+              </TextBox>
+              <TextBlock Grid.Column="1"
+                         Classes="quiet"
+                         Text="{Binding Holds}"
+                         MinWidth="130"
+                         VerticalAlignment="Center" />
+              <Button Grid.Column="2"
+                      Classes="row-word"
+                      Content="Remove"
+                      Command="{Binding ArchiveCommand}"
+                      ToolTip.Tip="Stop offering this topic; every entry keeps it" />
+            </Grid>
           </DataTemplate>
         </ListBox.ItemTemplate>
       </ListBox>
 
-      <Grid Grid.Row="6" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" VerticalAlignment="Top">
-        <TextBox x:Name="NewTopicName"
-                 Grid.Column="0"
-                 Text="{Binding NewTopicName}"
-                 PlaceholderText="the name it should answer to" />
-        <Button x:Name="RenameTopic"
-                Grid.Column="1"
-                Content="Rename"
-                Command="{Binding RenameTopicCommand}" />
-        <Button x:Name="RemoveTopic"
-                Grid.Column="2"
-                Content="Remove topic"
-                Command="{Binding RemoveTopicCommand}" />
-      </Grid>
+      <TextBlock x:Name="Proposal"
+                 Grid.Row="6"
+                 Classes="hint"
+                 Text="{Binding Proposal}"
+                 IsVisible="{Binding HasProposal}"
+                 TextWrapping="Wrap" />
 
       <Grid Grid.Row="7" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
         <TextBlock x:Name="Message"

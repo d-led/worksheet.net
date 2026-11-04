@@ -3,15 +3,42 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using SukiUI.Controls;
+using Worksheet.Desktop.ViewModels;
 
 namespace Worksheet.Desktop.Views;
 
-/// <summary>The catalogue, in a window of its own. It closes without touching the day.</summary>
+/// <summary>
+/// The catalogue, in a window of its own. It closes without touching the day, and every name in it
+/// is a field: nothing here asks a second question after the first answer.
+/// </summary>
 public partial class ManageWindow : SukiWindow
 {
     public ManageWindow() => InitializeComponent();
 
     private void Close_Click(object? sender, RoutedEventArgs e) => Close();
+
+    /// <summary>
+    /// A name field that takes the focus chooses its row, so the topics beside it follow the project
+    /// being worked on even though a field can swallow the click that would have selected it.
+    /// </summary>
+    private void Row_Focused(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Control { DataContext: CatalogueRow row } field)
+        {
+            field.FindAncestorOfType<ListBox>()?.SelectedItem = row;
+        }
+    }
+
+    /// <summary>Leaving a name field settles what was typed there, the way leaving a cell of the day does.</summary>
+    private void Row_Left(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Control { DataContext: CatalogueRow row })
+        {
+            row.CommitCommand.Execute(null);
+        }
+    }
 }

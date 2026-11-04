@@ -58,7 +58,7 @@ per method, worst first, and exits non-zero if any method is over 10. It merges 
 generated XAML members, and skips the composition roots (`App`, `Program`) — they only wire parts
 together, and every part is measured where it lives.
 
-Current state: 627 methods, no method over CRAP 10, method-average coverage 94.0%. What stays
+Current state: 670 methods, no method over CRAP 10, method-average coverage 94.3%. What stays
 uncovered needs a window server session — the tray, the composition root, the save dialog's file
 picker — or is a guard against a state a test cannot reach on purpose.
 
@@ -120,11 +120,14 @@ dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/day.png
 dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/frozen-day.png --kind sick --only status
 dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/completion.png --typing "Client portal (" --only entry
 dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/break.png --only break
+
+# the panel that renames and merges, with a name half typed so the sentence is in the picture
+dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/projects.png --only projects
 ```
 
 The example day is eight hours over three projects plus a 45 minute break (525 minutes in total),
 on a fixed Monday so that the picture never depends on the day it is rendered — a weekend would
-freeze the very timetable it is meant to show. Regenerate all three after any layout change — it is
+freeze the very timetable it is meant to show. Regenerate all four after any layout change — it is
 how the clipped start column was found.
 
 ## Continuous integration
@@ -161,7 +164,7 @@ is decided. No view sets one inline.
 - `docs/entry-syntax.md` — the grammar of one line, with examples.
 - `docs/behaviour.md` — what the application does, and what it deliberately does not do.
 
-Three choices in the window look like omissions and are not:
+Some choices in the window look like omissions and are not:
 
 - **Undo and redo stay out of the tray menu.** They change the day, and a change made with the window
   hidden is one nobody can see. The footer carries both, with their key combinations.
@@ -178,11 +181,20 @@ Three choices in the window look like omissions and are not:
   run for days without being restarted, and may not be running at midnight at all. The copy is taken
   on the UI thread, with the store's own gate held and after a checkpoint, because the ledger has one
   writer and the file it has open is the only consistent thing there is to copy.
+- **A merge is one journal change.** Renaming a project or a topic onto a name already in use
+  rewrites entries and re-homes or retires topics, which is several changes; they travel as one
+  `Batch`, so the journal records one decision and one undo takes the whole of it back. The
+  alternative — one event per rewritten entry — would have made undo step through a merge an entry
+  at a time, which is not what a person means by taking it back.
+- **The projects and topics panel has no second step.** A name is a field in its own row: `Enter`
+  or leaving it settles the name, `Esc` puts the old one back, and a sentence above the message line
+  says what `Enter` would do — including what a merge would move — while the name is still being
+  typed. A confirmation dialog would have been a second question after the answer was already given.
 
 Two export details that come from the same kind of reasoning: the JSON opens with a `version`
 (`ReportJson.FormatVersion`) that counts up only when a reader of the older file would read the newer
-one wrongly — a field merely added does not move it — and the page's Bootstrap and mermaid come from a
-CDN, which is why the two pictures need a connection and the tables do not.
+one wrongly — a field merely added does not move it — and the page's Bootstrap comes from a CDN,
+which is why its typography and bars need a connection and its tables and marks do not.
 
 ## Licence and provenance
 

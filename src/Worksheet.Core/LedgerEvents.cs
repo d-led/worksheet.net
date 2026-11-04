@@ -35,6 +35,19 @@ public sealed record ProjectRenamed(Guid ProjectId, string Before, string After)
 public sealed record TopicRenamed(Guid TopicId, string Before, string After) : LedgerEvent;
 
 /// <summary>
+/// A topic kept its identity and took another project's name — what a merge does to the topics of
+/// the project that goes away.
+/// </summary>
+public sealed record TopicMoved(Guid TopicId, Guid FromProjectId, Guid ToProjectId) : LedgerEvent;
+
+/// <summary>
+/// Several changes made as one decision, so that the journal says one thing was decided rather than
+/// four things happened. Undo takes the whole of it back: the inverse of a batch is the inverses of
+/// its parts in the reverse order.
+/// </summary>
+public sealed record Batch(LedgerEvent[] Changes) : LedgerEvent;
+
+/// <summary>
 /// A project taken out of the catalogue, with the entries that were moved somewhere else and the
 /// topics that went with it. Both sides of the entries are carried, so undo restores everything
 /// in one change — a deletion is one decision, not one per entry.

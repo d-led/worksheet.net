@@ -23,10 +23,11 @@ using Worksheet.Storage;
 //     dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/frozen-day.png sick --only status
 //     dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/completion.png --typing "Client portal (" --only entry
 //     dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/break.png --only break
+//     dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/projects.png --only projects
 //
 // `--only` narrows what is drawn: `entry` is the line and its offers, `status` is the day's status
-// with one frozen row beside it, `break` is a hole before and after taking it as a break. Without
-// it, the whole window.
+// with one frozen row beside it, `break` is a hole before and after taking it as a break, and
+// `projects` is the panel that renames and merges them. Without it, the whole window.
 
 var output = args.Length > 0 ? args[0] : "docs/screenshots/day.png";
 var only = ValueAfter("--only") ?? "window";
@@ -60,6 +61,7 @@ var frames = only switch
     "entry" => [Capture(EntryOnly(day))],
     "status" => [Capture(StatusAndOneRow(local, today))],
     "break" => BreakBeforeAndAfter(local, day),
+    "projects" => [Capture(Projects(local))],
     _ => [Capture(FullWindow(day))],
 };
 
@@ -108,6 +110,19 @@ static void Compose(LocalLedger local, string line, DateOnly day)
     {
         throw new InvalidOperationException(string.Join(" ", composed.Problems));
     }
+}
+
+// The panel that renames and merges projects, with a name half typed so the sentence that says
+// what Enter would do is in the picture.
+static Window Projects(LocalLedger local)
+{
+    var model = new ManageViewModel(local.Ledger);
+    model.SelectedProject = model.Projects.Single(project => project.Name == "Mobile app");
+
+    var typing = model.Projects.Single(project => project.Name == "Internal");
+    typing.Draft = "Client portal";
+
+    return new ManageWindow { DataContext = model, IsTitleBarVisible = false };
 }
 
 // The whole application, at the size the documentation shows.

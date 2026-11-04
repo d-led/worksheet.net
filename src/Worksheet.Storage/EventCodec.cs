@@ -27,6 +27,8 @@ internal static class EventCodec
     private const string ProjectRestoredKind = "project.restored";
     private const string TopicRemovedKind = "topic.removed";
     private const string TopicRestoredKind = "topic.restored";
+    private const string TopicMovedKind = "topic.moved";
+    private const string BatchKind = "batch.changes";
 
     public static string KindOf(LedgerEvent change) =>
         change switch
@@ -43,11 +45,15 @@ internal static class EventCodec
             ProjectRestored => ProjectRestoredKind,
             TopicRemoved => TopicRemovedKind,
             TopicRestored => TopicRestoredKind,
+            TopicMoved => TopicMovedKind,
+            Batch => BatchKind,
             _ => throw new JournalIntegrityException($"{change.GetType().Name} has no stored kind."),
         };
 
     public static string Encode(LedgerEvent change) =>
-        JsonSerializer.Serialize(change, change.GetType(), LedgerJson.Options);
+        change is Batch batch
+            ? JsonSerializer.Serialize(Parts(batch), LedgerJson.Options)
+            : JsonSerializer.Serialize(change, change.GetType(), LedgerJson.Options);
 
     public static LedgerEvent Decode(string kind, string payload) =>
         kind switch
@@ -64,8 +70,16 @@ internal static class EventCodec
             ProjectRestoredKind => Read<ProjectRestored>(kind, payload),
             TopicRemovedKind => Read<TopicRemoved>(kind, payload),
             TopicRestoredKind => Read<TopicRestored>(kind, payload),
+            TopicMovedKind => Read<TopicMoved>(kind, payload),
+            BatchKind => new Batch([.. Read<StoredChange[]>(kind, payload).Select(part => Decode(part.Kind, part.Body))]),
             _ => throw new JournalIntegrityException($"The journal holds a change of unknown kind '{kind}'."),
         };
+
+    /// <summary>One part of a batch, kept as the kind and the body the journal itself uses.</summary>
+    private sealed record StoredChange(string Kind, string Body);
+
+    private static StoredChange[] Parts(Batch batch) =>
+        [.. batch.Changes.Select(change => new StoredChange(KindOf(change), Encode(change)))];
 
     private static T Read<T>(string kind, string payload) =>
         JsonSerializer.Deserialize<T>(payload, LedgerJson.Options)

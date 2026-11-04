@@ -120,6 +120,17 @@
     <Setter Property="Background" Value="Transparent" />
   </Style>
 
+  <!-- A row's decision with its word in it, beside a name field of the same height. -->
+  <Style Selector="Button.row-word">
+    <Setter Property="Height" Value="30" />
+    <Setter Property="Padding" Value="12,0" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
   <Style Selector="TextBox.entry">
     <Setter Property="CornerRadius" Value="9" />
     <Setter Property="Padding" Value="12,8" />

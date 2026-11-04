@@ -55,6 +55,18 @@ public sealed class CatalogueTests
     private static void Open(Ledger ledger, string project) =>
         ledger.Commit(new ProjectOpened(Guid.NewGuid(), project));
 
+    private static string[] ProjectNames(Ledger ledger) =>
+        [.. ledger.State.Projects.Values
+            .Where(project => !project.Archived)
+            .Select(project => project.Name)
+            .Order(StringComparer.Ordinal)];
+
+    private static string[] TopicNames(Ledger ledger, Guid projectId) =>
+        [.. ledger.State.Topics.Values
+            .Where(topic => topic.ProjectId == projectId && !topic.Archived)
+            .Select(topic => topic.Name)
+            .Order(StringComparer.Ordinal)];
+
     [Fact]
     public void Renaming_a_project_keeps_its_entries_and_answers_to_the_new_name()
     {
@@ -67,15 +79,72 @@ public sealed class CatalogueTests
     }
 
     [Fact]
-    public void A_project_cannot_be_renamed_to_a_name_another_project_answers_to()
+    public void Renaming_a_project_onto_a_name_in_use_merges_the_two()
     {
         var opened = Opened();
+        var call = EntryAt(Mobile, null, "11:00");
+        opened.Ledger.Commit(new EntryLogged(call));
+
+        Assert.True(opened.Catalogue.RenameProject("Mobile", " website ").Accepted);
+
+        Assert.Equal(Website, opened.Ledger.State.Entries[call.Id].ProjectId);
+        Assert.True(opened.Ledger.State.Projects[Mobile].Archived);
+        Assert.Equal(["Website"], ProjectNames(opened.Ledger));
+    }
+
+    [Fact]
+    public void A_merge_carries_the_topics_of_both_projects_and_joins_the_ones_that_share_a_name()
+    {
+        var opened = Opened();
+        var calls = Guid.NewGuid();
+        var theirLogin = Guid.NewGuid();
+        var theirEntry = EntryAt(Mobile, theirLogin, "11:00");
+        var callsEntry = EntryAt(Mobile, calls, "12:00");
+        opened.Ledger.Commit(
+            [
+                new TopicAdded(calls, Mobile, "calls"),
+                new TopicAdded(theirLogin, Mobile, "login"),
+                new EntryLogged(callsEntry),
+                new EntryLogged(theirEntry),
+            ]);
+
+        Assert.True(opened.Catalogue.RenameProject("Mobile", "Website").Accepted);
+
+        Assert.Equal(Website, opened.Ledger.State.Topics[calls].ProjectId);
+        Assert.Equal(calls, opened.Ledger.State.Entries[callsEntry.Id].TopicId);
+        Assert.Equal(Login, opened.Ledger.State.Entries[theirEntry.Id].TopicId);
+        Assert.True(opened.Ledger.State.Topics[theirLogin].Archived);
+        Assert.Equal(["calls", "login"], TopicNames(opened.Ledger, Website));
+    }
+
+    [Fact]
+    public void A_merge_is_one_undo()
+    {
+        var opened = Opened();
+        var call = EntryAt(Mobile, null, "11:00");
+        opened.Ledger.Commit(new EntryLogged(call));
         var before = opened.Ledger.Version;
 
-        var refusal = opened.Catalogue.RenameProject("Website", " mobile ");
+        opened.Catalogue.RenameProject("Mobile", "Website");
 
-        Assert.Equal("There is already a project called 'mobile'.", Assert.Single(refusal.Problems));
-        Assert.Equal(before, opened.Ledger.Version);
+        Assert.Equal(before + 1, opened.Ledger.Version);
+        Assert.True(opened.Ledger.TryUndo(out var reason), reason);
+        Assert.Equal(Mobile, opened.Ledger.State.Entries[call.Id].ProjectId);
+        Assert.False(opened.Ledger.State.Projects[Mobile].Archived);
+        Assert.Equal(Website, opened.Ledger.State.Entries[opened.Login.Id].ProjectId);
+    }
+
+    [Fact]
+    public void Merging_into_a_name_that_was_retired_brings_it_back()
+    {
+        var opened = Opened();
+        opened.Catalogue.RemoveProject("Mobile");
+
+        Assert.True(opened.Catalogue.RenameProject("Website", "Mobile").Accepted);
+
+        Assert.False(opened.Ledger.State.Projects[Mobile].Archived);
+        Assert.True(opened.Ledger.State.Projects[Website].Archived);
+        Assert.Equal(Mobile, opened.Ledger.State.Entries[opened.Login.Id].ProjectId);
     }
 
     [Fact]
@@ -197,14 +266,69 @@ public sealed class CatalogueTests
     }
 
     [Fact]
-    public void A_topic_cannot_be_renamed_to_another_topic_of_the_same_project()
+    public void A_topic_renamed_onto_another_topic_of_the_project_merges_the_two()
     {
         var opened = Opened();
-        opened.Ledger.Commit(new TopicAdded(Guid.NewGuid(), Website, "logout"));
+        var logout = Guid.NewGuid();
+        opened.Ledger.Commit(new TopicAdded(logout, Website, "logout"));
 
-        var refusal = opened.Catalogue.RenameTopic("Website", "login", "Logout");
+        Assert.True(opened.Catalogue.RenameTopic("Website", "login", "Logout").Accepted);
 
-        Assert.Equal("There is already a topic in Website called 'Logout'.", Assert.Single(refusal.Problems));
+        Assert.Equal(logout, opened.Ledger.State.Entries[opened.Login.Id].TopicId);
+        Assert.True(opened.Ledger.State.Topics[Login].Archived);
+        Assert.Equal(["logout"], TopicNames(opened.Ledger, Website));
+    }
+
+    [Fact]
+    public void A_merge_brings_back_a_topic_of_the_surviving_project_that_was_out_of_use()
+    {
+        var opened = Opened();
+        var theirLogin = Guid.NewGuid();
+        var mobileEntry = EntryAt(Mobile, theirLogin, "11:00");
+        opened.Ledger.Commit([new TopicAdded(theirLogin, Mobile, "login"), new EntryLogged(mobileEntry)]);
+        opened.Catalogue.RemoveTopic("Website", "login");
+
+        Assert.True(opened.Catalogue.RenameProject("Mobile", "Website").Accepted);
+
+        Assert.False(opened.Ledger.State.Topics[Login].Archived);
+        Assert.Equal(Login, opened.Ledger.State.Entries[mobileEntry.Id].TopicId);
+        Assert.True(opened.Ledger.State.Topics[theirLogin].Archived);
+
+        Assert.True(opened.Ledger.TryUndo(out var reason), reason);
+        Assert.True(opened.Ledger.State.Topics[Login].Archived);
+        Assert.Equal(Mobile, opened.Ledger.State.Topics[theirLogin].ProjectId);
+        Assert.False(opened.Ledger.State.Topics[theirLogin].Archived);
+    }
+
+    [Fact]
+    public void A_topic_merge_brings_back_the_topic_of_that_name_that_was_out_of_use()
+    {
+        var opened = Opened();
+        var logout = Guid.NewGuid();
+        opened.Ledger.Commit(new TopicAdded(logout, Website, "logout"));
+        opened.Catalogue.RemoveTopic("Website", "logout");
+
+        Assert.True(opened.Catalogue.RenameTopic("Website", "login", "Logout").Accepted);
+
+        Assert.False(opened.Ledger.State.Topics[logout].Archived);
+        Assert.Equal(logout, opened.Ledger.State.Entries[opened.Login.Id].TopicId);
+        Assert.True(opened.Ledger.State.Topics[Login].Archived);
+    }
+
+    [Fact]
+    public void A_topic_merge_is_one_undo()
+    {
+        var opened = Opened();
+        var logout = Guid.NewGuid();
+        opened.Ledger.Commit(new TopicAdded(logout, Website, "logout"));
+        var before = opened.Ledger.Version;
+
+        opened.Catalogue.RenameTopic("Website", "login", "Logout");
+
+        Assert.Equal(before + 1, opened.Ledger.Version);
+        Assert.True(opened.Ledger.TryUndo(out var reason), reason);
+        Assert.Equal(Login, opened.Ledger.State.Entries[opened.Login.Id].TopicId);
+        Assert.False(opened.Ledger.State.Topics[Login].Archived);
     }
 
     [Fact]

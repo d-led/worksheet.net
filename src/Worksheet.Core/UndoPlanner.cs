@@ -24,6 +24,30 @@ public static class UndoPlanner
             ProjectRestored restored => new ProjectRemoved(restored.Project, restored.Topics, restored.Before, restored.After),
             TopicRemoved removed => new TopicRestored(removed.Topic, removed.Before, removed.After),
             TopicRestored restored => new TopicRemoved(restored.Topic, restored.Before, restored.After),
+            TopicMoved moved => new TopicMoved(moved.TopicId, moved.ToProjectId, moved.FromProjectId),
+            Batch batch => Reverse(batch),
             _ => null,
         };
+
+    /// <summary>
+    /// A batch is undone part by part, latest first, so a change that depends on the one before it is
+    /// taken back in the order that keeps the fold consistent. A batch holding something that cannot
+    /// be undone cannot be undone either, and says so by answering nothing.
+    /// </summary>
+    private static LedgerEvent? Reverse(Batch batch)
+    {
+        var inverses = new List<LedgerEvent>(batch.Changes.Length);
+
+        foreach (var part in batch.Changes.Reverse())
+        {
+            if (Reverse(part) is not { } inverse)
+            {
+                return null;
+            }
+
+            inverses.Add(inverse);
+        }
+
+        return new Batch([.. inverses]);
+    }
 }
