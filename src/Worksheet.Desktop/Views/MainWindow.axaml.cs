@@ -23,7 +23,10 @@ public partial class MainWindow : SukiWindow
         Closing += HideInsteadOfClosing;
     }
 
-    /// <summary>Set only when the tray asked to quit; a person closing the window means "later".</summary>
+    /// <summary>
+    /// Set only when leaving is meant — the tray asked to quit, or the system is shutting down; a
+    /// person closing the window means "later".
+    /// </summary>
     public bool AllowClose { get; set; }
 
     /// <summary>
@@ -63,21 +66,33 @@ public partial class MainWindow : SukiWindow
             }
             : null;
 
-    private void HideInsteadOfClosing(object? sender, WindowClosingEventArgs e)
+    /// <summary>
+    /// Puts the window aside, saying so the first time. This is what closing means, and what the
+    /// system's own Quit means: the day keeps counting, and only the tray's Quit ends the process.
+    /// </summary>
+    public void PutAside()
     {
-        if (AllowClose)
-        {
-            return;
-        }
-
-        e.Cancel = true;
-
-        if (CloseProcedure is { } procedure && !procedure.Noticed())
+        if (IsVisible && CloseProcedure is { } procedure && !procedure.Noticed())
         {
             procedure.Notice(this);
             return;
         }
 
         Hide();
+    }
+
+    private void HideInsteadOfClosing(object? sender, WindowClosingEventArgs e)
+    {
+        // The machine is going down: nothing is gained by being the application that would not let
+        // it. Everything else — the close button, and the system's own Quit, which arrives as an
+        // application shutdown — is answered by putting the window aside.
+        if (AllowClose || e.CloseReason == WindowCloseReason.OSShutdown)
+        {
+            return;
+        }
+
+        e.Cancel = true;
+
+        PutAside();
     }
 }

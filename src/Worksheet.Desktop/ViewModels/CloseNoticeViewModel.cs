@@ -20,8 +20,8 @@ public sealed partial class CloseNoticeViewModel : ObservableObject
     public string Title { get; } = "Worksheet keeps running";
 
     public string Body { get; } =
-        "The window closes and the day keeps counting. The icon in the tray brings it back — "
-        + "its menu holds everything else — and so does starting Worksheet again.";
+        "The window closes and the day keeps counting. The icon in the tray brings it back — its menu "
+        + "holds the rest, Quit among them — and so does starting Worksheet again.";
 
     public string Quiet { get; } = "Don't tell me again.";
 }

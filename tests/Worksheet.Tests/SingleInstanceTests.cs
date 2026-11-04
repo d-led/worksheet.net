@@ -3,6 +3,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+using System.Diagnostics;
 using Worksheet.Desktop;
 
 namespace Worksheet.Tests;
@@ -47,6 +48,36 @@ public sealed class SingleInstanceTests
     }
 
     [Fact]
+    public void Leaving_does_not_wait_on_the_thread_that_is_leaving()
+    {
+        // The application takes the instance on its UI thread and gives it back on the same thread
+        // while that thread is leaving, so nothing it posts can run. A listen loop that resumes
+        // where it started would never finish, and leaving would wait out the whole timeout.
+        var name = NewName();
+        var caller = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(new DepartingThread());
+
+        SingleInstance? instance;
+
+        try
+        {
+            instance = SingleInstance.TryAcquire(name);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(caller);
+        }
+
+        Assert.NotNull(instance);
+
+        var clock = Stopwatch.StartNew();
+        instance.Dispose();
+        clock.Stop();
+
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(1), $"leaving took {clock.Elapsed.TotalSeconds:F1}s");
+    }
+
+    [Fact]
     public void Different_instances_do_not_block_each_other()
     {
         using var first = SingleInstance.TryAcquire(NewName());
@@ -75,5 +106,16 @@ public sealed class SingleInstanceTests
     public void Summoning_a_window_that_is_not_there_is_not_an_error()
     {
         Assert.Null(Record.Exception(() => SingleInstance.Summon(NewName())));
+    }
+
+    /// <summary>A thread that runs nothing posted to it, which is what a thread inside its own exit is.</summary>
+    private sealed class DepartingThread : SynchronizationContext
+    {
+        public override void Post(SendOrPostCallback deliver, object? state)
+        {
+        }
+
+        public override void Send(SendOrPostCallback deliver, object? state) =>
+            throw new NotSupportedException("This thread is leaving.");
     }
 }

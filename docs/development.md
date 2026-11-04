@@ -240,8 +240,13 @@ Some choices in the window look like omissions and are not:
 - **The close notice is our own window, not a system notification.** Avalonia has no API for
   system notifications; `Avalonia.Controls.Notifications` is the in-window card set, and macOS
   Notification Center would need a signed bundle and entitlements. So the first close opens a small
-  window beside it that says the day keeps counting and where the icon is, with *Quit Worksheet*
-  and *Close the window* (the default, so Escape and Return both take the harmless answer). It is
+  window beside it that says the day keeps counting and where the icon is, with one answer —
+  *Close the window*, the default, so Escape and Return both take it. Closing is not leaving, so
+  leaving is not offered there; `Quit` is the tray menu's. The same notice answers the system's
+  Quit, because that request arrives at the window as a close: `WindowClosingEventArgs.CloseReason`
+  says which kind — `WindowClosing` for the close button and Cmd+W, `ApplicationShutdown` for
+  Cmd+Q and the application menu's Quit (both put the window aside), and `OSShutdown`, the one kind
+  let through, because a machine going down should not be argued with. It is
   shown once: `settings.json` holds `closeNoticeShown`, `SettingsResolver.HasShownCloseNotice` reads
   it and `RememberCloseNotice()` writes it, and `Store` keeps the flag while writing the knobs. A
   notice that repeats itself is one nobody reads.

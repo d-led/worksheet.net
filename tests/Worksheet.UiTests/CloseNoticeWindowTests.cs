@@ -12,8 +12,8 @@ using Worksheet.Desktop.Views;
 namespace Worksheet.UiTests;
 
 /// <summary>
-/// The notice a person gets the first time they close the window: what happens next, and the two
-/// answers they can give it.
+/// The notice a person gets the first time the window is put aside: what happens next, and the one
+/// answer it takes. Leaving is not among the answers — the tray's menu is where that lives.
 /// </summary>
 public sealed class CloseNoticeWindowTests
 {
@@ -27,35 +27,33 @@ public sealed class CloseNoticeWindowTests
     }
 
     [AvaloniaFact]
-    public void Closing_the_window_is_the_answer_that_leaves_the_application_running()
+    public void The_one_answer_closes_the_window_and_keeps_the_day_running()
     {
         var window = Opened();
 
         Mouse.Click(window, window.FindControl<Button>("CloseWindow")!);
 
-        Assert.False(window.QuitInstead);
+        Assert.False(window.IsVisible);
         Assert.True(window.DoNotTellAgain);
     }
 
     [AvaloniaFact]
-    public void Quitting_is_the_answer_that_leaves()
+    public void The_notice_offers_no_way_to_leave()
     {
         var window = Opened();
 
-        Mouse.Click(window, window.FindControl<Button>("Quit")!);
-
-        Assert.True(window.QuitInstead);
+        Assert.Null(window.FindControl<Button>("Quit"));
     }
 
     [AvaloniaFact]
-    public void Escape_takes_the_harmless_answer()
+    public void Escape_is_an_answer_too()
     {
         var window = Opened();
 
         window.Close();
         Dispatcher.UIThread.RunJobs();
 
-        Assert.False(window.QuitInstead);
+        Assert.False(window.IsVisible);
     }
 
     [AvaloniaFact]

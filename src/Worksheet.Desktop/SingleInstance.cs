@@ -88,9 +88,13 @@ internal sealed class SingleInstance : IDisposable
         {
             try
             {
-                await using (waiting)
+                // Nothing here resumes on the thread that started it: the application takes the
+                // instance on its UI thread and gives it back on that same thread while the thread
+                // is on its way out, so a loop that came back there could never finish, and leaving
+                // would wait out the whole of the timeout below.
+                await using (waiting.ConfigureAwait(false))
                 {
-                    await waiting.WaitForConnectionAsync(_closed.Token);
+                    await waiting.WaitForConnectionAsync(_closed.Token).ConfigureAwait(false);
 
                     Summoned?.Invoke(this, EventArgs.Empty);
                 }

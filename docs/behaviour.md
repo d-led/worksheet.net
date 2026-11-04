@@ -15,7 +15,9 @@ and records decisions; it is not a description of any other program's source.
 
 1. Shows one day at a time: the entries of that day in start order, and the total
    time on them. The left and right arrows move to the day before and after,
-   unless the caret is in a text field, which then keeps them for itself.
+   unless the caret is in a text field, which then keeps them for itself. A field
+   takes what was typed when it is left, and Enter takes it the same way — a cell
+   of the day is settled, a number in the settings is saved.
 2. Accepts an entry as one line of text (see `entry-syntax.md`), completing the names
    it is made of: the known projects while a project is being typed, then the topics
    of that project once its bracket is open. The keyboard walks the offers and takes
@@ -28,9 +30,12 @@ and records decisions; it is not a description of any other program's source.
 5. Runs in the system tray. Closing the window puts it aside rather than ending
    the process; the tray icon raises it again. The first time a window is closed
    the application says so in a notice of its own — the day keeps counting, the
-   icon in the menu bar brings the window back — and offers leaving instead; the
-   notice can be silenced there, and is then not shown again. Only *Quit* ends
-   the process. On macOS the application has no Dock icon at all: it is a
+   icon in the menu bar brings the window back — and the notice can be silenced
+   there, and is then not shown again. Nothing in that notice leaves: the
+   system's own Quit — Cmd+Q, and the Quit in the application menu — is answered
+   the way closing the window is, because only *Quit* ends the process, the one
+   in the menu-bar icon. A shutdown the machine itself is carrying out is not
+   stood in the way of. On macOS the application has no Dock icon at all: it is a
    menu-bar application, and a Dock icon it could never hear a click on would
    only take a place and answer nothing (see `development.md` for the measured
    reasons). The tray and the window's heading both open the

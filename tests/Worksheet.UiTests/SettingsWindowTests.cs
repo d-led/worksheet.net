@@ -82,4 +82,21 @@ public sealed class SettingsWindowTests
         Assert.Equal(7000, resolver.Resolve().Values.McpPort);
         Assert.Equal("Saved.", window.FindControl<TextBlock>("Message")!.Text);
     }
+
+    [AvaloniaFact]
+    public void Enter_in_a_number_field_saves_it_the_way_the_button_does()
+    {
+        using var temp = new TempDirectory("worksheet-settings-window");
+        var applied = 0;
+
+        var window = Opened(temp, out var resolver, () => applied++);
+        window.FindControl<TextBox>("PortBox")!.Text = "7000";
+
+        window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(1, applied);
+        Assert.Equal(7000, resolver.Resolve().Values.McpPort);
+        Assert.Equal("Saved.", window.FindControl<TextBlock>("Message")!.Text);
+    }
 }

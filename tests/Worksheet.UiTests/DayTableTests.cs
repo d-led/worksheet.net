@@ -5,7 +5,9 @@
 
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Worksheet.Core;
 using Worksheet.Desktop.Components;
 using Worksheet.Desktop.ViewModels;
@@ -22,6 +24,12 @@ public sealed class DayTableTests : UiTestBase
 
     private static TextBox Cell(Border row, string name) =>
         Descendants<TextBox>(row).Single(box => box.Classes.Contains(name));
+
+    private void Enter()
+    {
+        Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+        Settle();
+    }
 
     [AvaloniaFact]
     public void The_table_shows_a_start_and_an_end_per_entry_and_nothing_else()
@@ -206,6 +214,49 @@ public sealed class DayTableTests : UiTestBase
 
         Assert.Equal(TimeSpan.FromMinutes(135), Assert.Single(Ledger.Ledger.State.Entries).Value.Duration);
         Assert.Equal("2h15m", day.Total);
+    }
+
+    [AvaloniaFact]
+    public void Pressing_enter_in_a_clock_field_takes_the_time_typed()
+    {
+        var day = NewDay();
+        Seed(day, "Website 09:00 1h");
+
+        var table = Show<DayTable>(day);
+        Settle();
+
+        var endBox = Cell(Assert.Single(EntryRows(table)), "end-input");
+        endBox.Focus();
+        endBox.Text = "11:15";
+
+        Enter();
+
+        Assert.Equal(TimeSpan.FromMinutes(135), Assert.Single(Ledger.Ledger.State.Entries).Value.Duration);
+    }
+
+    [AvaloniaFact]
+    public void Pressing_enter_in_a_project_field_takes_the_name_typed()
+    {
+        var day = NewDay();
+        Seed(day, "Website 09:00 1h");
+
+        var table = Show<DayTable>(day);
+        Settle();
+
+        var projectBox = Descendants<AutoCompleteBox>(Assert.Single(EntryRows(table))).First();
+        projectBox.Focus();
+        Settle();
+        Window.KeyTextInput("Client portal");
+        Settle();
+
+        Enter();
+
+        var entry = Assert.Single(Ledger.Ledger.State.Entries).Value;
+        Assert.Equal("Client portal", Ledger.Ledger.State.ProjectName(entry.ProjectId));
+
+        // The row is built again from the journal, and shows the name the key took.
+        var restored = Descendants<AutoCompleteBox>(Assert.Single(EntryRows(table))).First();
+        Assert.Equal("Client portal", restored.Text);
     }
 
     [AvaloniaFact]

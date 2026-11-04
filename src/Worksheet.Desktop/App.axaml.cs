@@ -88,7 +88,7 @@ public sealed class App : Application
         _window = new MainWindow { DataContext = day };
         _window.CloseProcedure = new ClosingProcedure(
             () => _resolver?.HasShownCloseNotice ?? true,
-            window => ShowCloseNotice(window, desktop));
+            ShowCloseNotice);
         desktop.MainWindow = _window;
 
         TrayHost.Attach(
@@ -284,10 +284,11 @@ public sealed class App : Application
     }
 
     /// <summary>
-    /// The first time the window is closed: say that the day keeps counting and where the icon is,
-    /// and offer leaving instead. Told once, because a notice that repeats itself is one nobody reads.
+    /// The first time the window is put aside: say that the day keeps counting and where the icon
+    /// is. Told once, because a notice that repeats itself is one nobody reads. Nothing is offered
+    /// here but the answer that keeps the day going — quitting lives in the tray's menu.
     /// </summary>
-    private void ShowCloseNotice(Window window, IClassicDesktopStyleApplicationLifetime desktop)
+    private void ShowCloseNotice(Window window)
     {
         var notice = new CloseNoticeWindow { DataContext = new CloseNoticeViewModel() };
 
@@ -296,12 +297,6 @@ public sealed class App : Application
             if (notice.DoNotTellAgain)
             {
                 _resolver?.RememberCloseNotice();
-            }
-
-            if (notice.QuitInstead)
-            {
-                Quit(desktop);
-                return;
             }
 
             window.Hide();
