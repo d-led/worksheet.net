@@ -174,13 +174,14 @@ the same thing the day is folded from.
 
 ## The tray
 
-Closing the window hides it; the day keeps counting.
+Closing the window puts the day aside; it keeps counting.
 
 On Windows and Linux a click on the tray icon raises the window, and a right click opens the menu.
-On macOS a click on the icon opens that menu — the platform gives an application no click of its own
-for an icon that carries a menu — and the window comes back either from *Show window*, the menu's
-first entry, or by starting the application again: the copy that is already running raises its
-window instead of a second one starting.
+On macOS there are two icons, and they do different things: the one in the menu bar opens the menu
+(the platform gives an application no click of its own for an icon that carries a menu), and the one
+in the Dock brings the window back — closing the window there minimises it, so the Dock has
+something to give back. Starting the application again raises the window of the copy already
+running, on any platform, instead of starting a second one.
 
 The menu holds *Show window*, *Connect an agent…*, *Projects and topics…*, *Settings…*, *Open data
 folder*, *The journal…* and *Quit*.

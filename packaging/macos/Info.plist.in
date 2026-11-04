@@ -4,8 +4,11 @@
   The bundle the application is copied into /Applications as. `scripts/package.sh` writes
   @VERSION@ in from the build and adds AppIcon.icns next to it.
 
-  LSUIElement is deliberately true: the application is a tray application, so it belongs in the
-  menu bar rather than in the Dock, and its window is opened from the tray.
+  The application keeps a Dock icon as well as a menu-bar one. That is not an accident: macOS hands
+  an application no click for its menu-bar icon, so the Dock icon is the only one that can be clicked
+  to bring the window back. Closing the window therefore minimises it, where the Dock shows it and
+  its icon restores it. Avalonia says the same at start-up with MacOSPlatformOptions.ShowInDock,
+  which is why this file no longer claims LSUIElement.
 -->
 <plist version="1.0">
 <dict>
@@ -27,8 +30,6 @@
   <string>@VERSION@</string>
   <key>LSMinimumSystemVersion</key>
   <string>11.0</string>
-  <key>LSUIElement</key>
-  <true/>
   <key>NSHighResolutionCapable</key>
   <true/>
 </dict>

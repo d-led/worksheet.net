@@ -201,10 +201,18 @@ Some choices in the window look like omissions and are not:
   caps a socket path at 104 characters, so the name is short and a pipe that cannot be had simply
   means no summons rather than a failure to start. macOS asks a running application to *reopen*
   rather than starting a second process, so `ActivationKind.Reopen` raises the window too.
-- **On macOS a click on the tray icon cannot raise the window.** Avalonia's own documentation says
-  `TrayIcon.Clicked` is never raised on macOS, and an icon that carries a menu opens the menu instead;
-  so the way in on that platform is the menu's first entry, or starting the application again. The
-  tray menu's *Show window* is first for that reason.
+- **On macOS the Dock icon is the way back, and that is why it is there.** Avalonia's own
+  documentation says `TrayIcon.Clicked` is never raised on macOS, and an icon that carries a menu
+  opens the menu instead — so the menu-bar icon cannot raise the window. It cannot report a reopen
+  either: `ClassicDesktopStyleApplicationLifetime` is not an `IActivatableLifetime` in Avalonia
+  12.1.5 (measured, not assumed), so `Activated` never fires and a listener for it is dead code.
+  What does work is AppKit's own behaviour: activating the application restores its minimised
+  windows, which was measured too — `open -a` on a running copy took the window from `Minimized`
+  back to `Normal` with no code of ours involved. So closing the window on macOS minimises it
+  rather than hiding it, the Dock icon restores it, and `MacOSPlatformOptions.ShowInDock = true` is
+  said out loud in `Program.cs` rather than inherited from a default (which is also why the bundle
+  no longer claims `LSUIElement`). Reaching the window from the menu bar is *Show window*, first in
+  the menu.
 - **A merge is one journal change.** Renaming a project or a topic onto a name already in use
   rewrites entries and re-homes or retires topics, which is several changes; they travel as one
   `Batch`, so the journal records one decision and one undo takes the whole of it back. The

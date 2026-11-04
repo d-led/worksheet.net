@@ -57,6 +57,12 @@ public partial class MainWindow : SukiWindow
             }
             : null;
 
+    /// <summary>
+    /// Closing puts the day aside rather than ending it. On macOS that means the Dock — a minimised
+    /// window, which the application's own icon brings back when it is clicked, since an application
+    /// with no visible window gets no other signal that its icon was used. Elsewhere the tray owns
+    /// the click, so the window simply hides.
+    /// </summary>
     private void HideInsteadOfClosing(object? sender, WindowClosingEventArgs e)
     {
         if (AllowClose)
@@ -65,6 +71,13 @@ public partial class MainWindow : SukiWindow
         }
 
         e.Cancel = true;
+
+        if (OperatingSystem.IsMacOS())
+        {
+            WindowState = WindowState.Minimized;
+            return;
+        }
+
         Hide();
     }
 }

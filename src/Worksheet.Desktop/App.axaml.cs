@@ -70,25 +70,6 @@ public sealed class App : Application
         return true;
     }
 
-    /// <summary>
-    /// macOS asks the running application to reopen when its icon is opened again — a double click
-    /// on the bundle. That arrives here rather than as a second process, so it is the only way a
-    /// click outside the running window can bring it back on that platform.
-    /// </summary>
-    private void StartListeningForReopen()
-    {
-        if (ApplicationLifetime is IActivatableLifetime activatable)
-        {
-            activatable.Activated += (_, e) =>
-            {
-                if (e.Kind is ActivationKind.Reopen)
-                {
-                    ShowWindow();
-                }
-            };
-        }
-    }
-
     private void Start(IClassicDesktopStyleApplicationLifetime desktop)
     {
         // Closing the window must not end the process: only the tray decides that.
@@ -111,7 +92,6 @@ public sealed class App : Application
             this,
             new TrayActions(ShowWindow, ShowConnect, ShowSettings, ShowManage, ShowAudit, OpenDataFolder, () => Quit(desktop)));
 
-        StartListeningForReopen();
         StartMcp(day, _local);
         StartWeeklyBackups(_local);
 

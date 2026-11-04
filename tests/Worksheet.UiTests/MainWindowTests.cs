@@ -37,7 +37,7 @@ public sealed class MainWindowTests : UiTestBase
     }
 
     [AvaloniaFact]
-    public void Closing_the_window_hides_it_and_only_quitting_really_closes_it()
+    public void Closing_the_window_puts_it_aside_and_only_quitting_really_closes_it()
     {
         var window = OpenWindow();
         var closed = false;
@@ -46,9 +46,14 @@ public sealed class MainWindowTests : UiTestBase
         window.Close();
         Dispatcher.UIThread.RunJobs();
 
-        // Closing was cancelled, so the window is hidden rather than gone.
+        // Closing was cancelled, so the window is put aside rather than gone: to the Dock on macOS,
+        // where its own icon is what brings it back, and out of sight everywhere else.
         Assert.False(closed);
-        Assert.False(window.IsVisible);
+        Assert.True(
+            OperatingSystem.IsMacOS()
+                ? window.WindowState == WindowState.Minimized
+                : !window.IsVisible,
+            $"the window is put aside, not gone ({window.WindowState}, visible {window.IsVisible})");
 
         window.AllowClose = true;
         window.Close();

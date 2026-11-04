@@ -25,14 +25,17 @@ and records decisions; it is not a description of any other program's source.
    working day.
 4. Undoes the most recent change by appending its inverse, and redoes it by appending it
    again. Any new change forgets what could have been redone.
-5. Runs in the system tray. Closing the window hides it. Only the tray's *Quit*
-   ends the process. The tray and the window's heading both open the other four
-   screens — settings, projects and topics, the agent connection, the data
-   folder — so a platform without a tray icon loses only *Quit*. Each of those
-   windows leaves on Escape; in the catalogue, a name that differs from the
-   journal is put back first, and the next Escape leaves. Starting the
-   application again raises the window of the copy that is running, rather than
-   starting a second copy beside it.
+5. Runs in the system tray. Closing the window puts it aside rather than ending
+   the process: on macOS the window is minimised, so that the application's
+   Dock icon — the only icon macOS lets an application see a click on — brings
+   it back; elsewhere it hides and the tray icon raises it. Only the tray's
+   *Quit* ends the process. The tray and the window's heading both open the
+   other five screens — settings, projects and topics, the journal, the agent
+   connection, the data folder — so a platform without a tray icon loses only
+   *Quit*. Each of those windows leaves on Escape; in the catalogue, a name that
+   differs from the journal is put back first, and the next Escape leaves.
+   Starting the application again raises the window of the copy that is running,
+   rather than starting a second copy beside it.
 6. Follows the system's light or dark appearance, and its accent colour.
 7. Keeps everything in one file in the per-user data directory.
 8. Reads the journal as an audit when asked: every stored change newest first,
