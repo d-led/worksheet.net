@@ -13,7 +13,10 @@ public sealed record ProjectLine(string Project, int Minutes, IReadOnlyList<Topi
 /// <summary>One topic of a project; no name is the hours that were logged without one.</summary>
 public sealed record TopicLine(string? Topic, int Minutes)
 {
-    public string Label => Topic ?? "without a topic";
+    /// <summary>How the hours that were logged without a topic are named, in the data and on the page.</summary>
+    public const string WithoutTopic = "without a topic";
+
+    public string Label => Topic ?? WithoutTopic;
 }
 
 /// <summary>One time range as the report shows it.</summary>

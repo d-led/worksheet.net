@@ -6,6 +6,7 @@
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Worksheet.Core;
 using Worksheet.Export;
 
@@ -168,21 +169,40 @@ public sealed class ExportTests
     }
 
     [Fact]
-    public void The_page_carries_the_tables_the_figures_and_both_pictures()
+    public void The_page_carries_the_tables_the_figures_and_the_bars()
     {
         Logged("Website (login) 09:00 1h");
         Logged("Mobile 11:00 3h");
 
         var page = Html(Report(ExportPeriod.Month));
 
-        Assert.Contains("https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css", page);
-        Assert.Contains("mermaid.esm.min.mjs", page);
-        Assert.Contains("pie showData", page);
-        Assert.Contains("gantt", page);
+        Assert.Contains("https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css", page);
+        Assert.Contains("class=\"progress-bar\" style=\"width:75.0%\"", page);
         Assert.Contains(">Website</td>", page);
         Assert.Contains("75.0 %", page);
         Assert.Contains("4h", page);
-        Assert.Contains("2026-11-03 09:00", page);
+    }
+
+    [Fact]
+    public void The_page_draws_nothing_that_has_to_be_fetched_beyond_bootstrap()
+    {
+        var page = Html(Report(ExportPeriod.Month));
+
+        Assert.Single(Regex.Matches(page, "rel=\"stylesheet\""));
+        Assert.DoesNotContain("src=", page);
+    }
+
+    [Fact]
+    public void The_tables_sort_by_name_and_by_the_number_in_the_cell()
+    {
+        Logged("Website (login) 09:00 1h");
+
+        var page = Html(Report(ExportPeriod.Day));
+
+        Assert.Contains("data-sortable", page);
+        Assert.Contains("data-sort=\"text\">Project</button>", page);
+        Assert.Contains("data-sort=\"number\">Share</button>", page);
+        Assert.Contains("data-value=\"60\"", page);
     }
 
     [Fact]
@@ -200,15 +220,17 @@ public sealed class ExportTests
     }
 
     [Fact]
-    public void A_long_range_draws_one_bar_per_project_and_day_instead_of_one_per_entry()
+    public void The_timeline_has_one_lane_per_project_and_topic_not_one_per_range()
     {
-        Logged("Website 09:00 1h");
-        Logged("Website 10:00 1h");
+        Logged("Website (login) 09:00 1h");
+        Logged("Website (login) 10:00 1h");
+        Logged("Website (reports) 11:00 1h");
 
-        var quarter = Html(Report(ExportPeriod.Quarter));
+        var page = Html(Report(ExportPeriod.Day));
 
-        Assert.Contains("dateFormat YYYY-MM-DD\n", quarter);
-        Assert.Contains("3 Nov (2h)", quarter);
+        Assert.Single(Regex.Matches(page, ">Website · login</td>"));
+        Assert.Single(Regex.Matches(page, ">Website · reports</td>"));
+        Assert.Equal(3, Regex.Matches(page, "position-absolute top-0 bottom-0").Count);
     }
 
     [Fact]

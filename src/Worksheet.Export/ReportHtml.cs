@@ -9,16 +9,14 @@ using System.Text;
 namespace Worksheet.Export;
 
 /// <summary>
-/// The report as one page: Bootstrap from a CDN to read it, mermaid from a CDN for the two
-/// pictures — a pie for the shares and a gantt for the range as it was worked — and no script of
-/// its own. The page is written to stand alone: opened from a file, it needs a connection for the
-/// two libraries, and says in its footer what it depends on.
+/// The report as one page: totals with their shares, a bar per project and a bar per project and
+/// topic, a lane per project and topic over the days of the range, and a foldable list of the days.
+/// Bootstrap from a CDN gives it its typography and its bars; the one script is the page's own and
+/// sorts a table when a heading is pressed.
 /// </summary>
 public static class ReportHtml
 {
-    private const string Bootstrap = "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css";
-
-    private const string Mermaid = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    private const string Bootstrap = "https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css";
 
     public static string Of(RangeReport report, DateTimeOffset generatedAt)
     {
@@ -86,188 +84,254 @@ public static class ReportHtml
 
           """;
 
+    /// <summary>
+    /// One bar per project on the row that names it: a share is a length, and a bar of that length
+    /// under the number says more in less width than a circle cut into slices.
+    /// </summary>
     private static string ProjectCard(RangeReport report) =>
         $$"""
           <section class="card mb-4">
             <div class="card-body">
               <h2 class="h5 mb-3">Where the time went</h2>
-              <div class="row g-4 align-items-center">
-                <div class="col-md-4">{{Pie(report)}}</div>
-                <div class="col-md-8">{{ProjectsTable(report)}}</div>
-              </div>
+              {{(report.Projects.Count == 0
+                  ? "<p class=\"text-body-secondary mb-0\">Nothing was logged in this range.</p>\n"
+                  : ProjectBars(report))}}
             </div>
           </section>
 
           """;
 
-    private static string ProjectsTable(RangeReport report) =>
-        report.Projects.Count == 0
-            ? "<p class=\"text-body-secondary mb-0\">Nothing was logged in this range.</p>\n"
-            : $$"""
-              <table class="table table-sm align-middle w-auto mb-0">
-                <thead>
-                  <tr><th scope="col">Project</th><th scope="col" class="text-end">Time</th><th scope="col" class="text-end">Share</th></tr>
-                </thead>
-                <tbody>
-                  {{Rows(report, report.Projects.Select(project => (project.Project, project.Minutes)))}}
-                  <tr class="table-light fw-semibold">
-                    <td>Total</td>
-                    <td class="text-end">{{Esc(Shares.Hours(report.TotalMinutes))}}</td>
-                    <td class="text-end">100.0 %</td>
-                  </tr>
-                </tbody>
-              </table>
+    private static string ProjectBars(RangeReport report)
+    {
+        var rows = new StringBuilder();
 
-              """;
+        foreach (var project in report.Projects)
+        {
+            rows.AppendLine(BarRow([project.Project], project.Minutes, report.TotalMinutes));
+        }
+
+        var total =
+            $"    <tr class=\"table-light fw-semibold\"><td>Total</td><td></td>"
+            + $"<td class=\"text-end\">{Esc(Shares.Hours(report.TotalMinutes))}</td>"
+            + "<td class=\"text-end\">100.0 %</td></tr>\n";
+
+        return Table(["Project"], rows.ToString(), total);
+    }
 
     private static string TopicCard(RangeReport report)
     {
-        var pairs = report.Projects
-            .SelectMany(project => project.Topics.Select(topic => (Project: project.Project, topic.Label, topic.Minutes)))
-            .ToArray();
+        var rows = TopicRows(report);
 
         return $$"""
           <section class="card mb-4">
             <div class="card-body">
-              <h2 class="h5">By project and topic</h2>
-              {{(pairs.Length == 0
+              <h2 class="h5 mb-3">By project and topic</h2>
+              {{(rows.Length == 0
                   ? "<p class=\"text-body-secondary mb-0\">No project was used yet in this range.</p>\n"
-                  : TopicsTable(report, pairs))}}
+                  : Table(["Project", "Topic"], rows))}}
             </div>
           </section>
 
           """;
     }
 
-    private static string TopicsTable(RangeReport report, (string Project, string Topic, int Minutes)[] pairs)
+    /// <summary>A project is named once, on the first of its rows, so the bars start close to the names.</summary>
+    private static string TopicRows(RangeReport report)
     {
         var rows = new StringBuilder();
+        string? named = null;
 
-        foreach (var (project, topic, minutes) in pairs)
+        foreach (var project in report.Projects)
         {
-            rows.AppendLine(
-                $"      <tr><td>{Esc(project)}</td><td>{Esc(topic)}</td>"
-                + $"<td class=\"text-end\">{Esc(Shares.Hours(minutes))}</td>"
-                + $"<td class=\"text-end\">{Esc(Shares.Percent(minutes, report.TotalMinutes))}</td></tr>");
-        }
+            foreach (var topic in project.Topics)
+            {
+                var cell = project.Project == named ? string.Empty : project.Project;
+                named = project.Project;
 
-        return $$"""
-                   <table class="table table-sm align-middle w-auto mb-0">
-                     <thead>
-                       <tr><th scope="col">Project</th><th scope="col">Topic</th><th scope="col" class="text-end">Time</th><th scope="col" class="text-end">Share</th></tr>
-                     </thead>
-                     <tbody>
-                 {{rows.ToString()}}    </tbody>
-                   </table>
-
-                 """;
-    }
-
-    private static string Rows(RangeReport report, IEnumerable<(string Label, int Minutes)> lines)
-    {
-        var rows = new StringBuilder();
-
-        foreach (var (label, minutes) in lines)
-        {
-            rows.AppendLine(
-                $"      <tr><td>{Esc(label)}</td>"
-                + $"<td class=\"text-end\">{Esc(Shares.Hours(minutes))}</td>"
-                + $"<td class=\"text-end\">{Esc(Shares.Percent(minutes, report.TotalMinutes))}</td></tr>");
+                rows.AppendLine(BarRow([cell, topic.Label], topic.Minutes, report.TotalMinutes));
+            }
         }
 
         return rows.ToString();
     }
 
     /// <summary>
-    /// A pie rather than bars: the shares are of one whole, and a pie says that in the least width.
-    /// The absolutes are in the table beside it, so nothing is lost to the picture.
+    /// A table of bars: the cells that name a row, the bar, the time it stands for, its share. Every
+    /// heading but the bar sorts, and the footer stays where it is while the rows move.
     /// </summary>
-    private static string Pie(RangeReport report)
-    {
-        var projects = report.Projects.Where(project => project.Minutes > 0).ToArray();
+    private static string Table(string[] headings, string rows, string footer = "") =>
+        "<table class=\"table table-sm align-middle mb-0\" data-sortable>\n"
+        + "  <thead><tr>"
+        + string.Concat(headings.Select(heading => $"<th scope=\"col\">{Sorting(heading, "text", string.Empty)}</th>"))
+        + "<th scope=\"col\" style=\"width:45%\"></th>"
+        + $"<th scope=\"col\" class=\"text-end\">{Sorting("Time", "number", "text-end")}</th>"
+        + $"<th scope=\"col\" class=\"text-end\">{Sorting("Share", "number", "text-end")}</th>"
+        + "</tr></thead>\n"
+        + $"  <tbody>\n{rows}  </tbody>\n"
+        + (footer.Length == 0 ? string.Empty : $"  <tfoot>\n{footer}  </tfoot>\n")
+        + "</table>\n";
 
-        if (projects.Length == 0)
-        {
-            return "<p class=\"text-body-secondary mb-0\">No hours to share out.</p>\n";
-        }
+    /// <summary>A heading that sorts its column when pressed, and says which way it is sorted now.</summary>
+    private static string Sorting(string heading, string kind, string classes) =>
+        $"<button type=\"button\" class=\"btn btn-link p-0 fw-semibold text-reset {classes}\""
+        + $" data-sort=\"{kind}\">{Esc(heading)}</button>";
 
-        var chart = new StringBuilder("pie showData\n    title Hours by project\n");
-
-        foreach (var project in projects)
-        {
-            var hours = (project.Minutes / 60.0).ToString("0.00", CultureInfo.InvariantCulture);
-
-            chart.AppendLine($"    \"{Label(project.Project)}\" : {hours}");
-        }
-
-        return MermaidBlock(chart.ToString());
-    }
-
-    /// <summary>
-    /// The range as it was worked. Up to a month every entry keeps its own bar; beyond that a bar
-    /// per project per day, because a year of bars is a thicket rather than a picture.
-    /// </summary>
-    private static string Gantt(RangeReport report)
-    {
-        if (report.Days.Count == 0)
-        {
-            return "<p class=\"text-body-secondary mb-0\">Nothing to draw.</p>\n";
-        }
-
-        var perEntry = report.Range.Days <= 62;
-        var lines = new StringBuilder();
-        lines.AppendLine("gantt");
-        lines.AppendLine($"    title {Label(report.Range.Label)}");
-        lines.AppendLine(perEntry ? "    dateFormat YYYY-MM-DD HH:mm" : "    dateFormat YYYY-MM-DD");
-        lines.AppendLine("    axisFormat %d %b");
-        lines.AppendLine("    todayMarker off");
-
-        var id = 0;
-
-        foreach (var project in report.Projects)
-        {
-            lines.AppendLine($"    section {Label(project.Project)}");
-
-            foreach (var bar in Bars(report, project.Project, perEntry))
-            {
-                lines.AppendLine($"        {bar.Label} :e{++id}, {bar.Start}, {bar.Minutes}m");
-            }
-        }
-
-        return MermaidBlock(lines.ToString());
-    }
-
-    private static IEnumerable<(string Label, string Start, int Minutes)> Bars(RangeReport report, string project, bool perEntry) =>
-        perEntry ? EntryBars(report, project) : DayBars(report, project);
-
-    private static IEnumerable<(string Label, string Start, int Minutes)> EntryBars(RangeReport report, string project) =>
-        report.Days
-            .SelectMany(day => day.Entries.Select(entry => (Day: day.Date, Entry: entry)))
-            .Where(pair => pair.Entry.Project == project)
-            .Select(pair => (
-                $"{Label(pair.Entry.Topic ?? pair.Entry.Project)} {Shares.Hours(pair.Entry.Minutes)}",
-                $"{IsoDay(pair.Day)} {Clock(pair.Entry.Start)}",
-                pair.Entry.Minutes));
-
-    private static IEnumerable<(string Label, string Start, int Minutes)> DayBars(RangeReport report, string project) =>
-        report.Days
-            .Select(day => (day.Date, Minutes: day.Entries.Where(entry => entry.Project == project).Sum(entry => entry.Minutes)))
-            .Where(day => day.Minutes > 0)
-            .Select(day => (
-                $"{Reports(day.Date)} ({Shares.Hours(day.Minutes)})",
-                IsoDay(day.Date),
-                Math.Min(day.Minutes, 24 * 60)));
+    private static string BarRow(string[] cells, int minutes, int total) =>
+        "    <tr>"
+        + string.Concat(cells.Select(cell => $"<td>{Esc(cell)}</td>"))
+        + $"<td><div class=\"progress\" role=\"progressbar\" aria-valuenow=\"{Esc(Shares.Percent(minutes, total))}\""
+        + " aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"height:10px\">"
+        + $"<div class=\"progress-bar\" style=\"width:{Shares.Width(minutes, total)}\"></div></div></td>"
+        + $"<td class=\"text-end text-nowrap\" data-value=\"{minutes}\">{Esc(Shares.Hours(minutes))}</td>"
+        + $"<td class=\"text-end text-nowrap\" data-value=\"{minutes}\">{Esc(Shares.Percent(minutes, total))}</td>"
+        + "</tr>";
 
     private static string TimelineCard(RangeReport report) =>
         $$"""
           <section class="card mb-4">
             <div class="card-body">
-              <h2 class="h5">The range as it was worked</h2>
-              {{Gantt(report)}}
+              <h2 class="h5 mb-3">The range as it was worked</h2>
+              {{(report.Days.Count == 0 || report.Projects.Count == 0
+                  ? "<p class=\"text-body-secondary mb-0\">Nothing to draw.</p>\n"
+                  : Timeline(report))}}
             </div>
           </section>
 
           """;
+
+    /// <summary>
+    /// A lane per project and topic, one column per day worked, and a mark in the column for every
+    /// range: the picture is read down a lane instead of down one line per range, which is what a
+    /// gantt of the same data would spend its height on.
+    /// </summary>
+    private static string Timeline(RangeReport report)
+    {
+        var days = report.Days.Select(day => day.Date).ToArray();
+        var lanes = Lanes(report);
+        var (from, span) = Window(report);
+        var table = new StringBuilder();
+
+        table.AppendLine("<table class=\"table table-sm align-middle mb-0\">");
+        table.AppendLine(
+            "  <thead><tr><th scope=\"col\">Project and topic</th><th scope=\"col\" class=\"text-end\">Time</th>"
+            + $"<th scope=\"col\" style=\"width:55%\">{DayHeadings(days, from, span)}</th></tr></thead>");
+        table.AppendLine("  <tbody>");
+
+        foreach (var lane in lanes)
+        {
+            table.AppendLine(LaneRow(lane, report, days, from, span));
+        }
+
+        table.Append("  </tbody>\n</table>\n");
+
+        return table.ToString();
+    }
+
+    /// <summary>
+    /// The hours the range was actually worked in — from the earliest start to the latest end. A day
+    /// column is scaled to that window rather than to midnight, which is what keeps an hour from
+    /// being a hair on a wide column.
+    /// </summary>
+    private static (double From, double Span) Window(RangeReport report)
+    {
+        var entries = report.Days.SelectMany(day => day.Entries).ToArray();
+
+        if (entries.Length == 0)
+        {
+            return (0, 24 * 60);
+        }
+
+        var from = entries.Min(entry => entry.Start.ToTimeSpan().TotalMinutes);
+        var to = entries.Max(entry => entry.Start.ToTimeSpan().TotalMinutes + entry.Minutes);
+
+        return (from, Math.Max(to - from, 60));
+    }
+
+    /// <summary>One lane: a project, one of its topics, and the hours that topic holds in the range.</summary>
+    private sealed record Lane(string Project, string Topic, int Minutes, string Colour)
+    {
+        public bool Holds(EntryLine entry) =>
+            entry.Project == Project && (entry.Topic ?? TopicLine.WithoutTopic) == Topic;
+    }
+
+    /// <summary>The lanes in the order the tables name them, each with a colour that tells it apart.</summary>
+    private static Lane[] Lanes(RangeReport report)
+    {
+        string[] colours = ["primary", "success", "info", "warning", "secondary"];
+        var lanes = new List<Lane>();
+
+        for (var index = 0; index < report.Projects.Count; index++)
+        {
+            var project = report.Projects[index];
+            var colour = colours[index % colours.Length];
+
+            foreach (var topic in project.Topics)
+            {
+                lanes.Add(new Lane(project.Project, topic.Label, topic.Minutes, colour));
+            }
+        }
+
+        return [.. lanes];
+    }
+
+    private static string DayHeadings(DateOnly[] days, double from, double span) =>
+        "<div class=\"d-flex gap-1 small text-body-secondary\">"
+        + $"<span class=\"flex-fill text-end pe-1\">{Esc(Clock(from))}</span>"
+        + string.Concat(days.Select(day => $"<span class=\"flex-fill text-center\">{Esc(Reports(day))}</span>"))
+        + $"<span class=\"flex-fill ps-1\">{Esc(Clock(from + span))}</span>"
+        + "</div>";
+
+    private static string Clock(double minutes) =>
+        TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(minutes % (24 * 60)))
+            .ToString("HH:mm", CultureInfo.InvariantCulture);
+
+    private static string LaneRow(Lane lane, RangeReport report, DateOnly[] days, double from, double span)
+    {
+        var cells = new StringBuilder();
+
+        foreach (var day in days)
+        {
+            cells.Append(
+                "<div class=\"flex-fill position-relative rounded-1\" style=\"height:22px;background:#EEF1F4\">"
+                + Marks(lane, report, day, from, span)
+                + "</div>");
+        }
+
+        return "    <tr>"
+            + $"<td>{Esc(lane.Project)} · {Esc(lane.Topic)}</td>"
+            + $"<td class=\"text-end text-nowrap\">{Esc(Shares.Hours(lane.Minutes))}</td>"
+            + $"<td><div class=\"d-flex gap-1\">{cells}</div></td>"
+            + "</tr>";
+    }
+
+    /// <summary>Every range of one lane on one day, placed on the hours that were worked.</summary>
+    private static string Marks(Lane lane, RangeReport report, DateOnly date, double from, double span)
+    {
+        var marks = new StringBuilder();
+
+        foreach (var entry in report.Days.Where(day => day.Date == date).SelectMany(day => day.Entries).Where(lane.Holds))
+        {
+            marks.Append(
+                $"<span class=\"position-absolute top-0 bottom-0 bg-{lane.Colour} rounded-1\""
+                + $" style=\"{Place(entry, from, span)}\" title=\"{Esc(When(entry))}\"></span>");
+        }
+
+        return marks.ToString();
+    }
+
+    /// <summary>Where a range sits in that window, as left and width, and never thinner than a hair.</summary>
+    private static string Place(EntryLine entry, double from, double span)
+    {
+        var left = (entry.Start.ToTimeSpan().TotalMinutes - from) / span * 100;
+        var width = Math.Max(entry.Minutes / span * 100, 2);
+
+        return $"left:{Frac(left)}%;width:{Frac(width)}%";
+    }
+
+    private static string When(EntryLine entry) =>
+        $"{entry.Start:HH:mm}–{entry.End:HH:mm} · {Shares.Hours(entry.Minutes)}";
+
+    private static string Frac(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
 
     private static string Detail(RangeReport report) =>
         report.Days.Count == 0
@@ -330,32 +394,60 @@ public static class ReportHtml
         $$"""
           <footer class="text-body-secondary small mt-5">
             <p class="mb-1">Made by Worksheet from its journal. Days that hold nothing are left out; the total is what the journal says, not a guess at a working day.</p>
-            <p class="mb-0">This page loads Bootstrap and mermaid from jsDelivr. Without a connection the tables still read; the two pictures do not.</p>
+            <p class="mb-0">This page loads Bootstrap from jsDelivr. Without a connection it still reads, unstyled.</p>
           </footer>
 
           """;
 
+    /// <summary>
+    /// The page's one script: pressing a heading sorts its column, by the number in the cell when the
+    /// column is time or share and by the name otherwise. It is inline and it is all there is, so the
+    /// page sorts itself from a file with no connection.
+    /// </summary>
     private static string Scripts() =>
         $$"""
-          <script type="module">
-            import mermaid from '{{Mermaid}}';
-            mermaid.initialize({
-              startOnLoad: true,
-              securityLevel: 'strict',
-              theme: 'default',
-              gantt: { barHeight: 16, barGap: 6, topPadding: 40, gridLineStartPadding: 20, fontSize: 11, sectionFontSize: 13, numberSectionStyles: 2 },
-              pie: { textPosition: 0.62 }
-            });
+          <script>
+            for (const table of document.querySelectorAll('table[data-sortable]')) {
+              const body = table.tBodies[0];
+
+              for (const button of table.tHead.querySelectorAll('th button')) {
+                button.addEventListener('click', () => {
+                  const column = button.parentElement.cellIndex;
+                  const numeric = button.dataset.sort === 'number';
+                  const direction = button.dataset.direction === 'ascending' ? 'descending' : 'ascending';
+                  const value = row => {
+                    const cell = row.cells[column];
+
+                    return numeric ? Number(cell.dataset.value ?? 0) : cell.textContent.trim().toLowerCase();
+                  };
+
+                  for (const other of table.tHead.querySelectorAll('th button')) {
+                    delete other.dataset.direction;
+                  }
+
+                  button.dataset.direction = direction;
+
+                  [...body.rows]
+                    .sort((one, other) => {
+                      const order = numeric
+                        ? value(one) - value(other)
+                        : value(one).localeCompare(value(other));
+
+                      return direction === 'ascending' ? order : -order;
+                    })
+                    .forEach(row => body.append(row));
+
+                  for (const cell of table.tHead.querySelectorAll('th')) {
+                    cell.removeAttribute('aria-sort');
+                  }
+
+                  button.parentElement.setAttribute('aria-sort', direction);
+                });
+              }
+            }
           </script>
 
           """;
-
-    private static string MermaidBlock(string diagram) =>
-        $"<div class=\"overflow-auto\"><pre class=\"mermaid\">\n{diagram.Replace("<", "&lt;").Replace(">", "&gt;")}</pre></div>\n";
-
-    /// <summary>A label mermaid can read: no colon (it starts a task's data), no quote, one line.</summary>
-    private static string Label(string text) =>
-        text.Replace("\r", " ").Replace("\n", " ").Replace(":", "·").Replace("\"", "'").Trim();
 
     private static string Busiest(RangeReport report) =>
         report.Days.Count == 0
@@ -369,11 +461,6 @@ public static class ReportHtml
 
     /// <summary>How a day reads in a sentence.</summary>
     private static string DayText(DateOnly day) => day.ToString("d MMM yyyy", CultureInfo.InvariantCulture);
-
-    /// <summary>How a day is written for mermaid, which parses the format its own chart declares.</summary>
-    private static string IsoDay(DateOnly day) => day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-
-    private static string Clock(TimeOnly time) => time.ToString("HH:mm", CultureInfo.InvariantCulture);
 
     private static string Moment(DateTimeOffset moment) =>
         moment.ToLocalTime().ToString("d MMM yyyy HH:mm", CultureInfo.InvariantCulture);

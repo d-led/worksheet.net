@@ -20,4 +20,8 @@ internal static class Shares
 
     public static string Percent(int minutes, int total) =>
         (Of(minutes, total) * 100).ToString("0.0", CultureInfo.InvariantCulture) + " %";
+
+    /// <summary>A share as a bar's width, which is what a style attribute wants: a dot, a percent sign.</summary>
+    public static string Width(int minutes, int total) =>
+        (total <= 0 ? 0 : minutes * 100.0 / total).ToString("0.0", CultureInfo.InvariantCulture) + "%";
 }
