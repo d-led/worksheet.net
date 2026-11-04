@@ -25,7 +25,9 @@ and records decisions; it is not a description of any other program's source.
 4. Undoes the most recent change by appending its inverse, and redoes it by appending it
    again. Any new change forgets what could have been redone.
 5. Runs in the system tray. Closing the window hides it. Only the tray's *Quit*
-   ends the process.
+   ends the process. The tray and the window's heading both open the other four
+   screens — settings, projects and topics, the agent connection, the data
+   folder — so a platform without a tray icon loses only *Quit*.
 6. Follows the system's light or dark appearance, and its accent colour.
 7. Keeps everything in one file in the per-user data directory.
 

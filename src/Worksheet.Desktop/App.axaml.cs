@@ -74,6 +74,7 @@ public sealed class App : Application
 
         _local = LocalLedger.Open(policy: SnapshotPolicy.EveryChanges(_resolved.Values.SnapshotEvery));
         var day = new DayViewModel(_local);
+        day.Screens = new WindowScreens(ShowSettings, ShowManage, ShowConnect, OpenDataFolder);
         _window = new MainWindow { DataContext = day };
         desktop.MainWindow = _window;
 

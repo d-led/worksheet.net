@@ -99,6 +99,9 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     /// <summary>The five kinds of day, one of them chosen, pre-filled for a weekend.</summary>
     public ObservableCollection<DayKindOptionViewModel> Kinds { get; } = [];
 
+    /// <summary>The screens the heading can open; the shell sets them, since it owns the windows.</summary>
+    public WindowScreens? Screens { get; set; }
+
     /// <summary>The names the row editors offer; a name none of them has may still be typed.</summary>
     public ObservableCollection<string> Projects { get; } = [];
 

@@ -115,7 +115,7 @@ static Window FullWindow(DayViewModel day) =>
     new MainWindow
     {
         DataContext = day,
-        Width = 940,
+        Width = 1000,
         Height = 620,
         IsTitleBarVisible = false,
     };
@@ -167,7 +167,7 @@ static Window Surface(DayViewModel day, double height, params Control[] content)
     return new SukiWindow
     {
         DataContext = day,
-        Width = 940,
+        Width = 1000,
         Height = height,
         IsTitleBarVisible = false,
         Content = new Border { Classes = { "page" }, Padding = new Thickness(20, 16), Child = stack },

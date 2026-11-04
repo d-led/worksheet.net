@@ -26,7 +26,33 @@ public partial class DayHeader : UserControl
         {
             day.SaveExport = SaveAsync;
             WireExportMenu(day);
+            WireScreens();
         }
+    }
+
+    /// <summary>
+    /// The screens live in a flyout, which is outside the window's data context, so the clicks are
+    /// wired here; each item names the screen it opens and the day's screens say what that is.
+    /// </summary>
+    private void WireScreens()
+    {
+        if (Screens.Flyout is not MenuFlyout menu)
+        {
+            return;
+        }
+
+        foreach (var item in menu.Items.OfType<MenuItem>())
+        {
+            item.Click += (_, _) => Opening(item);
+        }
+    }
+
+    /// <summary>Opens the screen the pressed item names, read from the day as it is pressed rather than when wired.</summary>
+    private void Opening(MenuItem item)
+    {
+        var name = item.Name ?? throw new InvalidOperationException("A screen item needs a name.");
+
+        (DataContext as DayViewModel)?.Screens?.Open(name);
     }
 
     /// <summary>

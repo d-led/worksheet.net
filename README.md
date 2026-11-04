@@ -147,6 +147,10 @@ menu — a right click on Windows and Linux, the icon itself on macOS — holds 
 an agent…*, *Projects and topics…*, *Settings…*, *Open data folder* and *Quit*. A second copy exits
 at start-up.
 
+The window offers the same four screens without the tray: the *⋯* at the right of the heading opens
+*Settings…*, *Projects and topics…*, *Connect an agent…* and *Open data folder*. Only *Quit* lives in
+the tray alone, because it is not a screen.
+
 ## Where your data lives
 
 One file:

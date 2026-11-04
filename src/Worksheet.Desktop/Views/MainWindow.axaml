@@ -6,7 +6,7 @@
                  x:Class="Worksheet.Desktop.Views.MainWindow"
                  x:DataType="vm:DayViewModel"
                  Title="Worksheet"
-                 Width="940"
+Width="1000"
                  Height="620"
                  MinWidth="760"
                  MinHeight="460">

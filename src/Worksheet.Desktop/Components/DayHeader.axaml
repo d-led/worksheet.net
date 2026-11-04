@@ -9,7 +9,7 @@
     44x44 targets, because the previous version's 24x24 glyphs were the most-complained-about
     control.
   -->
-  <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
+  <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8">
 
     <Button x:Name="PreviousDay"
             Grid.Column="0"
@@ -62,6 +62,25 @@
         </MenuFlyout>
       </SplitButton.Flyout>
     </SplitButton>
+
+    <!--
+      The same four screens the tray offers. A menu-bar icon is not a way in on a platform without
+      one, and the heading is where a person looks first on any of them.
+    -->
+    <Button x:Name="Screens"
+            Grid.Column="7"
+            Content="⋯"
+            VerticalAlignment="Center"
+            ToolTip.Tip="Settings, projects and topics, the agent connection, the data folder">
+      <Button.Flyout>
+        <MenuFlyout>
+          <MenuItem x:Name="OpenSettings" Header="Settings…" />
+          <MenuItem x:Name="OpenManage" Header="Projects and topics…" />
+          <MenuItem x:Name="OpenConnect" Header="Connect an agent…" />
+          <MenuItem x:Name="OpenDataFolder" Header="Open data folder" />
+        </MenuFlyout>
+      </Button.Flyout>
+    </Button>
 
   </Grid>
 </UserControl>
