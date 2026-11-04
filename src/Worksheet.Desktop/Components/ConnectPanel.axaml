@@ -23,20 +23,20 @@
 
     <TextBox x:Name="VsCodeConfig"
              Grid.Row="3"
+             Classes="code"
              Text="{Binding VsCodeConfig}"
              IsReadOnly="True"
              AcceptsReturn="True"
-             FontFamily="monospace"
              MinHeight="104" />
 
     <TextBlock Grid.Row="4" Classes="quiet" Text="OTHER CLIENTS — under &quot;mcpServers&quot;" Margin="0,8,0,0" />
 
     <TextBox x:Name="OtherConfig"
              Grid.Row="5"
+             Classes="code"
              Text="{Binding OtherConfig}"
              IsReadOnly="True"
              AcceptsReturn="True"
-             FontFamily="monospace"
              MinHeight="104" />
 
     <StackPanel Grid.Row="6" Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">

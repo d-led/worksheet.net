@@ -126,6 +126,15 @@
     <Setter Property="FontSize" Value="16" />
   </Style>
 
+  <!--
+    The snippets a client is configured with are code: a fixed pitch, with the system's own as a
+    fallback, since the application ships no font of its own.
+  -->
+  <Style Selector="TextBox.code">
+    <Setter Property="FontFamily" Value="Menlo, Monaco, Cascadia Mono, Consolas, DejaVu Sans Mono, monospace" />
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+
   <Style Selector="TextBox.cell">
     <Setter Property="MinHeight" Value="30" />
     <Setter Property="Padding" Value="8,2" />
