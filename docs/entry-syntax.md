@@ -16,6 +16,10 @@ duration  = { digits ( "h" | "m" ) }   (the Go duration shape: 3h30m, 90m, 2h, 2
 Everything is trimmed; the fields are recognised from the right, so a project
 name may contain spaces and digits.
 
+A project with no topic is written without brackets: `Website 09:00 1h30m`. Empty
+brackets — `Website () 09:00 1h30m` — mean the same, so a half-typed topic left behind
+is not a project called `Website ()`.
+
 A clock is read leniently. A single digit after the colon is padded, so `12:0` is noon,
 `4:30` is half past four in the morning, and `12:5` is five past twelve rather than ten
 to one. Without `am` or `pm` a time is in 24-hour form: `4:30` is 04:30, not 16:30.
@@ -27,6 +31,7 @@ to one. Without `am` or `pm` a time is in 24-hour form: `4:30` is 04:30, not 16:
 | `Website (login) 09:00 1h30m` | Website | login | 09:00 + 1h30m |
 | `Website (reports) 10:30-12:00` | Website | reports | 10:30–12:00 |
 | `Water the garden 09:00-13:30` | Water the garden | — | 09:00–13:30 |
+| `Website () 09:00 1h30m` | Website | — | 09:00 + 1h30m |
 | `Deep work 9:30pm 45m` | Deep work | — | 21:30 + 45m |
 | `Reading 12:0 45m` | Reading | — | 12:00 + 45m |
 | `3.11. Reading 14:00 45m` | Reading | — | 2026-11-03, 14:00 + 45m |

@@ -222,8 +222,9 @@ public static partial class EntryCommandParser
     [GeneratedRegex(@"^(?<d>\d{1,2})\.(?<m>\d{1,2})\.(?:(?<y>\d{4})\.?)?\s+", RegexOptions.CultureInvariant)]
     private static partial Regex DatePrefix();
 
-    // A project name optionally followed by a parenthesised topic.
-    [GeneratedRegex(@"^(?<project>.*?)\s*\(\s*(?<topic>[^()]{1,64})\s*\)$", RegexOptions.CultureInvariant)]
+    // A project name optionally followed by a parenthesised topic. Empty brackets are no topic: a
+    // person who types them means the project alone, not a project called 'Website ()'.
+    [GeneratedRegex(@"^(?<project>.*?)\s*\(\s*(?<topic>[^()]{0,64})\s*\)$", RegexOptions.CultureInvariant)]
     private static partial Regex Topic();
 
     // "09:00-13:30", "9:00am-1:30pm" — and "09:00 13:30", because a dash is a keystroke.

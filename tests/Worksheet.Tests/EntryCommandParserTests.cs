@@ -21,6 +21,8 @@ public sealed class EntryCommandParserTests
     [InlineData("Sprint 7 09:00 1h", "Sprint 7", null, "09:00", 60)]
     [InlineData("Deep work 9:30pm 45m", "Deep work", null, "21:30", 45)]
     [InlineData("Reading 14:00 2h 30m", "Reading", null, "14:00", 150)]
+    [InlineData("Website () 09:00 1h", "Website", null, "09:00", 60)]
+    [InlineData("Website ( ) 09:00 1h", "Website", null, "09:00", 60)]
     public void Reads_project_topic_and_span(
         string line,
         string project,
