@@ -20,6 +20,17 @@ public static class Names
             _ => null,
         };
 
+    /// <summary>The sentence for a prefix that fits several names, or nothing when it does not.</summary>
+    public static string? Ambiguous<T>(NameMatch<T> match, string asked, string what)
+        where T : class =>
+        match.Ambiguous ? Refusal(match, asked, what) : null;
+
+    /// <summary>
+    /// A name that was taken out of the catalogue is not an answer any more, and it is not free
+    /// either: two projects with one name would make the name unable to point at either.
+    /// </summary>
+    public static string OutOfTheCatalogue(string name) => $"'{name.Trim()}' is already out of the catalogue.";
+
     /// <summary>A name as it is written down: what a person meant, without the padding.</summary>
     public static string Trimmed(string? name) => (name ?? string.Empty).Trim();
 }

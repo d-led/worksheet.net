@@ -248,7 +248,7 @@ public sealed class Catalogue(Ledger ledger)
         topic.Archived ? AlreadyGone(topic.Name) : null;
 
     private static CatalogueResult AlreadyGone(string name) =>
-        CatalogueResult.Refused($"'{name.Trim()}' is already out of the catalogue.");
+        CatalogueResult.Refused(Names.OutOfTheCatalogue(name));
 
     /// <summary>
     /// Nothing, or why a name does not point at one thing. The wording lives in <see cref="Names"/>

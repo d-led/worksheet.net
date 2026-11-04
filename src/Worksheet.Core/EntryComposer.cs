@@ -56,7 +56,7 @@ public sealed class EntryComposer(Ledger ledger)
             return new Plan(null, changes, [refusal]);
         }
 
-        if (NamesOf(command, changes, problems) is not { } names)
+        if (NamesOf(command.Project, command.Topic, changes, problems) is not { } names)
         {
             return new Plan(null, changes, problems);
         }
@@ -76,24 +76,31 @@ public sealed class EntryComposer(Ledger ledger)
 
     /// <summary>
     /// The project and its topic, or nothing when the names cannot be used. A break is the one
-    /// project without topics, so it is the one place a bracket is refused.
+    /// project without topics, so it is the one place a bracket is refused. A line and a row ask
+    /// this the same way, so they refuse the same things in the same words.
     /// </summary>
-    private Named? NamesOf(EntryCommand command, List<LedgerEvent> changes, List<string> problems)
+    private Named? NamesOf(string projectName, string? topicName, List<LedgerEvent> changes, List<string> problems)
     {
-        var project = ResolveProject(command.Project, changes, problems);
+        if (string.IsNullOrWhiteSpace(projectName))
+        {
+            problems.Add("An entry needs a project.");
+            return null;
+        }
+
+        var project = ResolveProject(projectName, changes, problems);
 
         if (project is not { } resolved)
         {
             return null;
         }
 
-        if (Break.IsBreak(resolved.Name) && !string.IsNullOrWhiteSpace(command.Topic))
+        if (Break.IsBreak(resolved.Name) && !string.IsNullOrWhiteSpace(topicName))
         {
             problems.Add(Break.RefusedTopic);
             return null;
         }
 
-        var topicId = ResolveTopic(resolved.Id, command.Topic, changes, problems);
+        var topicId = ResolveTopic(resolved.Id, topicName, changes, problems);
 
         return problems.Count > 0 ? null : new Named(resolved.Id, topicId);
     }
@@ -210,6 +217,41 @@ public sealed class EntryComposer(Ledger ledger)
     private List<string> RevisionProblems(Entry before, Entry after) =>
         [.. ReferenceProblems(after), .. ShapeProblems(before, after)];
 
+    /// <summary>
+    /// Points an entry at a project — and a topic of it — by name, which is how a row is corrected
+    /// when the project was not in the list yet. A name that is new is opened in the same commit as
+    /// the correction, so the row and the catalogue never disagree.
+    /// </summary>
+    public ComposeResult Point(Entry entry, string projectName, string? topicName)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+
+        var changes = new List<LedgerEvent>();
+        var problems = new List<string>();
+
+        if (DayRefusal(entry.Date) is { } refusal)
+        {
+            return ComposeResult.Refused(refusal);
+        }
+
+        if (NamesOf(projectName, topicName, changes, problems) is not { } names)
+        {
+            return new ComposeResult(null, problems);
+        }
+
+        var after = entry with { ProjectId = names.ProjectId, TopicId = names.TopicId };
+
+        if (after == entry)
+        {
+            return new ComposeResult(entry, []);
+        }
+
+        changes.Add(new EntryRevised(entry, after));
+        ledger.Commit(changes, ChangeOrigin.User);
+
+        return new ComposeResult(after, []);
+    }
+
     private IEnumerable<string> ReferenceProblems(Entry after)
     {
         if (!ledger.State.Projects.ContainsKey(after.ProjectId))
@@ -245,14 +287,20 @@ public sealed class EntryComposer(Ledger ledger)
     {
         var match = ledger.State.MatchProject(name);
 
-        if (match.Ambiguous)
+        if (Names.Ambiguous(match, name, "project") is { } ambiguous)
         {
-            problems.Add($"'{name.Trim()}' fits more than one project; write more of the name.");
+            problems.Add(ambiguous);
             return null;
         }
 
         if (match.Value is { } found)
         {
+            if (found.Archived)
+            {
+                problems.Add(Names.OutOfTheCatalogue(found.Name));
+                return null;
+            }
+
             return (found.Id, found.Name);
         }
 
@@ -271,15 +319,21 @@ public sealed class EntryComposer(Ledger ledger)
 
         var match = ledger.State.MatchTopic(projectId, name);
 
-        if (match.Ambiguous)
+        if (Names.Ambiguous(match, name, "topic of this project") is { } ambiguous)
         {
-            problems.Add($"'{name.Trim()}' fits more than one topic of this project; write more of the name.");
+            problems.Add(ambiguous);
             return null;
         }
 
-        if (match.Found)
+        if (match.Value is { } found)
         {
-            return match.Value!.Id;
+            if (found.Archived)
+            {
+                problems.Add(Names.OutOfTheCatalogue(found.Name));
+                return null;
+            }
+
+            return found.Id;
         }
 
         var id = Guid.CreateVersion7();
