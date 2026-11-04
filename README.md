@@ -84,9 +84,10 @@ it covers — `2026-11-04-0930-worksheet-2026-11.zip` — and holds two files:
   every logged day with its entries. The first field, `version`, is the format version: it changes
   only when a reader of the older file would read the newer one wrongly, so a script can check it
   and stop.
-- `worksheet-2026-11.html` — totals with shares, the same two tables, a pie of the projects, a gantt
-  of the range, and a foldable list of the days. Bootstrap and mermaid come from a CDN, so the
-  pictures need a connection and the tables do not.
+- `worksheet-2026-11.html` — totals with shares, a bar per project and a bar per project and topic, a
+  lane per project and topic over the days of the range, and a foldable list of the days. A heading
+  sorts its table, by name or by time, whichever way it is pressed twice. Bootstrap comes from a CDN;
+  without a connection the page still reads, unstyled.
 
 Days that hold nothing are left out; the page says so at the bottom.
 
@@ -151,6 +152,10 @@ One file:
 - Linux — `~/.config/Worksheet`
 
 Set `WORKSHEET_DATA_DIR` to keep it elsewhere.
+
+Beside the journal sit its weekly copies — `ledger-2026-W44.db` and three more. One is written when
+a week closes, the application checks once an hour and at start-up, and the fifth week deletes the
+oldest. Putting one back under the name `ledger.db` is the whole of a restore.
 
 Beside the journal sits `settings.json`, with the two values *Settings…* writes: the MCP port and how
 often the fold is rewritten. A stored value wins over the environment, the environment over the

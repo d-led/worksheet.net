@@ -58,7 +58,7 @@ per method, worst first, and exits non-zero if any method is over 10. It merges 
 generated XAML members, and skips the composition roots (`App`, `Program`) — they only wire parts
 together, and every part is measured where it lives.
 
-Current state: 594 methods, no method over CRAP 10, method-average coverage 94.8%. What stays
+Current state: 611 methods, no method over CRAP 10, method-average coverage 94.6%. What stays
 uncovered needs a window server session — the tray, the composition root, the save dialog's file
 picker — or is a guard against a state a test cannot reach on purpose.
 
@@ -144,7 +144,7 @@ unsigned download carries the quarantine flag; `install.sh` clears it after copy
 | path | responsibility |
 |---|---|
 | `src/Worksheet.Core` | model, journal changes, the fold, undo/redo planning, the catalogue, the entry language |
-| `src/Worksheet.Storage` | LiteDB journal and snapshots, the JSON codec, the data directory, the settings file |
+| `src/Worksheet.Storage` | LiteDB journal and snapshots, the JSON codec, the data directory, the settings file, the weekly copies |
 | `src/Worksheet.Export` | the range as a materialized object, its JSON file, its HTML page, and the zip |
 | `src/Worksheet.Mcp` | JSON-RPC over the MCP shape, the ten tools, the loopback transport |
 | `src/Worksheet.Desktop` | SukiUI theme, `SukiWindow`, the components, view models, tray |
@@ -169,6 +169,10 @@ Three choices in the window look like omissions and are not:
   because one process is the only writer (`docs/adr/0001-event-sourced-ledger.md`).
 - **`settings.json` is a file of its own**, apart from the journal, so that a preference is never part
   of the undo history.
+- **The weekly copy is noticed by an hourly poll**, not by an alarm at midnight: the application may
+  run for days without being restarted, and may not be running at midnight at all. The copy is taken
+  on the UI thread, with the store's own gate held and after a checkpoint, because the ledger has one
+  writer and the file it has open is the only consistent thing there is to copy.
 
 Two export details that come from the same kind of reasoning: the JSON opens with a `version`
 (`ReportJson.FormatVersion`) that counts up only when a reader of the older file would read the newer

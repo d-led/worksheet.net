@@ -39,13 +39,33 @@ public sealed class LiteDbStore : IDisposable
             Connection = ConnectionType.Direct,
         });
 
+        FilePath = fullPath;
         Journal = new JournalCollection(_database, _gate);
         Snapshots = new SnapshotCollection(_database, _gate);
     }
 
+    /// <summary>Where the file is, so that a backup can put a copy of it somewhere else.</summary>
+    public string FilePath { get; }
+
     public IEventJournal Journal { get; }
 
     public ISnapshotStore Snapshots { get; }
+
+    /// <summary>
+    /// Writes a copy another instance of the application can open. Every change has landed in the
+    /// file before the copy starts and none runs while it does: the ledger has one writer, and this
+    /// holds the same gate a write does.
+    /// </summary>
+    public void CopyTo(string target)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(target);
+
+        lock (_gate)
+        {
+            _database.Checkpoint();
+            File.Copy(FilePath, target, overwrite: true);
+        }
+    }
 
     public void Dispose() => _database.Dispose();
 

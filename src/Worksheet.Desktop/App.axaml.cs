@@ -29,6 +29,8 @@ public sealed class App : Application
     private SettingsResolver? _resolver;
     private ResolvedSettings? _resolved;
     private ManageViewModel? _manage;
+    private WeeklyBackups? _backups;
+    private DispatcherTimer? _backupPoll;
     private string? _mcpProblem;
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
@@ -81,6 +83,7 @@ public sealed class App : Application
             new TrayActions(ShowWindow, ShowConnect, ShowSettings, ShowManage, OpenDataFolder, () => Quit(desktop)));
 
         StartMcp(day, _local);
+        StartWeeklyBackups(_local);
 
         // A binary started from a terminal is not a bundle, so macOS does not bring it forward.
         _window.Show();
@@ -88,6 +91,21 @@ public sealed class App : Application
     }
 
     private DayViewModel? CurrentDay => _window?.DataContext as DayViewModel;
+
+    /// <summary>
+    /// Copies the journal once for every week that closed, keeping four. The week is noticed by a poll
+    /// rather than a midnight alarm — the application may be running for days, or may not be running
+    /// at midnight at all — and the copy is taken on this thread, where the ledger's one writer is.
+    /// </summary>
+    private void StartWeeklyBackups(LocalLedger local)
+    {
+        _backups = new WeeklyBackups(local.Folder, local.CopyTo, () => DateTimeOffset.Now);
+        _backups.Take();
+
+        _backupPoll = new DispatcherTimer { Interval = TimeSpan.FromHours(1) };
+        _backupPoll.Tick += (_, _) => _backups?.Take();
+        _backupPoll.Start();
+    }
 
     /// <summary>
     /// Starts the MCP server on the loopback. Every call is run on the UI thread, because the ledger
@@ -241,6 +259,9 @@ public sealed class App : Application
 
     private void Release()
     {
+        _backupPoll?.Stop();
+        _backupPoll = null;
+        _backups = null;
         _mcp?.Dispose();
         _mcp = null;
         _local?.Dispose();

@@ -124,4 +124,25 @@ public sealed class LiteDbStoreTests : IDisposable
         Assert.Equal(TimeSpan.FromMinutes(90), replayed.Ledger.State.TotalOn(Day));
         Assert.Equal(3, replayed.Ledger.Version);
     }
+
+    [Fact]
+    public void A_copy_of_the_file_opens_as_the_same_ledger()
+    {
+        var parse = EntryCommandParser.Parse("Website (login) 09:00 1h30m", Day);
+        Assert.True(parse.Succeeded, parse.Error);
+
+        var restored = Path.Combine(_temp.Path, "restored");
+        Directory.CreateDirectory(restored);
+
+        using (var original = LocalLedger.Open(_temp.Path, SnapshotPolicy.Disabled))
+        {
+            new EntryComposer(original.Ledger).Compose(parse.Command!);
+            original.CopyTo(Path.Combine(restored, "ledger.db"));
+        }
+
+        using var copy = LocalLedger.Open(restored, SnapshotPolicy.Disabled);
+
+        Assert.Equal(TimeSpan.FromMinutes(90), copy.Ledger.State.TotalOn(Day));
+        Assert.Equal("Website", Assert.Single(copy.Ledger.State.Projects).Value.Name);
+    }
 }

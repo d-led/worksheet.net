@@ -23,6 +23,15 @@ public sealed class LocalLedger : IDisposable
 
     public Ledger Ledger { get; }
 
+    /// <summary>The journal file itself.</summary>
+    public string File => _store.FilePath;
+
+    /// <summary>The folder the journal sits in, and where its weekly copies go.</summary>
+    public string Folder => Path.GetDirectoryName(_store.FilePath)!;
+
+    /// <summary>Writes a copy of the journal that another instance can open.</summary>
+    public void CopyTo(string target) => _store.CopyTo(target);
+
     /// <summary>
     /// Where the journal lives. <c>WORKSHEET_DATA_DIR</c> overrides the per-user location, which is
     /// what makes a portable copy and an isolated test run possible.
