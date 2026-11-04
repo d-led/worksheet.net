@@ -58,9 +58,9 @@ per method, worst first, and exits non-zero if any method is over 10. It merges 
 generated XAML members, and skips the composition roots (`App`, `Program`) — they only wire parts
 together, and every part is measured where it lives.
 
-Current state: 502 methods, no method over CRAP 10, method-average coverage 94.0%. What stays
-uncovered needs a window server session — the tray, the composition root, the click handlers of the
-dialogs — or is a guard against a state a test cannot reach on purpose.
+Current state: 584 methods, no method over CRAP 10, method-average coverage 94.7%. What stays
+uncovered needs a window server session — the tray, the composition root, the save dialog's file
+picker — or is a guard against a state a test cannot reach on purpose.
 
 ## Building what a person installs
 
@@ -144,7 +144,8 @@ unsigned download carries the quarantine flag; `install.sh` clears it after copy
 | path | responsibility |
 |---|---|
 | `src/Worksheet.Core` | model, journal changes, the fold, undo/redo planning, the catalogue, the entry language |
-| `src/Worksheet.Storage` | LiteDB journal and snapshots, the JSON codec, the data directory |
+| `src/Worksheet.Storage` | LiteDB journal and snapshots, the JSON codec, the data directory, the settings file |
+| `src/Worksheet.Export` | the range as a materialized object, its JSON file, its HTML page, and the zip |
 | `src/Worksheet.Mcp` | JSON-RPC over the MCP shape, the ten tools, the loopback transport |
 | `src/Worksheet.Desktop` | SukiUI theme, `SukiWindow`, the components, view models, tray |
 | `tools/Worksheet.Screenshot` | headless render of the window to a PNG |

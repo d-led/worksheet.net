@@ -9,6 +9,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Worksheet.Core;
+using Worksheet.Export;
 using Worksheet.Storage;
 
 namespace Worksheet.Desktop.ViewModels;
@@ -175,9 +176,66 @@ public sealed partial class DayViewModel : ObservableObject
         Refresh();
     }
 
+    /// <summary>
+    /// Where an export is written. The window supplies the save dialog and answers the path it chose,
+    /// or nothing when the person changed their mind; a test supplies a folder.
+    /// </summary>
+    public Func<ExportFile, Task<string?>>? SaveExport { get; set; }
+
+    /// <summary>
+    /// The range is the period the day on screen belongs to: that day, its month, its quarter, its
+    /// year. Building it here keeps the report and the page in one place, and the zip in one file.
+    /// </summary>
+    public ExportFile BuildExport(ExportPeriod period)
+    {
+        var report = RangeReport.Of(_local.Ledger.State, ExportRange.For(period, Day));
+
+        return new ExportFile(ExportBundle.ZipName(report), ExportBundle.Zip(report, DateTimeOffset.Now));
+    }
+
+    [RelayCommand]
+    private Task ExportDayAsync() => Export(ExportPeriod.Day);
+
+    [RelayCommand]
+    private Task ExportMonthAsync() => Export(ExportPeriod.Month);
+
+    [RelayCommand]
+    private Task ExportQuarterAsync() => Export(ExportPeriod.Quarter);
+
+    [RelayCommand]
+    private Task ExportYearAsync() => Export(ExportPeriod.Year);
+
+    /// <summary>The command for one range, so a menu is wired by the range it names rather than by position.</summary>
+    public IAsyncRelayCommand CommandFor(ExportPeriod period) =>
+        period switch
+        {
+            ExportPeriod.Day => ExportDayCommand,
+            ExportPeriod.Month => ExportMonthCommand,
+            ExportPeriod.Quarter => ExportQuarterCommand,
+            _ => ExportYearCommand,
+        };
+
+    private async Task Export(ExportPeriod period)
+    {
+        if (SaveExport is not { } save)
+        {
+            Report("There is nowhere to save an export from this window.", isProblem: true);
+            return;
+        }
+
+        var path = await save(BuildExport(period));
+
+        if (path is null)
+        {
+            Report("Export cancelled.", isProblem: false);
+            return;
+        }
+
+        Report($"Exported {Path.GetFileName(path)}.", isProblem: false);
+    }
+
     [RelayCommand]
     private void PreviousDay() => SelectedDate = Day.AddDays(-1).ToDateTime(TimeOnly.MinValue);
-
     [RelayCommand]
     private void NextDay() => SelectedDate = Day.AddDays(1).ToDateTime(TimeOnly.MinValue);
 

@@ -57,9 +57,9 @@ and records decisions; it is not a description of any other program's source.
 
 ## Deliberately not included
 
-- Report templates and transformation files. Totals are computed from the ledger;
-  anything richer is a query over the journal, exported as XML (a later slice).
+- Report templates and transformation files. The export is one fixed pair of files for a range — a
+  JSON report and a page built from the same materialized object — rather than a template language.
 - Plugin loading. The process is one binary.
 - A second copy of the state in a relational schema. The journal is the truth.
-- Editing settings through the UI beyond the day navigation and the entry line.
-  Settings live in a small JSON file next to the journal.
+- Choosing more than the knobs the settings view offers. The data folder is shown there rather than
+  changed, the day-kind labels are code, and everything else is settled by the day's own behaviour.

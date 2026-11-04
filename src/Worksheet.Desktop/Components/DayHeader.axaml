@@ -5,10 +5,11 @@
              x:DataType="vm:DayViewModel">
 
   <!--
-    Navigation, the day it is on, and the calendar to jump anywhere. The arrows are 44x44 targets,
-    because the previous version's 24x24 glyphs were the most-complained-about control.
+    Navigation, the day it is on, the calendar to jump anywhere, and the export. The arrows are
+    44x44 targets, because the previous version's 24x24 glyphs were the most-complained-about
+    control.
   -->
-  <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
+  <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
 
     <Button x:Name="PreviousDay"
             Grid.Column="0"
@@ -44,6 +45,23 @@
                Text="{Binding Total}"
                MinWidth="96"
                TextAlignment="Right" />
+
+    <!-- One click exports the month the day belongs to; the arrow offers the other three ranges. -->
+    <SplitButton x:Name="Export"
+                 Grid.Column="6"
+                 Content="Export month"
+                 Command="{Binding ExportMonthCommand}"
+                 VerticalAlignment="Center"
+                 ToolTip.Tip="Export the month, or another range, as a zip of JSON and an HTML page">
+      <SplitButton.Flyout>
+        <MenuFlyout>
+          <MenuItem x:Name="ExportDay" Header="Day" Tag="Day" />
+          <MenuItem x:Name="ExportMonth" Header="Month" Tag="Month" />
+          <MenuItem x:Name="ExportQuarter" Header="Quarter" Tag="Quarter" />
+          <MenuItem x:Name="ExportYear" Header="Year" Tag="Year" />
+        </MenuFlyout>
+      </SplitButton.Flyout>
+    </SplitButton>
 
   </Grid>
 </UserControl>

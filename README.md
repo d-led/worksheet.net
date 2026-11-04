@@ -78,6 +78,19 @@ hole becomes an ordinary row:
 Under the line, a `next:` hint names the part still missing, and anything already wrong — an
 intersection with another block, for instance — is said while you type, not after Enter.
 
+## Take a range with you
+
+*Export month* in the heading writes one zip for the month the day on screen belongs to; the arrow
+beside it offers the day itself, the quarter and the year. The zip holds two files:
+
+- `worksheet-2026-11.json` — the range as data: minutes per project, per project and topic, and every
+  logged day with its entries, for whatever you want to do with it next;
+- `worksheet-2026-11.html` — a page of it: totals with shares, the same two tables, a pie of the
+  projects, a gantt of the range as it was worked, and a foldable list of the days. It loads Bootstrap
+  and mermaid from a CDN, so the two pictures need a connection; the tables read either way.
+
+Days that hold nothing are left out, and the page says so at the bottom.
+
 ## Days that do not work
 
 Above the table sits what the day is: `Working day`, `Flex day`, `Sick day`, `Holiday`, `Weekend`.

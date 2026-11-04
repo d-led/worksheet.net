@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Worksheet.Core\Worksheet.Core.csproj" />
+    <ProjectReference Include="..\Worksheet.Export\Worksheet.Export.csproj" />
     <ProjectReference Include="..\Worksheet.Mcp\Worksheet.Mcp.csproj" />
     <ProjectReference Include="..\Worksheet.Storage\Worksheet.Storage.csproj" />
   </ItemGroup>
