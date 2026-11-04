@@ -15,6 +15,13 @@ namespace Worksheet.Export;
 /// </summary>
 public static class ReportJson
 {
+    /// <summary>
+    /// The version of the shape the data file is written in. It counts up only when a reader built
+    /// for the previous version would read the new file wrongly: a field renamed or dropped, a unit
+    /// changed, a value moved into another. A field merely added leaves it where it is.
+    /// </summary>
+    public const int FormatVersion = 1;
+
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
 
     public static string Of(RangeReport report, DateTimeOffset generatedAt)
@@ -26,6 +33,7 @@ public static class ReportJson
         return JsonSerializer.Serialize(
             new
             {
+                version = FormatVersion,
                 range = new
                 {
                     from = Day(report.Range.From),

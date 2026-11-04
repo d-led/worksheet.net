@@ -141,6 +141,15 @@ public sealed class ExportTests
     }
 
     [Fact]
+    public void The_data_file_states_the_version_of_the_shape_it_is_written_in()
+    {
+        using var json = JsonDocument.Parse(Json(Report(ExportPeriod.Month)));
+
+        Assert.True(json.RootElement.GetProperty("version").TryGetInt32(out var version), "version is a whole number");
+        Assert.True(version >= 1, $"version {version} is at least the first");
+    }
+
+    [Fact]
     public void The_page_carries_the_tables_the_figures_and_both_pictures()
     {
         Logged("Website (login) 09:00 1h");
