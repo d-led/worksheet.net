@@ -14,7 +14,8 @@ and records decisions; it is not a description of any other program's source.
 ## What the application does
 
 1. Shows one day at a time: the entries of that day in start order, and the total
-   time on them.
+   time on them. The left and right arrows move to the day before and after,
+   unless the caret is in a text field, which then keeps them for itself.
 2. Accepts an entry as one line of text (see `entry-syntax.md`), completing the names
    it is made of: the known projects while a project is being typed, then the topics
    of that project once its bracket is open. The keyboard walks the offers and takes

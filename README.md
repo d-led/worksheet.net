@@ -74,6 +74,11 @@ entry line; `Break` records it directly as a `Break` entry with a note you can c
 Under the line, a `next:` hint names the part still missing, and an error — an intersection with
 another block, for instance — is shown while you type.
 
+## Move between days
+
+`←` and `→` walk a day back and forward, as long as the caret is not in one of the fields. `❮` `❯`,
+`Today` and the calendar do the same with the mouse.
+
 ## Export a range
 
 *Export month* in the heading writes one zip for the month the day on screen belongs to; the arrow
