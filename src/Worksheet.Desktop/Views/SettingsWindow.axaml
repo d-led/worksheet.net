@@ -1,6 +1,6 @@
-<suki:SukiWindow xmlns="https://github.com/avaloniaui"
+<local:SecondaryWindow xmlns="https://github.com/avaloniaui"
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                 xmlns:suki="clr-namespace:SukiUI.Controls;assembly=SukiUI"
+                 xmlns:local="using:Worksheet.Desktop.Views"
                  xmlns:vm="using:Worksheet.Desktop.ViewModels"
                  x:Class="Worksheet.Desktop.Views.SettingsWindow"
                  x:DataType="vm:SettingsViewModel"
@@ -71,4 +71,4 @@
     </Grid>
   </Border>
 
-</suki:SukiWindow>
+</local:SecondaryWindow>

@@ -1,6 +1,6 @@
-<suki:SukiWindow xmlns="https://github.com/avaloniaui"
+<local:SecondaryWindow xmlns="https://github.com/avaloniaui"
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                 xmlns:suki="clr-namespace:SukiUI.Controls;assembly=SukiUI"
+                 xmlns:local="using:Worksheet.Desktop.Views"
                  xmlns:vm="using:Worksheet.Desktop.ViewModels"
                  x:Class="Worksheet.Desktop.Views.ManageWindow"
                  x:DataType="vm:ManageViewModel"
@@ -25,7 +25,7 @@
       <TextBlock Grid.Row="1"
                  Classes="quiet"
                  TextWrapping="Wrap"
-                 Text="A name is typed where it stands: Enter or leaving the field keeps it, Escape puts the old one back. A name another row already answers to merges the two, hours and all, into one name." />
+                 Text="A name is typed where it stands: Enter or leaving the field keeps it, Escape puts the old one back and then leaves. A name another row already answers to merges the two, hours and all, into one name." />
 
       <TextBlock Grid.Row="2" Classes="caption" Text="PROJECTS" />
 
@@ -46,7 +46,6 @@
                        LostFocus="Row_Left">
                 <TextBox.KeyBindings>
                   <KeyBinding Gesture="Enter" Command="{Binding CommitCommand}" />
-                  <KeyBinding Gesture="Escape" Command="{Binding RevertCommand}" />
                 </TextBox.KeyBindings>
               </TextBox>
               <TextBlock Grid.Column="1"
@@ -82,7 +81,6 @@
                        LostFocus="Row_Left">
                 <TextBox.KeyBindings>
                   <KeyBinding Gesture="Enter" Command="{Binding CommitCommand}" />
-                  <KeyBinding Gesture="Escape" Command="{Binding RevertCommand}" />
                 </TextBox.KeyBindings>
               </TextBox>
               <TextBlock Grid.Column="1"
@@ -123,4 +121,4 @@
     </Grid>
   </Border>
 
-</suki:SukiWindow>
+</local:SecondaryWindow>

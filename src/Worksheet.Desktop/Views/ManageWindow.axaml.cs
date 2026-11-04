@@ -4,9 +4,9 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
-using SukiUI.Controls;
 using Worksheet.Desktop.ViewModels;
 
 namespace Worksheet.Desktop.Views;
@@ -15,9 +15,31 @@ namespace Worksheet.Desktop.Views;
 /// The catalogue, in a window of its own. It closes without touching the day, and every name in it
 /// is a field: nothing here asks a second question after the first answer.
 /// </summary>
-public partial class ManageWindow : SukiWindow
+public partial class ManageWindow : SecondaryWindow
 {
     public ManageWindow() => InitializeComponent();
+
+    /// <summary>
+    /// Escape belongs to a name that differs from the journal before it belongs to the window: the
+    /// first press puts the name back, the next one leaves.
+    /// </summary>
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape && Typed() is { } row)
+        {
+            row.RevertCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
+        base.OnKeyDown(e);
+    }
+
+    /// <summary>The row whose name is being typed and no longer says what the journal says.</summary>
+    private CatalogueRow? Typed() =>
+        FocusManager?.GetFocusedElement() is Control { DataContext: CatalogueRow { IsChanged: true } row }
+            ? row
+            : null;
 
     private void Close_Click(object? sender, RoutedEventArgs e) => Close();
 

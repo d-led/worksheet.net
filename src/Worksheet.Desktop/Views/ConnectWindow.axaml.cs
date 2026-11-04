@@ -9,7 +9,7 @@ using SukiUI.Controls;
 namespace Worksheet.Desktop.Views;
 
 /// <summary>A frame around <see cref="Components.ConnectPanel"/> that closes without touching the day.</summary>
-public partial class ConnectWindow : SukiWindow
+public partial class ConnectWindow : SecondaryWindow
 {
     public ConnectWindow() => InitializeComponent();
 

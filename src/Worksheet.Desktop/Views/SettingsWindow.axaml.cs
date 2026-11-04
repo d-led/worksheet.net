@@ -4,7 +4,6 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Avalonia.Interactivity;
-using SukiUI.Controls;
 using Worksheet.Desktop.ViewModels;
 using Worksheet.Storage;
 
@@ -14,7 +13,7 @@ namespace Worksheet.Desktop.Views;
 /// The knobs. The window writes the file and then says so; what the application can apply while it
 /// runs — the MCP port — is asked for by <see cref="Applied"/>.
 /// </summary>
-public partial class SettingsWindow : SukiWindow
+public partial class SettingsWindow : SecondaryWindow
 {
     public SettingsWindow() => InitializeComponent();
 

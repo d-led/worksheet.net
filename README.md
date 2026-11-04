@@ -138,7 +138,7 @@ the server off.
 
 *Projects and topics…* in the heading's `⋯` (or in the tray menu) lists every project in use with
 what each holds, and the topics of the one you choose. A name is edited where it stands: `Enter` or
-leaving the field keeps the new name, `Esc` puts the old one back.
+leaving the field keeps the new name, `Esc` puts the old one back and then leaves the window.
 
 ![Renaming in place, with the merge the typed name would make stated before it is made](docs/screenshots/projects.png)
 
@@ -162,7 +162,7 @@ at start-up.
 
 The window offers the same four screens without the tray: the *⋯* at the right of the heading opens
 *Settings…*, *Projects and topics…*, *Connect an agent…* and *Open data folder*. Only *Quit* lives in
-the tray alone, because it is not a screen.
+the tray alone, because it is not a screen. Each of those windows closes with `Esc`.
 
 ## Where your data lives
 
