@@ -460,4 +460,13 @@ public sealed partial class DayViewModel : ObservableObject
         MessageIsProblem = isProblem;
         Message = message;
     }
+
+    /// <summary>
+    /// Reads the fold again after something outside this view changed it — an agent through the
+    /// MCP server, or the tray. What is on screen is always the fold, so it is re-read, not patched.
+    /// </summary>
+    public void Reload() => Refresh();
+
+    /// <summary>Says something to the person at the window: a start-up problem, or news from elsewhere.</summary>
+    public void Say(string message, bool isProblem) => Report(message, isProblem);
 }

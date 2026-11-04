@@ -8,8 +8,10 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using Worksheet.Desktop.ViewModels;
 using Worksheet.Desktop.Views;
+using Worksheet.Mcp;
 using Worksheet.Storage;
 
 namespace Worksheet.Desktop;
@@ -22,6 +24,7 @@ public sealed class App : Application
     private LocalLedger? _local;
     private MainWindow? _window;
     private SingleInstance? _instance;
+    private McpHttpHost? _mcp;
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
@@ -58,10 +61,13 @@ public sealed class App : Application
         desktop.Exit += (_, _) => Release();
 
         _local = LocalLedger.Open();
-        _window = new MainWindow { DataContext = new DayViewModel(_local) };
+        var day = new DayViewModel(_local);
+        _window = new MainWindow { DataContext = day };
         desktop.MainWindow = _window;
 
         TrayHost.Attach(this, ShowWindow, OpenDataFolder, () => Quit(desktop));
+
+        StartMcp(day, _local);
 
         // A binary started from a terminal is not a bundle, so macOS does not bring it forward.
         _window.Show();
@@ -69,6 +75,44 @@ public sealed class App : Application
     }
 
     private DayViewModel? CurrentDay => _window?.DataContext as DayViewModel;
+
+    /// <summary>
+    /// Starts the MCP server on the loopback. Every call is run on the UI thread, because the ledger
+    /// has one writer and the window is reading the same fold; the day is re-read only when a call
+    /// changed the journal. A port someone else holds is said in the window, and the application
+    /// keeps working without its server.
+    /// </summary>
+    private void StartMcp(DayViewModel day, LocalLedger local)
+    {
+        var settings = McpSettings.FromEnvironment();
+
+        if (!settings.Enabled)
+        {
+            return;
+        }
+
+        var toolkit = new SerialToolkit(
+            new WorksheetTools(local.Ledger),
+            work => Dispatcher.UIThread.Invoke(() =>
+            {
+                var version = local.Ledger.Version;
+                var outcome = work();
+
+                if (local.Ledger.Version != version)
+                {
+                    day.Reload();
+                }
+
+                return outcome;
+            }));
+
+        _mcp = McpHttpHost.TryStart(new McpServer(toolkit), settings.Port, out var problem);
+
+        if (problem is not null)
+        {
+            day.Say($"{problem} Set {McpSettings.PortVariable} to another port.", isProblem: true);
+        }
+    }
 
     private void ShowWindow()
     {
@@ -103,6 +147,8 @@ public sealed class App : Application
 
     private void Release()
     {
+        _mcp?.Dispose();
+        _mcp = null;
         _local?.Dispose();
         _instance?.Dispose();
     }

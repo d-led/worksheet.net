@@ -50,6 +50,30 @@ public sealed class DayViewModelTests : IDisposable
     private static IEnumerable<GapRowViewModel> Gaps(DayViewModel day) => day.Rows.OfType<GapRowViewModel>();
 
     [Fact]
+    public void A_day_shows_what_a_writer_outside_the_window_logged()
+    {
+        var day = DayWith("Website 09:00 1h");
+
+        new EntryComposer(_local.Ledger).Compose(
+            new EntryCommand(Today, "Mobile", Topic: null, new TimeOnly(10, 0), TimeSpan.FromHours(1), Note: null));
+        day.Reload();
+
+        Assert.Equal(2, day.Rows.Count);
+        Assert.Equal("2h", day.Total);
+    }
+
+    [Fact]
+    public void The_window_can_say_what_went_wrong_at_start_up()
+    {
+        var day = DayWith();
+
+        day.Say("Port 5317 is taken, so the MCP server is not running.", isProblem: true);
+
+        Assert.True(day.MessageIsProblem);
+        Assert.Equal("Port 5317 is taken, so the MCP server is not running.", day.Message);
+    }
+
+    [Fact]
     public void A_line_becomes_a_row_showing_absolute_times()
     {
         var day = DayWith("Website (login) 09:00 1h30m");

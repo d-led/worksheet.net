@@ -127,9 +127,41 @@ public sealed class McpHostTests
         Assert.Contains($"Port {port} is taken", problem);
     }
 
-    /// <summary>A port the machine is not using: taken and released, so the number is known to be free.</summary>
-    private static int FreePort()
+    /// <summary>
+    /// The whole chain the application composes: handshake, a line logged through a tool, and the
+    /// day read back — over HTTP, the way a client will do it.
+    /// </summary>
+    [Fact]
+    public async Task A_client_can_shake_hands_log_a_line_and_read_the_day_back()
     {
+        var port = FreePort();
+        var ledger = Core.Ledger.Open(new InMemoryJournal());
+        var toolkit = new SerialToolkit(new WorksheetTools(ledger), work => work());
+
+        using var host = McpHttpHost.TryStart(new McpServer(toolkit), port, out _);
+        using var client = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{port}") };
+
+        Assert.Contains("2025-06-18", await Post(client, """{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}"""));
+
+        await Post(
+            client,
+            """{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"log_entry","arguments":{"line":"Client portal (login) 08:30 2h30m","date":"2026-11-03"}}}""");
+
+        var day = await Post(
+            client,
+            """{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"day","arguments":{"date":"2026-11-03"}}}""");
+
+        Assert.Contains("08:30-11:00 Client portal (login) 2h30m", day);
+        Assert.Contains("Total 2h30m", day);
+    }
+
+    private static async Task<string> Post(HttpClient client, string body) =>
+        await (await client.PostAsync("/mcp", new StringContent(body, Encoding.UTF8, "application/json")))
+            .Content
+            .ReadAsStringAsync();
+
+    /// <summary>A port the machine is not using: taken and released, so the number is known to be free.</summary>
+    private static int FreePort()    {
         var probe = new TcpListener(IPAddress.Loopback, 0);
         probe.Start();
         var port = ((IPEndPoint)probe.LocalEndpoint).Port;
