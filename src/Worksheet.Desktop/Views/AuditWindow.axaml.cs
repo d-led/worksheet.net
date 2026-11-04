@@ -21,6 +21,14 @@ public partial class AuditWindow : SecondaryWindow
 {
     public AuditWindow() => InitializeComponent();
 
+    /// <summary>The caret starts in the filter, since reading the journal begins with what one is looking for.</summary>
+    protected override void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+
+        Filter.Focus();
+    }
+
     private void Close_Click(object? sender, RoutedEventArgs e) => Close();
 
     /// <summary>A double click on a row opens the body of that change; a double click on the list itself does nothing.</summary>

@@ -138,6 +138,17 @@ public sealed class AuditWindowTests
     }
 
     [AvaloniaFact]
+    public void The_filter_has_the_caret_when_the_window_opens()
+    {
+        using var temp = new TempDirectory("worksheet-audit");
+        var window = Opened(temp, out var local, out _);
+
+        Assert.True(window.FindControl<TextBox>("Filter")!.IsFocused);
+
+        local.Dispose();
+    }
+
+    [AvaloniaFact]
     public void One_change_is_shown_whole_with_its_body_written_out()
     {
         using var temp = new TempDirectory("worksheet-audit");

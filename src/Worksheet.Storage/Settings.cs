@@ -94,7 +94,29 @@ public sealed class SettingsResolver(string directory, Func<string, string?> env
 
         File.WriteAllText(
             FilePath,
-            JsonSerializer.Serialize(new StoredSettings { McpPort = values.McpPort, SnapshotEvery = values.SnapshotEvery }));
+            JsonSerializer.Serialize(new StoredSettings
+            {
+                McpPort = values.McpPort,
+                SnapshotEvery = values.SnapshotEvery,
+                CloseNoticeShown = HasShownCloseNotice,
+            }));
+    }
+
+    /// <summary>
+    /// Whether the application has already told this person that closing the window leaves it
+    /// running. Kept beside the knobs rather than among them: it is something the application
+    /// remembers about the person, not something the person chose.
+    /// </summary>
+    public bool HasShownCloseNotice => Read()?.CloseNoticeShown ?? false;
+
+    /// <summary>Remembers that the notice has been given, leaving every knob as it was.</summary>
+    public void RememberCloseNotice()
+    {
+        Directory.CreateDirectory(directory);
+
+        File.WriteAllText(
+            FilePath,
+            JsonSerializer.Serialize((Read() ?? new StoredSettings()) with { CloseNoticeShown = true }));
     }
 
     /// <summary>
@@ -163,5 +185,8 @@ public sealed class SettingsResolver(string directory, Func<string, string?> env
 
         [JsonPropertyName("snapshotEvery")]
         public int? SnapshotEvery { get; init; }
+
+        [JsonPropertyName("closeNoticeShown")]
+        public bool? CloseNoticeShown { get; init; }
     }
 }

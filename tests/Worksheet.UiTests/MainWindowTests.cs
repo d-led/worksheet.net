@@ -7,6 +7,7 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
 using Worksheet.Desktop.Components;
+using Worksheet.Desktop.ViewModels;
 using Worksheet.Desktop.Views;
 
 namespace Worksheet.UiTests;
@@ -37,7 +38,46 @@ public sealed class MainWindowTests : UiTestBase
     }
 
     [AvaloniaFact]
-    public void Closing_the_window_puts_it_aside_and_only_quitting_really_closes_it()
+    public void A_person_who_has_not_been_told_gets_told_instead_of_the_window_slipping_away()
+    {
+        var window = OpenWindow();
+        var noticed = false;
+        var told = 0;
+
+        window.CloseProcedure = new ClosingProcedure(
+            () => noticed,
+            _ => told++);
+
+        window.Close();
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(1, told);
+        Assert.True(window.IsVisible);
+
+        window.AllowClose = true;
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void A_person_already_told_has_the_window_put_aside_without_being_asked_again()
+    {
+        var window = OpenWindow();
+        var told = 0;
+
+        window.CloseProcedure = new ClosingProcedure(() => true, _ => told++);
+
+        window.Close();
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(0, told);
+        Assert.False(window.IsVisible);
+
+        window.AllowClose = true;
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Closing_the_window_hides_it_and_only_quitting_really_closes_it()
     {
         var window = OpenWindow();
         var closed = false;
@@ -46,14 +86,9 @@ public sealed class MainWindowTests : UiTestBase
         window.Close();
         Dispatcher.UIThread.RunJobs();
 
-        // Closing was cancelled, so the window is put aside rather than gone: to the Dock on macOS,
-        // where its own icon is what brings it back, and out of sight everywhere else.
+        // Closing was cancelled, so the window is hidden rather than gone.
         Assert.False(closed);
-        Assert.True(
-            OperatingSystem.IsMacOS()
-                ? window.WindowState == WindowState.Minimized
-                : !window.IsVisible,
-            $"the window is put aside, not gone ({window.WindowState}, visible {window.IsVisible})");
+        Assert.False(window.IsVisible);
 
         window.AllowClose = true;
         window.Close();

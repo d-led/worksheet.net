@@ -125,4 +125,27 @@ public sealed class SettingsTests : IDisposable
         Assert.Throws<ArgumentOutOfRangeException>(() => Resolved().Store(new AppSettings(McpPort: 70_000, SnapshotEvery: 500)));
         Assert.Throws<ArgumentOutOfRangeException>(() => Resolved().Store(new AppSettings(McpPort: 5317, SnapshotEvery: -1)));
     }
+
+    [Fact]
+    public void The_close_notice_has_not_been_shown_before_the_first_close()
+    {
+        Assert.False(Resolved().HasShownCloseNotice);
+    }
+
+    [Fact]
+    public void The_close_notice_is_remembered_across_a_restart()
+    {
+        Resolved().RememberCloseNotice();
+
+        Assert.True(Resolved().HasShownCloseNotice);
+    }
+
+    [Fact]
+    public void Choosing_a_port_does_not_make_the_close_notice_return()
+    {
+        Resolved().RememberCloseNotice();
+        Resolved().Store(new AppSettings(McpPort: 7000, SnapshotEvery: 100));
+
+        Assert.True(Resolved().HasShownCloseNotice);
+    }
 }

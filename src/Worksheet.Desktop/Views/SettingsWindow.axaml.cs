@@ -17,6 +17,15 @@ public partial class SettingsWindow : SecondaryWindow
 {
     public SettingsWindow() => InitializeComponent();
 
+    /// <summary>The caret starts where the window is about: the port, the one number a person changes.</summary>
+    protected override void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+
+        PortBox.Focus();
+        PortBox.SelectAll();
+    }
+
     /// <summary>Called after a save or a revert, so the application can apply what it can without a restart.</summary>
     public Action? Applied { get; set; }
 

@@ -1,0 +1,43 @@
+<local:SecondaryWindow xmlns="https://github.com/avaloniaui"
+                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                       xmlns:local="using:Worksheet.Desktop.Views"
+                       xmlns:vm="using:Worksheet.Desktop.ViewModels"
+                       x:Class="Worksheet.Desktop.Views.CloseNoticeWindow"
+                       x:DataType="vm:CloseNoticeViewModel"
+                       Title="Worksheet keeps running"
+                       Width="480"
+                       SizeToContent="Height"
+                       CanResize="False"
+                       WindowStartupLocation="CenterOwner">
+
+  <!--
+    Said once, the first time the window is closed: this is a menu-bar application, so closing the
+    window is not the same as leaving. Escape answers "close the window", which is the harmless
+    answer; leaving takes a second, deliberate press.
+  -->
+  <Border Classes="page" Padding="20">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10">
+
+      <TextBlock Grid.Row="0" Classes="title" Text="{Binding Title}" />
+
+      <TextBlock x:Name="Body"
+                 Grid.Row="1"
+                 Classes="body"
+                 Text="{Binding Body}"
+                 TextWrapping="Wrap" />
+
+      <CheckBox x:Name="Quiet"
+                Grid.Row="2"
+                Content="{Binding Quiet}"
+                IsChecked="{Binding DoNotTellAgain}"
+                VerticalAlignment="Center" />
+
+      <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+        <Button x:Name="Quit" Content="Quit Worksheet" Click="Quit_Click" />
+        <Button x:Name="CloseWindow" Content="Close the window" Click="CloseWindow_Click" IsDefault="True" />
+      </StackPanel>
+
+    </Grid>
+  </Border>
+
+</local:SecondaryWindow>

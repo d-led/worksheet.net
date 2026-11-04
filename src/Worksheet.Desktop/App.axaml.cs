@@ -86,6 +86,9 @@ public sealed class App : Application
         var day = new DayViewModel(_local);
         day.Screens = new WindowScreens(ShowSettings, ShowManage, ShowConnect, ShowAudit, OpenDataFolder);
         _window = new MainWindow { DataContext = day };
+        _window.CloseProcedure = new ClosingProcedure(
+            () => _resolver?.HasShownCloseNotice ?? true,
+            window => ShowCloseNotice(window, desktop));
         desktop.MainWindow = _window;
 
         TrayHost.Attach(
@@ -278,6 +281,33 @@ public sealed class App : Application
         }
 
         desktop.Shutdown();
+    }
+
+    /// <summary>
+    /// The first time the window is closed: say that the day keeps counting and where the icon is,
+    /// and offer leaving instead. Told once, because a notice that repeats itself is one nobody reads.
+    /// </summary>
+    private void ShowCloseNotice(Window window, IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        var notice = new CloseNoticeWindow { DataContext = new CloseNoticeViewModel() };
+
+        notice.Closed += (_, _) =>
+        {
+            if (notice.DoNotTellAgain)
+            {
+                _resolver?.RememberCloseNotice();
+            }
+
+            if (notice.QuitInstead)
+            {
+                Quit(desktop);
+                return;
+            }
+
+            window.Hide();
+        };
+
+        Dialog.ShowOver(notice, window);
     }
 
     private void Release()

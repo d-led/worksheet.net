@@ -27,6 +27,12 @@ public partial class MainWindow : SukiWindow
     public bool AllowClose { get; set; }
 
     /// <summary>
+    /// Set by the shell: what closing means besides hiding. The window asks before it disappears,
+    /// because vanishing without a word reads as having been closed for good.
+    /// </summary>
+    public ClosingProcedure? CloseProcedure { get; set; }
+
+    /// <summary>
     /// The arrows walk the day, unless the caret is in a field: an empty field leaves a left arrow
     /// unhandled, so the focus decides rather than whether the key was taken.
     /// </summary>
@@ -57,12 +63,6 @@ public partial class MainWindow : SukiWindow
             }
             : null;
 
-    /// <summary>
-    /// Closing puts the day aside rather than ending it. On macOS that means the Dock — a minimised
-    /// window, which the application's own icon brings back when it is clicked, since an application
-    /// with no visible window gets no other signal that its icon was used. Elsewhere the tray owns
-    /// the click, so the window simply hides.
-    /// </summary>
     private void HideInsteadOfClosing(object? sender, WindowClosingEventArgs e)
     {
         if (AllowClose)
@@ -72,9 +72,9 @@ public partial class MainWindow : SukiWindow
 
         e.Cancel = true;
 
-        if (OperatingSystem.IsMacOS())
+        if (CloseProcedure is { } procedure && !procedure.Noticed())
         {
-            WindowState = WindowState.Minimized;
+            procedure.Notice(this);
             return;
         }
 

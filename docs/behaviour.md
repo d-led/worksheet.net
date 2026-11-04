@@ -26,10 +26,14 @@ and records decisions; it is not a description of any other program's source.
 4. Undoes the most recent change by appending its inverse, and redoes it by appending it
    again. Any new change forgets what could have been redone.
 5. Runs in the system tray. Closing the window puts it aside rather than ending
-   the process: on macOS the window is minimised, so that the application's
-   Dock icon — the only icon macOS lets an application see a click on — brings
-   it back; elsewhere it hides and the tray icon raises it. Only the tray's
-   *Quit* ends the process. The tray and the window's heading both open the
+   the process; the tray icon raises it again. The first time a window is closed
+   the application says so in a notice of its own — the day keeps counting, the
+   icon in the menu bar brings the window back — and offers leaving instead; the
+   notice can be silenced there, and is then not shown again. Only *Quit* ends
+   the process. On macOS the application has no Dock icon at all: it is a
+   menu-bar application, and a Dock icon it could never hear a click on would
+   only take a place and answer nothing (see `development.md` for the measured
+   reasons). The tray and the window's heading both open the
    other five screens — settings, projects and topics, the journal, the agent
    connection, the data folder — so a platform without a tray icon loses only
    *Quit*. Each of those windows leaves on Escape; in the catalogue, a name that

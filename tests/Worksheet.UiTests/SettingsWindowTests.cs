@@ -43,6 +43,18 @@ public sealed class SettingsWindowTests
     private static void Click(Window window, Button button) => Mouse.Click(window, button);
 
     [AvaloniaFact]
+    public void The_port_has_the_caret_when_the_window_opens()
+    {
+        using var temp = new TempDirectory("worksheet-settings-window");
+
+        var window = Opened(temp, out _, () => { });
+
+        var port = window.FindControl<TextBox>("PortBox")!;
+        Assert.True(port.IsFocused);
+        Assert.Equal(port.Text?.Length ?? 0, port.SelectionEnd - port.SelectionStart);
+    }
+
+    [AvaloniaFact]
     public void The_window_shows_the_values_in_force_and_where_they_came_from()
     {
         using var temp = new TempDirectory("worksheet-settings-window");

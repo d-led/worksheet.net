@@ -36,9 +36,9 @@ internal static class Program
     public static AppBuilder BuildAvaloniaApp() =>
         AppBuilder.Configure<App>()
             .UsePlatformDetect()
-            // A menu-bar application keeps a Dock icon as well: on macOS the menu-bar icon opens its
-            // menu on a click and never reports one, so the Dock icon is the only one that can be
-            // clicked back into view. Said here rather than inherited from a default.
-            .With(new MacOSPlatformOptions { ShowInDock = true })
+            // No Dock icon: this is a menu-bar application, and a Dock icon it can never hear a click
+            // on would only take a place in the Dock and answer nothing. Said here rather than
+            // inherited, because Avalonia's default is to show one.
+            .With(new MacOSPlatformOptions { ShowInDock = false })
             .LogToTrace();
 }
