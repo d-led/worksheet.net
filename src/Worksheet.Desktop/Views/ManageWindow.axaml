@@ -15,90 +15,92 @@
     The catalogue in two lists: what is in use with what it holds, then the topics of the one chosen.
     Every button here is one journal change, so the day's own undo takes any of them back.
   -->
-  <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto" RowSpacing="10" Margin="20">
+  <Border Classes="page" Padding="20">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto" RowSpacing="10">
 
-    <TextBlock Grid.Row="0" Classes="title" Text="Projects and topics" />
+      <TextBlock Grid.Row="0" Classes="title" Text="Projects and topics" />
 
-    <TextBlock Grid.Row="1"
-               Classes="quiet"
-               TextWrapping="Wrap"
-               Text="Renaming keeps the entries where they are. A project you take out of use sends its hours to another project and keeps its topics with it; a topic you take out leaves its hours on the day, without one." />
-
-    <ListBox x:Name="ProjectList"
-             Grid.Row="2"
-             Height="150"
-             ItemsSource="{Binding Projects}"
-             SelectedItem="{Binding SelectedProject}">
-      <ListBox.ItemTemplate>
-        <DataTemplate x:DataType="vm:CatalogueRow">
-          <TextBlock Text="{Binding Label}" />
-        </DataTemplate>
-      </ListBox.ItemTemplate>
-    </ListBox>
-
-    <Grid Grid.Row="3" ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
-      <TextBox x:Name="NewProjectName"
-               Grid.Column="0"
-               Text="{Binding NewProjectName}"
-               PlaceholderText="the name it should answer to" />
-      <Button x:Name="RenameProject"
-              Grid.Column="1"
-              Content="Rename"
-              Command="{Binding RenameProjectCommand}" />
-      <ComboBox x:Name="MoveTo"
-                Grid.Column="2"
-                Width="160"
-                ItemsSource="{Binding MoveTargets}"
-                SelectedItem="{Binding MoveEntriesTo}"
-                PlaceholderText="move hours to" />
-      <Button x:Name="RemoveProject"
-              Grid.Column="3"
-              Content="Remove project"
-              Command="{Binding RemoveProjectCommand}" />
-    </Grid>
-
-    <TextBlock Grid.Row="4" Classes="caption" Text="TOPICS OF THE CHOSEN PROJECT" />
-
-    <ListBox x:Name="TopicList"
-             Grid.Row="5"
-             Height="120"
-             ItemsSource="{Binding Topics}"
-             SelectedItem="{Binding SelectedTopic}">
-      <ListBox.ItemTemplate>
-        <DataTemplate x:DataType="vm:CatalogueRow">
-          <TextBlock Text="{Binding Label}" />
-        </DataTemplate>
-      </ListBox.ItemTemplate>
-    </ListBox>
-
-    <Grid Grid.Row="6" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" VerticalAlignment="Top">
-      <TextBox x:Name="NewTopicName"
-               Grid.Column="0"
-               Text="{Binding NewTopicName}"
-               PlaceholderText="the name it should answer to" />
-      <Button x:Name="RenameTopic"
-              Grid.Column="1"
-              Content="Rename"
-              Command="{Binding RenameTopicCommand}" />
-      <Button x:Name="RemoveTopic"
-              Grid.Column="2"
-              Content="Remove topic"
-              Command="{Binding RemoveTopicCommand}" />
-    </Grid>
-
-    <Grid Grid.Row="7" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-      <TextBlock x:Name="Message"
-                 Grid.Column="0"
-                 Classes="meta"
-                 Classes.problem="{Binding MessageIsProblem}"
-                 Text="{Binding Message}"
-                 IsVisible="{Binding HasMessage}"
+      <TextBlock Grid.Row="1"
+                 Classes="quiet"
                  TextWrapping="Wrap"
-                 VerticalAlignment="Center" />
-      <Button x:Name="Undo" Grid.Column="1" Content="Undo" Command="{Binding UndoCommand}" IsEnabled="{Binding CanUndo}" />
-      <Button x:Name="CloseButton" Grid.Column="2" Content="Close" Click="Close_Click" />
-    </Grid>
+                 Text="Renaming keeps the entries where they are. A project you take out of use sends its hours to another project and keeps its topics with it; a topic you take out leaves its hours on the day, without one." />
 
-  </Grid>
+      <ListBox x:Name="ProjectList"
+               Grid.Row="2"
+               Height="150"
+               ItemsSource="{Binding Projects}"
+               SelectedItem="{Binding SelectedProject}">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:CatalogueRow">
+            <TextBlock Text="{Binding Label}" />
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+      <Grid Grid.Row="3" ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+        <TextBox x:Name="NewProjectName"
+                 Grid.Column="0"
+                 Text="{Binding NewProjectName}"
+                 PlaceholderText="the name it should answer to" />
+        <Button x:Name="RenameProject"
+                Grid.Column="1"
+                Content="Rename"
+                Command="{Binding RenameProjectCommand}" />
+        <ComboBox x:Name="MoveTo"
+                  Grid.Column="2"
+                  Width="160"
+                  ItemsSource="{Binding MoveTargets}"
+                  SelectedItem="{Binding MoveEntriesTo}"
+                  PlaceholderText="move hours to" />
+        <Button x:Name="RemoveProject"
+                Grid.Column="3"
+                Content="Remove project"
+                Command="{Binding RemoveProjectCommand}" />
+      </Grid>
+
+      <TextBlock Grid.Row="4" Classes="caption" Text="TOPICS OF THE CHOSEN PROJECT" />
+
+      <ListBox x:Name="TopicList"
+               Grid.Row="5"
+               Height="120"
+               ItemsSource="{Binding Topics}"
+               SelectedItem="{Binding SelectedTopic}">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:CatalogueRow">
+            <TextBlock Text="{Binding Label}" />
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+      <Grid Grid.Row="6" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" VerticalAlignment="Top">
+        <TextBox x:Name="NewTopicName"
+                 Grid.Column="0"
+                 Text="{Binding NewTopicName}"
+                 PlaceholderText="the name it should answer to" />
+        <Button x:Name="RenameTopic"
+                Grid.Column="1"
+                Content="Rename"
+                Command="{Binding RenameTopicCommand}" />
+        <Button x:Name="RemoveTopic"
+                Grid.Column="2"
+                Content="Remove topic"
+                Command="{Binding RemoveTopicCommand}" />
+      </Grid>
+
+      <Grid Grid.Row="7" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+        <TextBlock x:Name="Message"
+                   Grid.Column="0"
+                   Classes="meta"
+                   Classes.problem="{Binding MessageIsProblem}"
+                   Text="{Binding Message}"
+                   IsVisible="{Binding HasMessage}"
+                   TextWrapping="Wrap"
+                   VerticalAlignment="Center" />
+        <Button x:Name="Undo" Grid.Column="1" Content="Undo" Command="{Binding UndoCommand}" IsEnabled="{Binding CanUndo}" />
+        <Button x:Name="CloseButton" Grid.Column="2" Content="Close" Click="Close_Click" />
+      </Grid>
+
+    </Grid>
+  </Border>
 
 </suki:SukiWindow>

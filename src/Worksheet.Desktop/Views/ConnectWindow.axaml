@@ -13,14 +13,16 @@
                  WindowStartupLocation="CenterOwner">
 
   <!-- The panel does the work; the window only gives it a frame and a way out. -->
-  <Grid RowDefinitions="*,Auto">
-    <c:ConnectPanel x:Name="Panel" Grid.Row="0" />
-    <Button x:Name="CloseButton"
-            Grid.Row="1"
-            Content="Close"
-            HorizontalAlignment="Right"
-            Margin="0,0,20,16"
-            Click="Close_Click" />
-  </Grid>
+  <Border Classes="page">
+    <Grid RowDefinitions="*,Auto">
+      <c:ConnectPanel x:Name="Panel" Grid.Row="0" />
+      <Button x:Name="CloseButton"
+              Grid.Row="1"
+              Content="Close"
+              HorizontalAlignment="Right"
+              Margin="0,0,20,16"
+              Click="Close_Click" />
+    </Grid>
+  </Border>
 
 </suki:SukiWindow>
