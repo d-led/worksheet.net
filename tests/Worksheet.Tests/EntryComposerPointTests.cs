@@ -102,37 +102,41 @@ public sealed class EntryComposerPointTests
     }
 
     [Fact]
-    public void A_line_cannot_be_logged_on_a_project_taken_out_of_the_catalogue()
+    public void A_line_on_a_project_out_of_the_catalogue_brings_it_back()
     {
         Logged("Website 09:00 1h");
         Logged("Mobile 10:00 1h");
-        new Catalogue(_ledger).RemoveProject("Website", "Mobile");
+        new Catalogue(_ledger).RemoveProject("Website");
 
         var composed = _composer.Compose(EntryCommandParser.Parse("Website 11:00 1h", Day).Command!);
 
-        Assert.Equal("'Website' is already out of the catalogue.", Assert.Single(composed.Problems));
+        Assert.True(composed.Created, string.Join(" ", composed.Problems));
+        Assert.False(_ledger.State.Projects.Values.Single(project => project.Name == "Website").Archived);
+        Assert.Equal(2, _ledger.State.Entries.Values.Count(entry => entry.ProjectId == _ledger.State.MatchProject("Website").Value!.Id));
     }
 
     [Fact]
-    public void A_row_cannot_be_pointed_at_a_project_taken_out_of_the_catalogue()
+    public void A_row_pointed_at_a_project_out_of_the_catalogue_brings_it_back()
     {
         var entry = Logged("Website 09:00 1h");
         Logged("Mobile 10:00 1h");
-        new Catalogue(_ledger).RemoveProject("Website", "Mobile");
+        new Catalogue(_ledger).RemoveProject("Website");
 
         var pointed = _composer.Point(entry, "Website", null);
 
-        Assert.Equal("'Website' is already out of the catalogue.", Assert.Single(pointed.Problems));
+        Assert.True(pointed.Created, string.Join(" ", pointed.Problems));
+        Assert.False(_ledger.State.Projects.Values.Single(project => project.Name == "Website").Archived);
     }
 
     [Fact]
-    public void A_row_cannot_be_pointed_at_a_topic_taken_out_of_the_catalogue()
+    public void A_row_pointed_at_a_topic_out_of_the_catalogue_brings_it_back()
     {
         var entry = Logged("Website (login) 09:00 1h");
         new Catalogue(_ledger).RemoveTopic("Website", "login");
 
         var pointed = _composer.Point(_ledger.State.Entries[entry.Id], "Website", "login");
 
-        Assert.Equal("'login' is already out of the catalogue.", Assert.Single(pointed.Problems));
+        Assert.True(pointed.Created, string.Join(" ", pointed.Problems));
+        Assert.False(_ledger.State.Topics.Values.Single(topic => topic.Name == "login").Archived);
     }
 }

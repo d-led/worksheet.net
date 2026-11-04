@@ -23,7 +23,7 @@
       <TextBlock Grid.Row="1"
                  Classes="quiet"
                  TextWrapping="Wrap"
-                 Text="Renaming keeps the entries where they are. A project you take out of use sends its hours to another project and keeps its topics with it; a topic you take out leaves its hours on the day, without one." />
+                 Text="Renaming keeps the entries where they are. Archiving a project stops offering its name and leaves every entry exactly as it was — typing the name again brings it back. A topic archives the same way." />
 
       <ListBox x:Name="ProjectList"
                Grid.Row="2"
@@ -37,7 +37,7 @@
         </ListBox.ItemTemplate>
       </ListBox>
 
-      <Grid Grid.Row="3" ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+      <Grid Grid.Row="3" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
         <TextBox x:Name="NewProjectName"
                  Grid.Column="0"
                  Text="{Binding NewProjectName}"
@@ -46,15 +46,9 @@
                 Grid.Column="1"
                 Content="Rename"
                 Command="{Binding RenameProjectCommand}" />
-        <ComboBox x:Name="MoveTo"
-                  Grid.Column="2"
-                  Width="160"
-                  ItemsSource="{Binding MoveTargets}"
-                  SelectedItem="{Binding MoveEntriesTo}"
-                  PlaceholderText="move hours to" />
         <Button x:Name="RemoveProject"
-                Grid.Column="3"
-                Content="Remove project"
+                Grid.Column="2"
+                Content="Archive"
                 Command="{Binding RemoveProjectCommand}" />
       </Grid>
 

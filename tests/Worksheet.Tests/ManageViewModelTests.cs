@@ -65,17 +65,6 @@ public sealed class ManageViewModelTests
     }
 
     [Fact]
-    public void The_dropped_hours_can_go_to_any_other_project()
-    {
-        Opened();
-
-        var panel = new ManageViewModel(_ledger) { SelectedProject = Row("Website") };
-
-        Assert.Equal(["Mobile"], panel.MoveTargets);
-        Assert.Equal("Mobile", panel.MoveEntriesTo);
-    }
-
-    [Fact]
     public void Renaming_the_chosen_project_keeps_it_chosen_and_says_so()
     {
         Opened();
@@ -89,15 +78,16 @@ public sealed class ManageViewModelTests
     }
 
     [Fact]
-    public void A_project_that_still_holds_entries_is_not_dropped_without_them()
+    public void Archiving_a_project_leaves_its_hours_where_they_are()
     {
         Opened();
-        var panel = new ManageViewModel(_ledger) { SelectedProject = Row("Website"), MoveEntriesTo = string.Empty };
+        var panel = new ManageViewModel(_ledger) { SelectedProject = Row("Website") };
 
         panel.RemoveProjectCommand.Execute(null);
 
-        Assert.Equal("Website still has 2 entries; name the project they move to.", panel.Message);
-        Assert.True(panel.MessageIsProblem);
+        Assert.Equal("'Website' is out of the catalogue; its entries stay as they are.", panel.Message);
+        Assert.False(panel.MessageIsProblem);
+        Assert.Equal(2, _ledger.State.Entries.Values.Count(entry => _ledger.State.ProjectName(entry.ProjectId) == "Website"));
     }
 
     [Fact]
@@ -108,8 +98,7 @@ public sealed class ManageViewModelTests
 
         panel.RemoveProjectCommand.Execute(null);
 
-        Assert.Equal(["Mobile (3 entries)"], panel.Projects.Select(project => project.Label));
-        Assert.Equal("'Website' is out of the catalogue.", panel.Message);
+        Assert.Equal(["Mobile (1 entry)"], panel.Projects.Select(project => project.Label));
     }
 
     [Fact]
@@ -134,7 +123,7 @@ public sealed class ManageViewModelTests
         panel.RemoveTopicCommand.Execute(null);
 
         Assert.Equal(["reports (1 entry)"], panel.Topics.Select(topic => topic.Label));
-        Assert.Equal("'login' is out of Website; its entries stay without a topic.", panel.Message);
+        Assert.Equal("'login' is out of Website; its entries stay as they are.", panel.Message);
     }
 
     [Fact]

@@ -110,16 +110,16 @@ public sealed class WorksheetTools : IToolkit
     private ToolOutcome RemoveProject(ToolCall call)
     {
         var project = Names.Trimmed(call.Text("project"));
-        var destination = Names.Trimmed(call.Text("move_entries_to"));
-
-        // Counted before the call: afterwards the project is archived and its entries are elsewhere.
         var held = Held(project);
 
         return Answered(
-            _catalogue.RemoveProject(project, call.Text("move_entries_to")),
-            destination.Length > 0 && held > 0
-                ? $"'{project}' is out of the catalogue; its entries are under '{destination}' now."
-                : $"'{project}' is out of the catalogue.");
+            _catalogue.RemoveProject(project),
+            held switch
+            {
+                0 => $"'{project}' is out of the catalogue.",
+                1 => $"'{project}' is out of the catalogue; its entry keeps it.",
+                _ => $"'{project}' is out of the catalogue; its {held} entries keep it.",
+            });
     }
 
     private ToolOutcome RenameTopic(ToolCall call) =>
@@ -133,7 +133,7 @@ public sealed class WorksheetTools : IToolkit
     private ToolOutcome RemoveTopic(ToolCall call) =>
         Answered(
             _catalogue.RemoveTopic(Names.Trimmed(call.Text("project")), Names.Trimmed(call.Text("topic"))),
-            $"'{Names.Trimmed(call.Text("topic"))}' is out of {Names.Trimmed(call.Text("project"))}; its entries stay on their days without a topic.");
+            $"'{Names.Trimmed(call.Text("topic"))}' is out of {Names.Trimmed(call.Text("project"))}; its entries stay as they are.");
 
     private ToolOutcome Undo() =>
         _ledger.TryUndo(out var reason) ? ToolOutcome.Said("Undone.") : ToolOutcome.Refused(reason!);
@@ -241,15 +241,14 @@ public sealed class WorksheetTools : IToolkit
             Annotations: ToolAnnotations.Writes),
         new(
             "remove_project",
-            "Take a project out of the catalogue. Refused while it holds entries, unless move_entries_to names "
-            + "the project they move to; their topics stay behind with the project that goes away.",
+            "Take a project out of the catalogue. Its entries are not touched: they keep the project they "
+            + "were logged under. The name stops being offered, and typing it again brings the project back.",
             new
             {
                 type = "object",
                 properties = new
                 {
                     project = new { type = "string", description = "The project to take out of use." },
-                    move_entries_to = new { type = "string", description = "The project its entries move to." },
                 },
                 required = new[] { "project" },
             },

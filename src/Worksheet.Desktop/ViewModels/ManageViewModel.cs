@@ -44,10 +44,6 @@ public sealed partial class ManageViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string _newTopicName = string.Empty;
 
-    /// <summary>Where the hours go when a project is dropped; the picker offers the other live projects.</summary>
-    [ObservableProperty]
-    private string _moveEntriesTo = string.Empty;
-
     [ObservableProperty]
     private string? _message;
 
@@ -73,10 +69,6 @@ public sealed partial class ManageViewModel : ObservableObject, IDisposable
 
     /// <summary>The topics of the chosen project.</summary>
     public ObservableCollection<CatalogueRow> Topics { get; } = [];
-
-    /// <summary>The other projects, which are the places dropped hours can go.</summary>
-    public IReadOnlyList<string> MoveTargets =>
-        [.. Projects.Select(project => project.Name).Where(name => name != SelectedProject?.Name)];
 
     public bool HasMessage => !string.IsNullOrEmpty(Message);
 
@@ -108,8 +100,8 @@ public sealed partial class ManageViewModel : ObservableObject, IDisposable
         }
 
         Report(
-            _catalogue.RemoveProject(project.Name, MoveEntriesTo),
-            $"'{project.Name}' is out of the catalogue.");
+            _catalogue.RemoveProject(project.Name),
+            $"'{project.Name}' is out of the catalogue; its entries stay as they are.");
     }
 
     [RelayCommand]
@@ -137,7 +129,7 @@ public sealed partial class ManageViewModel : ObservableObject, IDisposable
 
         Report(
             _catalogue.RemoveTopic(project.Name, topic.Name),
-            $"'{topic.Name}' is out of {project.Name}; its entries stay without a topic.");
+            $"'{topic.Name}' is out of {project.Name}; its entries stay as they are.");
     }
 
     [RelayCommand]
@@ -210,13 +202,6 @@ public sealed partial class ManageViewModel : ObservableObject, IDisposable
         }
 
         SelectedTopic = Topics.FirstOrDefault(row => row.Name == topic);
-
-        OnPropertyChanged(nameof(MoveTargets));
-
-        if (!MoveTargets.Contains(MoveEntriesTo))
-        {
-            MoveEntriesTo = MoveTargets.FirstOrDefault() ?? string.Empty;
-        }
     }
 
     private IEnumerable<CatalogueRow> ProjectRows() =>

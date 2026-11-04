@@ -55,11 +55,12 @@ public sealed class Catalogue(Ledger ledger)
     }
 
     /// <summary>
-    /// Takes a project out of the catalogue. Its entries are not deleted — they move to the named
-    /// project, and their topics stay behind, because a topic belongs to the project it is named in.
-    /// One change carries both sides, so undo is one step even for a project full of entries.
+    /// Takes a project out of the catalogue and leaves every entry exactly as it is: the journal is
+    /// append-only, so the hours of a retired project keep its name. The name stops being offered,
+    /// and typing it again brings the project back. Moving hours to another project is a remap, a
+    /// decision of its own, not a side effect of this one.
     /// </summary>
-    public CatalogueResult RemoveProject(string projectName, string? entriesGoTo)
+    public CatalogueResult RemoveProject(string projectName)
     {
         var match = ledger.State.MatchProject(projectName);
 
@@ -75,19 +76,10 @@ public sealed class Catalogue(Ledger ledger)
             return gone;
         }
 
+        var topics = ledger.State.Topics.Values.Where(topic => topic.ProjectId == project.Id).ToArray();
         var entries = EntriesOf(project.Id);
 
-        if (MoveTarget(project, entriesGoTo, entries.Length, out var destination) is { } targetRefusal)
-        {
-            return targetRefusal;
-        }
-
-        var topics = ledger.State.Topics.Values.Where(topic => topic.ProjectId == project.Id).ToArray();
-        var moved = destination is { } into
-            ? entries.Select(entry => entry with { ProjectId = into.Id, TopicId = null }).ToArray()
-            : [];
-
-        ledger.Commit([new ProjectRemoved(project, topics, entries, moved)]);
+        ledger.Commit([new ProjectRemoved(project, topics, entries, entries)]);
 
         return CatalogueResult.Done;
     }
@@ -125,7 +117,7 @@ public sealed class Catalogue(Ledger ledger)
             (before, after) => new TopicRenamed(topic.Id, before, after));
     }
 
-    /// <summary>Taking a topic away leaves its entries on the day with no topic, not without a project.</summary>
+    /// <summary>Taking a topic away leaves its entries on the day with the topic they had.</summary>
     public CatalogueResult RemoveTopic(string projectName, string topicName)
     {
         var project = ledger.State.MatchProject(projectName);
@@ -149,10 +141,9 @@ public sealed class Catalogue(Ledger ledger)
             return gone;
         }
 
-        var before = ledger.State.Entries.Values.Where(entry => entry.TopicId == topic.Id).ToArray();
-        var after = before.Select(entry => entry with { TopicId = null }).ToArray();
+        var entries = ledger.State.Entries.Values.Where(entry => entry.TopicId == topic.Id).ToArray();
 
-        ledger.Commit([new TopicRemoved(topic, before, after)]);
+        ledger.Commit([new TopicRemoved(topic, entries, entries)]);
 
         return CatalogueResult.Done;
     }
@@ -188,55 +179,6 @@ public sealed class Catalogue(Ledger ledger)
         return CatalogueResult.Done;
     }
 
-    /// <summary>
-    /// Where the entries go, or why they cannot go anywhere. A project with entries cannot simply
-    /// vanish: those hours would have no name to be reported under.
-    /// </summary>
-    private CatalogueResult? MoveTarget(Project project, string? entriesGoTo, int entries, out Project? destination)
-    {
-        destination = null;
-
-        return string.IsNullOrWhiteSpace(entriesGoTo)
-            ? entries == 0
-                ? null
-                : CatalogueResult.Refused($"{project.Name} still has {Count(entries, "entry", "entries")}; name the project they move to.")
-            : Destination(project, entriesGoTo, out destination);
-    }
-
-    /// <summary>The project the hours go to: in use, not the one going away, and not the place breaks go.</summary>
-    private CatalogueResult? Destination(Project project, string entriesGoTo, out Project? destination)
-    {
-        destination = null;
-
-        var match = ledger.State.MatchProject(entriesGoTo);
-
-        if (Unusable(match, entriesGoTo, "project") is { } refusal)
-        {
-            return refusal;
-        }
-
-        var target = match.Value!;
-
-        if (target.Id == project.Id)
-        {
-            return CatalogueResult.Refused("Entries cannot move into the project that goes away.");
-        }
-
-        if (Gone(target) is { } gone)
-        {
-            return gone;
-        }
-
-        if (Break.IsBreak(target.Name))
-        {
-            return CatalogueResult.Refused("Entries cannot move into a break.");
-        }
-
-        destination = target;
-
-        return null;
-    }
-
     private Entry[] EntriesOf(Guid projectId) =>
         [.. ledger.State.Entries.Values.Where(entry => entry.ProjectId == projectId)];
 
@@ -257,7 +199,4 @@ public sealed class Catalogue(Ledger ledger)
     private static CatalogueResult? Unusable<T>(NameMatch<T> match, string name, string what)
         where T : class =>
         Names.Refusal(match, name, what) is { } refusal ? CatalogueResult.Refused(refusal) : null;
-
-    private static string Count(int count, string singular, string plural) =>
-        count == 1 ? $"1 {singular}" : $"{count} {plural}";
 }

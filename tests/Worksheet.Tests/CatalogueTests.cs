@@ -122,35 +122,23 @@ public sealed class CatalogueTests
     }
 
     [Fact]
-    public void A_project_with_entries_is_not_removed_until_they_have_a_home()
-    {
-        var opened = Opened();
-        var before = opened.Ledger.Version;
-
-        var refusal = opened.Catalogue.RemoveProject("Website", null);
-
-        Assert.Equal("Website still has 2 entries; name the project they move to.", Assert.Single(refusal.Problems));
-        Assert.Equal(before, opened.Ledger.Version);
-    }
-
-    [Fact]
-    public void Removing_a_project_moves_its_entries_and_takes_their_topics_away()
+    public void Removing_a_project_leaves_its_entries_and_topics_exactly_as_they_were()
     {
         var opened = Opened();
 
-        Assert.True(opened.Catalogue.RemoveProject("Website", "Mobile").Accepted);
+        Assert.True(opened.Catalogue.RemoveProject("Website").Accepted);
 
         Assert.True(opened.Ledger.State.Projects[Website].Archived);
         Assert.True(opened.Ledger.State.Topics[Login].Archived);
-        Assert.Equal(Mobile, opened.Ledger.State.Entries[opened.Login.Id].ProjectId);
-        Assert.Null(opened.Ledger.State.Entries[opened.Login.Id].TopicId);
+        Assert.Equal(Website, opened.Ledger.State.Entries[opened.Login.Id].ProjectId);
+        Assert.Equal(Login, opened.Ledger.State.Entries[opened.Login.Id].TopicId);
     }
 
     [Fact]
     public void Removing_a_project_and_undoing_it_puts_everything_back_in_one_step()
     {
         var opened = Opened();
-        opened.Catalogue.RemoveProject("Website", "Mobile");
+        opened.Catalogue.RemoveProject("Website");
 
         Assert.True(opened.Ledger.TryUndo(out var reason), reason);
 
@@ -161,46 +149,25 @@ public sealed class CatalogueTests
     }
 
     [Fact]
-    public void A_project_without_entries_is_removed_with_nowhere_to_move_them()
+    public void A_project_without_entries_is_removed_as_readily_as_one_with_them()
     {
         var opened = Opened();
         Open(opened.Ledger, "Reading");
         var reading = opened.Ledger.State.Projects.Values.Single(project => project.Name == "Reading");
 
-        Assert.True(opened.Catalogue.RemoveProject("Reading", null).Accepted);
+        Assert.True(opened.Catalogue.RemoveProject("Reading").Accepted);
 
         Assert.True(opened.Ledger.State.Projects[reading.Id].Archived);
         Assert.Equal(Website, opened.Ledger.State.Entries[opened.Login.Id].ProjectId);
     }
 
     [Fact]
-    public void Entries_cannot_be_moved_into_the_project_that_is_going_away()
-    {
-        var opened = Opened();
-
-        var refusal = opened.Catalogue.RemoveProject("Website", "Website");
-
-        Assert.Equal("Entries cannot move into the project that goes away.", Assert.Single(refusal.Problems));
-    }
-
-    [Fact]
-    public void Entries_cannot_be_moved_into_a_break()
-    {
-        var opened = Opened();
-        Open(opened.Ledger, Break.Project);
-
-        var refusal = opened.Catalogue.RemoveProject("Website", Break.Project);
-
-        Assert.Equal("Entries cannot move into a break.", Assert.Single(refusal.Problems));
-    }
-
-    [Fact]
     public void A_project_already_out_of_the_catalogue_is_not_removed_again()
     {
         var opened = Opened();
-        opened.Catalogue.RemoveProject("Website", "Mobile");
+        opened.Catalogue.RemoveProject("Website");
 
-        var refusal = opened.Catalogue.RemoveProject("Website", "Mobile");
+        var refusal = opened.Catalogue.RemoveProject("Website");
 
         Assert.Equal("'Website' is already out of the catalogue.", Assert.Single(refusal.Problems));
     }
@@ -251,14 +218,14 @@ public sealed class CatalogueTests
     }
 
     [Fact]
-    public void Removing_a_topic_leaves_its_entries_on_the_day_without_one()
+    public void Removing_a_topic_leaves_its_entries_with_the_topic_they_had()
     {
         var opened = Opened();
 
         Assert.True(opened.Catalogue.RemoveTopic("Website", "login").Accepted);
 
         Assert.True(opened.Ledger.State.Topics[Login].Archived);
-        Assert.Null(opened.Ledger.State.Entries[opened.Login.Id].TopicId);
+        Assert.Equal(Login, opened.Ledger.State.Entries[opened.Login.Id].TopicId);
         Assert.Equal(Website, opened.Ledger.State.Entries[opened.Login.Id].ProjectId);
     }
 

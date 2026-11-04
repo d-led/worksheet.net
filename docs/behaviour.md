@@ -54,6 +54,11 @@ and records decisions; it is not a description of any other program's source.
   journal change, so replaying the journal after undo produces the same state as
   before the change. On a ledger with no snapshot, this is verifiable by
   construction; the tests do exactly that.
+- Retiring a project or a topic takes the name out of what is offered and leaves
+  every entry exactly as it was: the journal is append-only, so hours keep the
+  name they were logged under. Typing the name again brings it back, with the
+  topics that went with the project. Moving hours to another name is a remap —
+  a decision of its own, not a side effect of retiring.
 
 ## Deliberately not included
 

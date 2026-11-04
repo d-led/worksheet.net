@@ -270,6 +270,9 @@ public sealed class EntryComposer(Ledger ledger)
 
         if (after == entry)
         {
+            // The row already points where it should; a revival the name asked for is still written.
+            ledger.Commit(changes, ChangeOrigin.User);
+
             return new ComposeResult(entry, []);
         }
 
@@ -324,8 +327,7 @@ public sealed class EntryComposer(Ledger ledger)
         {
             if (found.Archived)
             {
-                problems.Add(Names.OutOfTheCatalogue(found.Name));
-                return null;
+                changes.Add(Restore(found));
             }
 
             return (found.Id, found.Name);
@@ -356,8 +358,7 @@ public sealed class EntryComposer(Ledger ledger)
         {
             if (found.Archived)
             {
-                problems.Add(Names.OutOfTheCatalogue(found.Name));
-                return null;
+                changes.Add(Restore(found));
             }
 
             return found.Id;
@@ -367,6 +368,32 @@ public sealed class EntryComposer(Ledger ledger)
         changes.Add(new TopicAdded(id, projectId, name.Trim()));
 
         return id;
+    }
+
+    /// <summary>
+    /// A name that is out of the catalogue comes back when it is typed again: the same identity, its
+    /// entries where they were, and one change — so undoing the line takes the revival with it.
+    /// </summary>
+    private ProjectRestored Restore(Project project)
+    {
+        var topics = ledger.State.Topics.Values
+            .Where(topic => topic.ProjectId == project.Id && topic.Archived)
+            .ToArray();
+        var entries = ledger.State.Entries.Values
+            .Where(entry => entry.ProjectId == project.Id)
+            .ToArray();
+
+        return new ProjectRestored(project, topics, entries, entries);
+    }
+
+    /// <summary>One topic comes back the same way, with the entries that were logged under it.</summary>
+    private TopicRestored Restore(Topic topic)
+    {
+        var entries = ledger.State.Entries.Values
+            .Where(entry => entry.TopicId == topic.Id)
+            .ToArray();
+
+        return new TopicRestored(topic, entries, entries);
     }
 
     /// <summary>A note is what the person meant to write, without the padding around it.</summary>

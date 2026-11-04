@@ -58,7 +58,7 @@ per method, worst first, and exits non-zero if any method is over 10. It merges 
 generated XAML members, and skips the composition roots (`App`, `Program`) — they only wire parts
 together, and every part is measured where it lives.
 
-Current state: 621 methods, no method over CRAP 10, method-average coverage 94.0%. What stays
+Current state: 618 methods, no method over CRAP 10, method-average coverage 93.9%. What stays
 uncovered needs a window server session — the tray, the composition root, the save dialog's file
 picker — or is a guard against a state a test cannot reach on purpose.
 

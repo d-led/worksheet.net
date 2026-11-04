@@ -133,8 +133,12 @@ the server off.
 
 *Projects and topics…* in the tray menu lists every project in use with how many entries each holds,
 and the topics of the one you choose. A rename keeps the entries where they are. Retiring a project
-sends its hours to a project you pick and takes its topics out of use; retiring a topic leaves its
-hours on their days without a topic. Each is one change, so one undo reverts it.
+leaves every entry exactly as it was, under the name it was logged with — the history is not
+rewritten — and simply stops offering that name; typing it again brings the project back with its
+topics. A topic retires the same way. Each is one change, so one undo reverts it.
+
+Moving hours from one project or topic to another is a separate decision, not a side effect of
+retiring, and is not offered yet.
 
 ## The tray
 

@@ -182,36 +182,37 @@ public sealed class McpToolTests
     }
 
     [Fact]
-    public void Removing_a_project_says_where_its_hours_went()
+    public void Removing_a_project_says_that_its_entries_keep_it()
     {
         LogEntry("Client portal (login) 08:30 2h30m", Tuesday);
         LogEntry("Mobile 11:00 1h", Tuesday);
 
         Assert.Equal(
-            "'Client portal' is out of the catalogue; its entries are under 'Mobile' now.",
-            Call("remove_project", """{"project":"Client portal","move_entries_to":"Mobile"}""").Text);
-        Assert.Equal("Mobile (2 entries)", Call("list_projects", "{}").Text);
+            "'Client portal' is out of the catalogue; its entry keeps it.",
+            Call("remove_project", """{"project":"Client portal"}""").Text);
+        Assert.Equal("Mobile (1 entry)", Call("list_projects", "{}").Text);
     }
 
     [Fact]
-    public void A_project_that_still_holds_entries_is_not_removed_without_them()
+    public void A_line_on_a_project_out_of_the_catalogue_brings_it_back()
     {
         LogEntry("Client portal 08:30 2h", Tuesday);
+        Call("remove_project", """{"project":"Client portal"}""");
 
-        Assert.Equal(
-            "Client portal still has 1 entry; name the project they move to.",
-            Call("remove_project", """{"project":"Client portal"}""").Text);
+        LogEntry("Client portal 13:00 1h", Tuesday);
+
+        Assert.Contains("Client portal (2 entries)", Call("list_projects", "{}").Text, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void Removing_a_topic_leaves_its_entries_on_the_day()
+    public void Removing_a_topic_says_that_its_entries_keep_it()
     {
         LogEntry("Client portal (login) 08:30 2h30m", Tuesday);
 
         Assert.Equal(
-            "'login' is out of Client portal; its entries stay on their days without a topic.",
+            "'login' is out of Client portal; its entries stay as they are.",
             Call("remove_topic", """{"project":"Client portal","topic":"login"}""").Text);
-        Assert.Contains("08:30-11:00 Client portal 2h30m", Call("day", """{"date":"2026-11-03"}""").Text);
+        Assert.Contains("08:30-11:00 Client portal (login) 2h30m", Call("day", """{"date":"2026-11-03"}""").Text);
     }
 
     [Fact]
