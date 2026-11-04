@@ -42,7 +42,9 @@ public static partial class EntryGuide
     {
         var typed = (text ?? string.Empty).Trim();
 
-        return typed.Length == 0 ? EntryStep.Project : Written(typed, continuesFrom) ?? Typed(typed);
+        return typed.Length == 0
+            ? EntryStep.Project
+            : Written(typed, continuesFrom) ?? Missing(typed, continuesFrom);
     }
 
     /// <summary>A line the grammar already accepts, or nothing while it is still half-written.</summary>
@@ -58,6 +60,18 @@ public static partial class EntryGuide
         // A start with no length is legal, but it is not finished work.
         return parse.Command!.Duration > TimeSpan.Zero ? EntryStep.Complete : EntryStep.Span;
     }
+
+    /// <summary>
+    /// What a line that does not yet read as an entry is short of. A whole span that only becomes
+    /// readable once some start is assumed is missing that start, which is a different thing to
+    /// say than "write an end" to someone who has just written one.
+    /// </summary>
+    private static EntryStep Missing(string typed, TimeOnly? continuesFrom) =>
+        continuesFrom is null && ReadsFromAnyStart(typed) ? EntryStep.Start : Typed(typed);
+
+    /// <summary>Whether the line is a whole span whose only missing piece is the start it continues from.</summary>
+    private static bool ReadsFromAnyStart(string typed) =>
+        EntryCommandParser.Parse(typed, DateOnly.MinValue, _ => TimeOnly.MinValue).Succeeded;
 
     /// <summary>
     /// A half-written line: the brackets around the topic, then the clock that comes after them.

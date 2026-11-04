@@ -73,6 +73,23 @@ public sealed class LedgerStateTests
     }
 
     [Fact]
+    public void A_day_stops_where_its_last_entry_ends() =>
+        Assert.Equal(Clocks.At("11:00"), Ledger().EndOfLast(Day));
+
+    [Fact]
+    public void A_day_with_nothing_on_it_has_no_end_to_continue_from() =>
+        Assert.Null(Ledger().EndOfLast(new DateOnly(2026, 11, 5)));
+
+    [Fact]
+    public void A_day_that_ends_at_midnight_has_no_end_to_continue_from()
+    {
+        var state = LedgerState.Create();
+        state.Apply(new EntryLogged(EntryAt(Day, "22:00", 120)));
+
+        Assert.Null(state.EndOfLast(Day));
+    }
+
+    [Fact]
     public void A_project_is_found_by_its_name_in_any_case()
     {
         var match = Ledger().MatchProject("  webshop ");

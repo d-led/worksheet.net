@@ -21,7 +21,9 @@ and records decisions; it is not a description of any other program's source.
 2. Accepts an entry as one line of text (see `entry-syntax.md`), completing the names
    it is made of: the known projects while a project is being typed, then the topics
    of that project once its bracket is open. The keyboard walks the offers and takes
-   one, and the bracket that comes next is written in already.
+   one, and the bracket that comes next is written in already. Once the day holds an
+   entry, the line may leave its start out — `till 16:00`, `for 1h30m` — and then
+   begins where the last entry of that day ended.
 3. Says what kind of day it is — working, flex, sick, holiday or weekend — as a row of
    radios above the table, and freezes the timetable on every day that is not a
    working day.

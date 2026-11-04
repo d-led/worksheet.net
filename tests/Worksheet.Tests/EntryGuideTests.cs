@@ -55,9 +55,18 @@ public sealed class EntryGuideTests
     }
 
     [Fact]
-    public void Without_an_end_to_continue_from_a_shorthand_is_still_being_written()
+    public void Without_an_end_to_continue_from_the_start_is_what_a_shorthand_is_missing()
     {
-        Assert.Equal(EntryStep.Span, EntryGuide.Next("web till 13:30"));
+        Assert.Equal(EntryStep.Start, EntryGuide.Next("web till 13:30"));
+        Assert.Equal(EntryStep.Start, EntryGuide.Next("web for 1h30m"));
+        Assert.Equal("start, e.g. 09:00", EntryGuide.Label(EntryStep.Start, "web till 13:30"));
+    }
+
+    [Fact]
+    public void A_line_with_its_own_start_is_never_mistaken_for_a_shorthand()
+    {
+        Assert.Equal(EntryStep.Span, EntryGuide.Next("web 09:00"));
+        Assert.Equal(EntryStep.Complete, EntryGuide.Next("web 09:00 1h"));
     }
 
     [Fact]
