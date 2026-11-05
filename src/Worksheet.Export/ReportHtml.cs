@@ -294,7 +294,7 @@ public static class ReportHtml
 
     private static string EntryRow(EntryLine entry) =>
         $"""
-         <tr><td class="text-nowrap">{ClockText.Format(entry.Start)}–{ClockText.Format(entry.End)}</td><td>{Esc(entry.Project)}</td><td>{Esc(entry.Topic ?? string.Empty)}</td><td class="text-end">{Esc(Shares.Hours(entry.Minutes))}</td><td class="text-body-secondary">{Esc(entry.Note ?? string.Empty)}</td></tr>
+         <tr style="--bs-table-bg:{Tints.Wash(entry.Project)}"><td class="text-nowrap">{ClockText.Format(entry.Start)}–{ClockText.Format(entry.End)}</td><td>{Esc(entry.Project)}</td><td>{Esc(entry.Topic ?? string.Empty)}</td><td class="text-end">{Esc(Shares.Hours(entry.Minutes))}</td><td class="text-body-secondary">{Esc(entry.Note ?? string.Empty)}</td></tr>
          """;
 
     /// <summary>The page's last word: where the numbers come from, and what the page needs from the net.</summary>

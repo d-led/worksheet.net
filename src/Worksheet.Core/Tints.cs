@@ -22,11 +22,29 @@ public static class Tints
     private const double Lightness = 0.66;
 
     /// <summary>
+    /// How much of the tint survives in a page's row. More than half the row is carried towards
+    /// white: on the page the tint fills every cell, while in the window the fields cover most of
+    /// their row, so the same tint must be paler here to stay a background rather than a paint.
+    /// </summary>
+    private const double WashShare = 0.55;
+
+    /// <summary>The warm a break's row is washed in, which is the theme's own value in its light half.</summary>
+    public const string BreakWash = "#fceedf";
+
+    /// <summary>
     /// The tint of a name as <c>#rrggbb</c>, or nothing for a break: a pause is the absence of work,
     /// and a colour of its own would make it look like a project.
     /// </summary>
     public static string? Of(string? name) =>
         name is null || Break.IsBreak(name) ? null : Hex(Hue(name.Trim()), Saturation, Lightness);
+
+    /// <summary>
+    /// The wash a row of a page is painted with: the project's tint laid over white, or the warm a
+    /// break has instead. The window reaches the same colour by drawing the tint over whatever
+    /// surface its theme chose, which is why the share is a number and not a second palette.
+    /// </summary>
+    public static string Wash(string name) =>
+        Of(name) is { } tint ? Blend(tint, WashShare) : BreakWash;
 
     /// <summary>The hue a name falls on, as a fraction of the circle, so two projects rarely share one.</summary>
     private static double Hue(string name) => StableHash(name) % 360 / 360.0;
@@ -65,4 +83,20 @@ public static class Tints
     /// <summary>One channel as two hex digits.</summary>
     private static string Channel(double value, double floor) =>
         Math.Clamp((int)Math.Round((value + floor) * 255), 0, 255).ToString("x2", CultureInfo.InvariantCulture);
+
+    /// <summary>A tint mixed into white by <paramref name="share"/>, so text keeps its contrast.</summary>
+    private static string Blend(string tint, double share) =>
+        $"#{Washed(tint[1..3], share)}{Washed(tint[3..5], share)}{Washed(tint[5..7], share)}";
+
+    /// <summary>One channel of a colour, mixed into white and written as two hex digits.</summary>
+    private static string Washed(string channel, double share) =>
+        Math.Clamp((int)Math.Round(Mixed(channel, share)), 0, 255).ToString("x2", CultureInfo.InvariantCulture);
+
+    /// <summary>One channel's value, carried that share of the way to white.</summary>
+    private static double Mixed(string channel, double share)
+    {
+        var value = Convert.ToInt32(channel, 16);
+
+        return value + ((255 - value) * share);
+    }
 }

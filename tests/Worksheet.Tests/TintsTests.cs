@@ -41,6 +41,19 @@ public sealed class TintsTests
     }
 
     [Fact]
+    public void A_wash_is_the_projects_tint_carried_towards_white()
+    {
+        var tint = Channels(Tints.Of("Website"));
+        var wash = Channels(Tints.Wash("Website"));
+
+        Assert.All(tint.Zip(wash), pair => Assert.True(pair.Second > pair.First, $"a wash is paler: {pair}"));
+        Assert.Equal(Tints.Wash("Website"), Tints.Wash("Website"));
+    }
+
+    [Fact]
+    public void A_break_is_washed_warm_instead() => Assert.Equal("#fceedf", Tints.Wash(Break.Project));
+
+    [Fact]
     public void A_break_has_no_tint_of_its_own()
     {
         Assert.Null(Tints.Of(Break.Project));

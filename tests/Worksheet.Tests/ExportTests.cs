@@ -212,6 +212,18 @@ public sealed class ExportTests
     }
 
     [Fact]
+    public void A_day_row_is_washed_in_its_projects_tint_and_a_break_row_in_the_warm_one()
+    {
+        Logged("Website 09:00 1h");
+        Logged("Break 10:00 30m");
+
+        var page = Html(Report(ExportPeriod.Day));
+
+        Assert.Contains($"<tr style=\"--bs-table-bg:{Tints.Wash("Website")}\">", page);
+        Assert.Contains($"<tr style=\"--bs-table-bg:{Tints.BreakWash}\">", page);
+    }
+
+    [Fact]
     public void The_page_marks_each_project_in_the_pastel_the_window_gives_it_and_a_break_in_none()
     {
         Logged("Website 09:00 1h");
