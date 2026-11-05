@@ -87,7 +87,10 @@ public sealed class DayTableTests : UiTestBase
     {
         var rows = EntryRows(Table("Website 09:00 1h", "Break 10:00 30m"));
 
-        Assert.NotNull(Stripe(rows[0]));
+        // The stripe is the very colour the exported page draws that project's bar in.
+        var stripe = Assert.IsType<SolidColorBrush>(Stripe(rows[0]));
+
+        Assert.Equal(Color.Parse(Tints.Of("Website")!), stripe.Color);
         Assert.NotNull(ProjectWash(rows[0]).Background);
         Assert.False(BreakWash(rows[0]).IsVisible);
 
