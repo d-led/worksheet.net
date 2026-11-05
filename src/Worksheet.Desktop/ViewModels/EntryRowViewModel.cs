@@ -152,7 +152,7 @@ public sealed partial class EntryRowViewModel : ObservableObject, IDayRow
             ? _state().Topics.Values
                 .Where(topic => topic.ProjectId == project.Id && !topic.Archived)
                 .Select(topic => topic.Name)
-                .OrderBy(name => name, StringComparer.CurrentCultureIgnoreCase)
+                .OrderBy(name => name, Dates.Names)
                 .ToList()
             : [];
 

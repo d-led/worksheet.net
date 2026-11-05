@@ -3,6 +3,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+using System.Globalization;
 using Worksheet.Core;
 using Worksheet.Desktop.ViewModels;
 using Worksheet.Storage;
@@ -48,6 +49,28 @@ public sealed class DayViewModelTests : IDisposable
     private static EntryRowViewModel EntryRow(DayViewModel day) => (EntryRowViewModel)day.Rows[0];
 
     private static IEnumerable<GapRowViewModel> Gaps(DayViewModel day) => day.Rows.OfType<GapRowViewModel>();
+
+    [Fact]
+    public void The_day_is_worded_in_the_interfaces_language_whatever_the_machine_speaks()
+    {
+        var before = CultureInfo.CurrentCulture;
+
+        try
+        {
+            // A German machine used to write "Donnerstag" in front of the English word "Today".
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE");
+
+            var day = new DayViewModel(_local, Today);
+            Assert.Equal("Today, 3 November", day.DayTitle);
+
+            day.SelectedDate = Today.AddDays(1).ToDateTime(TimeOnly.MinValue);
+            Assert.Equal("Wednesday 4 November", day.DayTitle);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = before;
+        }
+    }
 
     [Fact]
     public void A_day_shows_what_a_writer_outside_the_window_logged()

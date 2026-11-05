@@ -3,7 +3,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+using System.Globalization;
 using Avalonia;
+using Worksheet.Core;
 
 namespace Worksheet.Desktop;
 
@@ -15,6 +17,12 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        // The interface is English, so the process's culture is pinned before anything is drawn:
+        // the calendar a person picks a day from is a control of someone else's, and it words its
+        // months from the machine unless told otherwise. Dates.Names keeps the orderings in it too.
+        CultureInfo.DefaultThreadCurrentCulture = Dates.English;
+        CultureInfo.DefaultThreadCurrentUICulture = Dates.English;
+
         try
         {
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);

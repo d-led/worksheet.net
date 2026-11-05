@@ -415,14 +415,18 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     private static IEnumerable<string> ProjectNames(LedgerState state) =>
         state.Projects.Values
             .Where(project => !project.Archived)
-            .OrderBy(project => project.Name, StringComparer.CurrentCultureIgnoreCase)
+            .OrderBy(project => project.Name, Dates.Names)
             .Select(project => project.Name)
             .ToList();
 
+    /// <summary>
+    /// The day in words. English and day first, from <see cref="Dates"/>: the machine's own language
+    /// would put a German weekday in front of the English word "Today".
+    /// </summary>
     private string DescribeDay(DateOnly day) =>
         day == _today
-            ? $"Today, {day.ToString("d MMMM", CultureInfo.CurrentCulture)}"
-            : day.ToString("dddd d MMMM", CultureInfo.CurrentCulture);
+            ? $"Today, {day.ToString("d MMMM", Dates.English)}"
+            : day.ToString("dddd d MMMM", Dates.English);
 
     /// <summary>
     /// A correction of one row. On success the rows are left alone, so the control that was being

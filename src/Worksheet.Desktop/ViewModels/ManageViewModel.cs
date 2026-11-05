@@ -203,7 +203,7 @@ public sealed partial class ManageViewModel : ObservableObject, ICataloguePanel,
     private IEnumerable<CatalogueRow> ProjectRows() =>
         _ledger.State.Projects.Values
             .Where(project => !project.Archived)
-            .OrderBy(project => project.Name, StringComparer.CurrentCultureIgnoreCase)
+            .OrderBy(project => project.Name, Dates.Names)
             .Select(project => Row(CatalogueKind.Project, project.Name, entry => entry.ProjectId == project.Id));
 
     private IEnumerable<CatalogueRow> TopicRows() =>
@@ -211,7 +211,7 @@ public sealed partial class ManageViewModel : ObservableObject, ICataloguePanel,
             ? []
             : _ledger.State.Topics.Values
                 .Where(topic => !topic.Archived && _ledger.State.ProjectName(topic.ProjectId) == chosen.Name)
-                .OrderBy(topic => topic.Name, StringComparer.CurrentCultureIgnoreCase)
+                .OrderBy(topic => topic.Name, Dates.Names)
                 .Select(topic => Row(CatalogueKind.Topic, topic.Name, entry => entry.TopicId == topic.Id, chosen.Name));
 
     private CatalogueRow Row(CatalogueKind kind, string name, Func<Entry, bool> holds, string? project = null)

@@ -84,6 +84,10 @@ entry line; `Break` records it directly as a `Break` entry with a note you can c
 Under the line, a `next:` hint names the part still missing, and an error — an intersection with
 another block, for instance — is shown while you type.
 
+The interface is English, and so are the dates: a weekday or a month is worded in English and read
+day first (`Thursday 5 November`), whatever language the machine is set to, so a report made on one
+machine says what a report made on another says.
+
 ## Move between days
 
 `←` and `→` walk a day back and forward, as long as the caret is not in one of the fields. `❮` `❯`,

@@ -78,14 +78,14 @@ public sealed record RangeReport(ExportRange Range, int TotalMinutes, IReadOnlyL
     private static ProjectLine[] ProjectsOf(IEnumerable<EntryLine> entries) =>
         [.. entries
             .GroupBy(entry => entry.Project)
-            .OrderBy(project => project.Key, StringComparer.CurrentCultureIgnoreCase)
+            .OrderBy(project => project.Key, Dates.Names)
             .Select(project => new ProjectLine(
                 project.Key,
                 project.Sum(entry => entry.Minutes),
                 [.. project
                     .GroupBy(entry => entry.Topic)
                     .OrderBy(topic => topic.Key is null)
-                    .ThenBy(topic => topic.Key, StringComparer.CurrentCultureIgnoreCase)
+                    .ThenBy(topic => topic.Key, Dates.Names)
                     .Select(topic => new TopicLine(topic.Key, topic.Sum(entry => entry.Minutes)))]))];
 
     private static int Minutes(TimeSpan duration) => (int)Math.Round(duration.TotalMinutes);
