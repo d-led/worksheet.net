@@ -20,8 +20,9 @@ undo later:
 ## The shape now
 
 ```
-Views/MainWindow.axaml        SukiWindow: four components, no logic
+Views/MainWindow.axaml        SukiWindow: six components, no logic
 Components/DayHeader          navigation, the day, the calendar, the total
+Components/ExportBanner       where the last export went
 Components/QuickEntry         the entry language, one line, Enter, known-name chips
 Components/DayTable           one column per fact, each editable in place
 Components/StatusLine         what happened, undo, redo

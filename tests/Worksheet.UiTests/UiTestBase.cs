@@ -95,4 +95,17 @@ public abstract class UiTestBase : IDisposable
     protected Point Centre(Control control) =>
         control.TranslatePoint(new Point(control.Bounds.Width / 2, control.Bounds.Height / 2), Window)
             ?? throw new InvalidOperationException($"{control.GetType().Name} is not laid out.");
+
+    /// <summary>The stretch of a frame a control covers, so a test can ask what was drawn there.</summary>
+    protected PixelRect AreaOf(Control control)
+    {
+        var topLeft = control.TranslatePoint(new Point(0, 0), Window)
+            ?? throw new InvalidOperationException($"{control.GetType().Name} is not laid out.");
+
+        return new PixelRect(
+            (int)Math.Round(topLeft.X),
+            (int)Math.Round(topLeft.Y),
+            (int)Math.Round(control.Bounds.Width),
+            (int)Math.Round(control.Bounds.Height));
+    }
 }

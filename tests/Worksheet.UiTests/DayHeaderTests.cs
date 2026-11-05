@@ -48,12 +48,74 @@ public sealed class DayHeaderTests : UiTestBase
         Seed(day, "Website 09:00 1h");
         var titleBefore = day.DayTitle;
 
-        var calendar = header.FindControl<CalendarDatePicker>("Calendar")!;
+        var calendar = OpenCalendar(header);
         calendar.SelectedDate = calendar.SelectedDate!.Value.AddDays(-5);
         Settle();
 
         Assert.NotEqual(titleBefore, day.DayTitle);
         Assert.Equal("0m", header.FindControl<TextBlock>("Total")!.Text);
+    }
+
+    [AvaloniaFact]
+    public void The_calendar_is_a_glyph_with_no_number_of_its_own()
+    {
+        var header = Show<DayHeader>(NewDay());
+        var button = header.FindControl<Button>("Calendar")!;
+
+        // The stock picker draws a number on its sheet, which next to a day on screen reads as a
+        // date. This one is an outline, and nothing in the heading is a second date to be misread.
+        var icon = Assert.IsType<PathIcon>(button.Content);
+
+        Assert.NotNull(icon.Data);
+        Assert.Empty(Descendants<TextBlock>(button));
+    }
+
+    [AvaloniaFact]
+    public void The_calendar_closes_the_moment_a_day_is_picked()
+    {
+        var day = NewDay();
+        var header = Show<DayHeader>(day);
+        var flyout = (Flyout)header.FindControl<Button>("Calendar")!.Flyout!;
+
+        var calendar = OpenCalendar(header);
+
+        // Open, it is a picture on the glass and not just a flag: the frame keeps it as one.
+        using (var frame = Shot("calendar-open"))
+        {
+            Assert.True(frame.InkExtent(AreaOf(calendar)) > 0);
+        }
+
+        calendar.SelectedDate = calendar.SelectedDate!.Value.AddDays(-2);
+        Settle();
+
+        Assert.False(flyout.IsOpen);
+        Assert.NotEqual(day.Date, NewDay().Date);
+    }
+
+    [AvaloniaFact]
+    public void The_calendar_closes_when_the_focus_leaves_it()
+    {
+        var header = Show<DayHeader>(NewDay());
+        var flyout = (Flyout)header.FindControl<Button>("Calendar")!.Flyout!;
+
+        var calendar = OpenCalendar(header);
+        Assert.True(flyout.IsOpen);
+
+        // The keyboard goes somewhere else: the calendar has been left, so it goes with it.
+        header.FindControl<Button>("Today")!.Focus();
+        Settle();
+
+        Assert.False(flyout.IsOpen);
+    }
+
+    /// <summary>The calendar of an open heading: the button pressed, and what the popup holds.</summary>
+    private Calendar OpenCalendar(DayHeader header)
+    {
+        var button = header.FindControl<Button>("Calendar")!;
+
+        Click(button);
+
+        return Assert.IsType<Calendar>(Assert.IsType<Flyout>(button.Flyout).Content);
     }
 
     [AvaloniaFact]

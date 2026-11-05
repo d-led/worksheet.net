@@ -102,7 +102,9 @@ machine says what a report made on another says.
 ## Move between days
 
 `←` and `→` walk a day back and forward, as long as the caret is not in one of the fields. `❮` `❯`,
-`Today` and the calendar do the same with the mouse.
+`Today` and the calendar button do the same with the mouse: the calendar opens on the day on screen,
+closes when a day is picked or the focus leaves it, and its icon is an outline with no number on it —
+next to a day on screen, a number of its own would read as another date.
 
 ## Export a range
 

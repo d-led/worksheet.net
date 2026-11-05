@@ -27,11 +27,22 @@
 
     <TextBlock x:Name="DayTitle" Grid.Column="2" Classes="title" Text="{Binding DayTitle}" Margin="8,0" />
 
-    <CalendarDatePicker x:Name="Calendar"
-                        Grid.Column="3"
-                        SelectedDate="{Binding SelectedDate}"
-                        VerticalAlignment="Center"
-                        ToolTip.Tip="Pick a day" />
+    <!--
+      The calendar: a glyph rather than a number, so nothing in the heading can be read as a date
+      of its own, and a popup that closes when a day is picked or the visit is over.
+    -->
+    <Button x:Name="Calendar"
+            Grid.Column="3"
+            Classes="nav"
+            VerticalAlignment="Center"
+            ToolTip.Tip="Pick a day">
+      <PathIcon Data="{StaticResource CalendarGlyph}" Width="17" Height="17" />
+      <Button.Flyout>
+        <Flyout Placement="BottomEdgeAlignedLeft" Opened="OnCalendarOpened">
+          <Calendar SelectedDatesChanged="OnDayPicked" LostFocus="OnCalendarLeft" />
+        </Flyout>
+      </Button.Flyout>
+    </Button>
 
     <Button x:Name="Today"
             Grid.Column="4"
