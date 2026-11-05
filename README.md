@@ -2,7 +2,7 @@
 
 Log your working day in one line, on projects and on the topics inside them.
 
-![A day of eight hours over three projects with a forty-five minute break](docs/screenshots/day.png)
+![A day of eight hours over three projects with an hour's break](docs/screenshots/day.png)
 
 ## Install
 

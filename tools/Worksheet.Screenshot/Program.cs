@@ -76,13 +76,13 @@ Stack(frames).Save(output, new PngBitmapEncoderOptions());
 Console.WriteLine($"Wrote {output} (total {day.Total})");
 Directory.Delete(dataDirectory, recursive: true);
 
-// The day the documentation shows: eight hours over three projects, a 45 minute break, and one
-// hole left in it.
+// The day the documentation shows: eight hours of work over three projects, an hour's break
+// between them, and no hole left in it.
 static IEnumerable<string> TheDay()
 {
     yield return "Client portal (login) 08:30-11:00";
     yield return "Client portal (reports) 11:00-12:30";
-    yield return "Break 12:30 45m";
+    yield return "Break 12:30 1h";
     yield return "Mobile app (checkout) 13:30-15:00";
     yield return "Internal (onboarding) 15:00 2h30m";
 }
