@@ -98,29 +98,38 @@ public static partial class EntryGuide
     public static string Label(EntryStep step, string? text = null, TimeOnly? continuesFrom = null) =>
         step switch
         {
-            EntryStep.Start when continuesFrom is { } from =>
-                $"start 09:00, or from {ClockText.Format(from)} \"till {Example(from)}\" / \"for 1h30m\"",
+            EntryStep.Start when continuesFrom is { } from => StartLabel(from),
             EntryStep.Span => SpanLabel(EntryCommandParser.SpanWordAtEnd(text ?? string.Empty)?.Word, continuesFrom),
             _ => Labels[(int)step],
         };
+
+    /// <summary>A clock, and the two shorthands — the one that names an end only while an end fits.</summary>
+    private static string StartLabel(TimeOnly from) =>
+        Example(from) is { } endsAt
+            ? $"start 09:00, or from {ClockText.Format(from)} \"till {endsAt}\" / \"for 1h30m\""
+            : $"start 09:00, or from {ClockText.Format(from)} \"for 1h30m\"";
 
     /// <summary>The half of a span that a trailing shorthand is still missing.</summary>
     private static string SpanLabel(string? tail, TimeOnly? continuesFrom) =>
         tail switch
         {
             "for" => "a length, e.g. 1h30m",
-            "till" => $"an end, e.g. {Example(continuesFrom)}",
+            "till" => $"an end, e.g. {Example(continuesFrom) ?? PlainClock}",
             _ => Labels[(int)EntryStep.Span],
         };
 
+    /// <summary>The clock an example falls back to when there is no end of the day to build one from.</summary>
+    private const string PlainClock = "13:30";
+
     /// <summary>
     /// A clock an example may name: one span after where the day stopped, so the example reads as a
-    /// time later than the start it continues from. Without such a start, a plain 13:30 will do.
+    /// time later than the start it continues from — and nothing when the day has no room left, or
+    /// nothing to continue from at all.
     /// </summary>
-    private static string Example(TimeOnly? continuesFrom) =>
+    private static string? Example(TimeOnly? continuesFrom) =>
         continuesFrom is { } from && from.ToTimeSpan() + ExampleLength < TimeSpan.FromDays(1)
             ? ClockText.Format(TimeOnly.FromTimeSpan(from.ToTimeSpan() + ExampleLength))
-            : "13:30";
+            : null;
 
     [GeneratedRegex(@"\d{1,2}:\d{1,2}", RegexOptions.CultureInvariant)]
     private static partial Regex Clock();

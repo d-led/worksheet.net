@@ -12,6 +12,9 @@ public sealed class EntryGuideTests
     /// <summary>Where the day stopped: the start a line may leave out.</summary>
     private static readonly TimeOnly Stopped = new(10, 0);
 
+    [Fact]
+    public void Nothing_typed_is_the_project_step() => Assert.Equal(EntryStep.Project, EntryGuide.Next(null));
+
     [Theory]
     [InlineData("", EntryStep.Project)]
     [InlineData("   ", EntryStep.Project)]
@@ -100,4 +103,16 @@ public sealed class EntryGuideTests
             "start 09:00, or from 17:30 \"till 19:00\" / \"for 1h30m\"",
             EntryGuide.Label(EntryStep.Start, "web (login) ", new TimeOnly(17, 30)));
     }
+
+    [Fact]
+    public void A_day_with_no_room_left_for_an_example_offers_only_the_length()
+    {
+        Assert.Equal(
+            "start 09:00, or from 22:30 \"for 1h30m\"",
+            EntryGuide.Label(EntryStep.Start, "web (login) ", new TimeOnly(22, 30)));
+    }
+
+    [Fact]
+    public void An_end_example_with_no_day_to_build_one_from_is_a_plain_clock() =>
+        Assert.Equal("an end, e.g. 13:30", EntryGuide.Label(EntryStep.Span, "web till"));
 }

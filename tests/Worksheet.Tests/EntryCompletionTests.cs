@@ -122,4 +122,34 @@ public sealed class EntryCompletionTests
     [Fact]
     public void Taking_a_project_over_a_closed_name_opens_its_bracket() =>
         Assert.Equal("Website (", EntryCompletion.Take(Ledger(), "web-", "Website"));
+
+    [Fact]
+    public void Nothing_to_offer_says_so() => Assert.False(EntryProposals.None.Any);
+
+    [Fact]
+    public void A_blank_line_from_nowhere_offers_nothing() =>
+        Assert.Empty(EntryCompletion.Proposals(Ledger(), null).Names);
+
+    [Fact]
+    public void Taking_an_offer_over_nothing_writes_the_project_and_its_bracket() =>
+        Assert.Equal("Website (", EntryCompletion.Take(Ledger(), null, "Website"));
+
+    [Fact]
+    public void A_line_that_already_has_its_time_is_left_as_it_is() =>
+        Assert.Equal("Website (login) 09:00", EntryCompletion.Take(Ledger(), "Website (login) 09:00", "login"));
+
+    [Fact]
+    public void A_project_is_still_offered_while_its_time_is_being_typed() =>
+        Assert.Equal(new[] { "Website" }, Names("Web 09:00"));
+
+    [Fact]
+    public void An_offer_needs_a_ledger_to_be_offered_from()
+    {
+        Assert.Throws<ArgumentNullException>(() => EntryCompletion.Proposals(null!, string.Empty));
+        Assert.Throws<ArgumentNullException>(() => EntryCompletion.Take(null!, "Web", "Website"));
+    }
+
+    [Fact]
+    public void Taking_an_offer_needs_a_name_to_take() =>
+        Assert.ThrowsAny<ArgumentException>(() => EntryCompletion.Take(Ledger(), "Web", "   "));
 }
