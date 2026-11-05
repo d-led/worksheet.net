@@ -5,6 +5,7 @@
 
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Worksheet.Core;
 
 namespace Worksheet.Export;
@@ -14,7 +15,7 @@ namespace Worksheet.Export;
 /// and the hours written the way the application writes them so a reader and a script see the same
 /// number. Days are the days that hold something, in order.
 /// </summary>
-public static class ReportJson
+public static partial class ReportJson
 {
     /// <summary>
     /// The version of the shape the data file is written in. It counts up only when a reader built
@@ -23,7 +24,13 @@ public static class ReportJson
     /// </summary>
     public const int FormatVersion = 1;
 
-    private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
+    /// <summary>
+    /// The one place the file's shape is read from: generated at compile time, so the single-file
+    /// build serialises without reflection and a rename in the records cannot drift from the reader.
+    /// </summary>
+    [JsonSourceGenerationOptions(WriteIndented = true)]
+    [JsonSerializable(typeof(ReportDocument))]
+    private sealed partial class Context : JsonSerializerContext;
 
     public static string Of(RangeReport report, DateTimeOffset generatedAt)
     {
@@ -31,22 +38,22 @@ public static class ReportJson
 
         var total = report.TotalMinutes;
 
-        return JsonSerializer.Serialize(
-            new ReportDocument(
-                FormatVersion,
-                new ReportCoverage(
-                    Day(report.Range.From),
-                    Day(report.Range.To),
-                    report.Range.Period.ToString().ToLowerInvariant(),
-                    report.Range.Label,
-                    report.Range.Days),
-                generatedAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture),
-                total,
-                Shares.Hours(total),
-                report.DaysLogged,
-                report.Projects.Select(project => Project(project, total)),
-                report.Days.Select(DayOf)),
-            Options);
+        var document = new ReportDocument(
+            FormatVersion,
+            new ReportCoverage(
+                Day(report.Range.From),
+                Day(report.Range.To),
+                report.Range.Period.ToString().ToLowerInvariant(),
+                report.Range.Label,
+                report.Range.Days),
+            generatedAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture),
+            total,
+            Shares.Hours(total),
+            report.DaysLogged,
+            report.Projects.Select(project => Project(project, total)),
+            report.Days.Select(DayOf));
+
+        return JsonSerializer.Serialize(document, Context.Default.ReportDocument);
     }
 
     private static ReportProjectLine Project(ProjectLine project, int total) =>
