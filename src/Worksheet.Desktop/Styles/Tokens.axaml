@@ -226,6 +226,16 @@
   </Style>
 
   <!--
+    The same pastel laid behind the row at a low opacity: the hue a project is read by, quiet enough
+    that the fields stay the loudest thing on it. Opacity rather than a second palette keeps it
+    honest in both themes — the tint blends with whatever surface the theme has put there.
+  -->
+  <Style Selector="Border.project-wash">
+    <Setter Property="Opacity" Value="0.16" />
+    <Setter Property="CornerRadius" Value="7" />
+  </Style>
+
+  <!--
     A break's row is washed warm instead of carrying a stripe: a pause is not a project, and the
     one row that is not work should say so before the eye reads its name. The colour is a theme
     resource, because a peach that reads well on white glares on a dark surface.

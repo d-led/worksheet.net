@@ -32,7 +32,8 @@
               <Border Classes="row" IsEnabled="{Binding IsEditable}">
                 <Panel>
 
-                  <!-- Behind the fields: a break is washed warm, a project row keeps the plain surface. -->
+                  <!-- Behind the fields: the project's pastel at a wash, then a break's warm one. -->
+                  <Border Classes="project-wash" Background="{Binding Tint}" />
                   <Border Classes="break-wash" IsVisible="{Binding IsBreak}" />
 
                   <Grid ColumnDefinitions="4,*" ColumnSpacing="7">
