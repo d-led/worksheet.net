@@ -30,12 +30,17 @@
 
             <DataTemplate DataType="vm:EntryRowViewModel">
               <Border Classes="row" IsEnabled="{Binding IsEditable}">
-                <Grid ColumnDefinitions="4,*" ColumnSpacing="7">
+                <Panel>
 
-                  <!-- The project's own pastel: the day read down its left edge. A break has none. -->
-                  <Border Classes="tint" Background="{Binding Tint}" />
+                  <!-- Behind the fields: a break is washed warm, a project row keeps the plain surface. -->
+                  <Border Classes="break-wash" IsVisible="{Binding IsBreak}" />
 
-                  <Grid Grid.Column="1" ColumnDefinitions="64,64,*,*,150,26" ColumnSpacing="6">
+                  <Grid ColumnDefinitions="4,*" ColumnSpacing="7">
+
+                    <!-- The project's own pastel: the day read down its left edge. A break has none. -->
+                    <Border Classes="tint" Background="{Binding Tint}" />
+
+                    <Grid Grid.Column="1" ColumnDefinitions="64,64,*,*,150,26" ColumnSpacing="6">
 
                   <TextBox Grid.Column="0"
                            Classes="cell start-input"
@@ -73,7 +78,8 @@
                           Command="{Binding RetractCommand}"
                           ToolTip.Tip="Retract this entry" />
                   </Grid>
-                </Grid>
+                  </Grid>
+                </Panel>
               </Border>
             </DataTemplate>
 

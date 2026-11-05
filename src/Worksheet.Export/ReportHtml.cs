@@ -27,8 +27,8 @@ public static class ReportHtml
 
     private const string NothingToDraw = """<p class="text-body-secondary mb-0">Nothing to draw.</p>""";
 
-    /// <summary>What a bar is filled with when the project has no colour of its own: a break.</summary>
-    private const string NoTint = "#ced4da";
+    /// <summary>What a bar is filled with when the row is a break: the warm peach, since a pause is not a project.</summary>
+    private const string BreakTint = "#f3c89a";
 
     /// <summary>The page, block by block in the order it is read; each block ends with its line end.</summary>
     public static string Of(RangeReport report, DateTimeOffset generatedAt)
@@ -163,10 +163,10 @@ public static class ReportHtml
     /// <summary>Rows as a page writes them: one per line, each with its own line end.</summary>
     private static string Rows(IEnumerable<string> rows) => string.Concat(rows.Select(row => $"{row}\n"));
 
-    /// <summary>A bar in the project's own pastel; a break gets the page's grey, having no colour of its own.</summary>
+    /// <summary>A bar in the project's own pastel; a break gets the warm peach, having no colour of its own.</summary>
     private static string BarRow(string[] cells, int minutes, int total, string? tint) =>
         $"""
-         <tr>{string.Concat(cells.Select(cell => $"<td>{Esc(cell)}</td>"))}<td><div class="progress" role="progressbar" aria-valuenow="{Esc(Shares.Percent(minutes, total))}" aria-valuemin="0" aria-valuemax="100" style="height:10px"><div class="progress-bar" style="width:{Shares.Width(minutes, total)};background:{tint ?? NoTint}"></div></div></td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Hours(minutes))}</td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Percent(minutes, total))}</td></tr>
+         <tr>{string.Concat(cells.Select(cell => $"<td>{Esc(cell)}</td>"))}<td><div class="progress" role="progressbar" aria-valuenow="{Esc(Shares.Percent(minutes, total))}" aria-valuemin="0" aria-valuemax="100" style="height:10px"><div class="progress-bar" style="width:{Shares.Width(minutes, total)};background:{tint ?? BreakTint}"></div></div></td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Hours(minutes))}</td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Percent(minutes, total))}</td></tr>
          """;
 
     private static string TimelineCard(RangeReport report) =>

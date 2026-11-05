@@ -83,16 +83,22 @@ public sealed class DayTableTests : UiTestBase
     }
 
     [AvaloniaFact]
-    public void A_row_carries_its_projects_pastel_and_a_break_carries_none()
+    public void A_project_row_is_striped_in_its_pastel_and_a_break_row_is_washed_instead()
     {
         var rows = EntryRows(Table("Website 09:00 1h", "Break 10:00 30m"));
 
         Assert.NotNull(Stripe(rows[0]));
+        Assert.False(Wash(rows[0]).IsVisible);
+
         Assert.Null(Stripe(rows[1]));
+        Assert.True(Wash(rows[1]).IsVisible);
     }
 
     private static IBrush? Stripe(Border row) =>
         Descendants<Border>(row).Single(border => border.Classes.Contains("tint")).Background;
+
+    private static Border Wash(Border row) =>
+        Descendants<Border>(row).Single(border => border.Classes.Contains("break-wash"));
 
     [AvaloniaFact]
     public void A_hole_between_entries_is_visible_with_its_length()

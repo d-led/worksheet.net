@@ -220,7 +220,7 @@ public sealed class ExportTests
         var page = Html(Report(ExportPeriod.Day));
 
         Assert.Contains($"background:{Tints.Of("Website")}", page);
-        Assert.Contains("background:#ced4da", page);
+        Assert.Contains("background:#f3c89a", page);
     }
 
     [Fact]

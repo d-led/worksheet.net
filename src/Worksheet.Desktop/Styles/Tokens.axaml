@@ -225,6 +225,16 @@
     <Setter Property="CornerRadius" Value="2" />
   </Style>
 
+  <!--
+    A break's row is washed warm instead of carrying a stripe: a pause is not a project, and the
+    one row that is not work should say so before the eye reads its name. The colour is a theme
+    resource, because a peach that reads well on white glares on a dark surface.
+  -->
+  <Style Selector="Border.break-wash">
+    <Setter Property="Background" Value="{DynamicResource BreakWashBrush}" />
+    <Setter Property="CornerRadius" Value="7" />
+  </Style>
+
   <!-- An area of the page that is read rather than typed into: a body of text, framed. -->
   <Style Selector="Border.panel">
     <Setter Property="CornerRadius" Value="8" />

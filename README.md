@@ -68,7 +68,8 @@ change, so undo takes it back.
 
 A row's left edge carries the tint of its project: a pastel picked from the name, so the same project
 is the same colour in every window, on every run, and on the exported page, where its bar is drawn in
-it too. A break has no tint — a pause is not a project.
+it too. A break carries no such tint — a pause is not a project — and its row is washed warm instead,
+so it reads as a pause before the name does.
 
 The project and topic cells take a name you type, not only one from the list. A name nobody has used
 yet is created when you leave the cell, so a block can be moved onto a new project without returning

@@ -51,6 +51,10 @@ public sealed partial class EntryRowViewModel : ObservableObject, IDayRow
     [ObservableProperty]
     private IBrush? _tint;
 
+    /// <summary>True on a break: the one row that is not work, and is washed rather than striped.</summary>
+    [ObservableProperty]
+    private bool _isBreak;
+
     public EntryRowViewModel(
         Entry entry,
         IReadOnlyList<string> projects,
@@ -118,6 +122,7 @@ public sealed partial class EntryRowViewModel : ObservableObject, IDayRow
         RefreshTopics(entry.TopicId);
         Note = entry.Note ?? string.Empty;
         Tint = Tints.Of(ProjectText) is { } tint ? new SolidColorBrush(Color.Parse(tint)) : null;
+        IsBreak = Break.IsBreak(ProjectText);
 
         _loading = false;
     }

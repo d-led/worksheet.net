@@ -10,6 +10,7 @@
         <ResourceDictionary x:Key="Light">
           <SolidColorBrush x:Key="PageBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="BreakWashBrush" Color="#FCEEDF" />
           <SolidColorBrush x:Key="HairlineBrush" Color="#24000000" />
           <SolidColorBrush x:Key="InkBrush" Color="#111827" />
           <SolidColorBrush x:Key="MutedInkBrush" Color="#374151" />
@@ -22,6 +23,7 @@
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="PageBrush" Color="#101215" />
           <SolidColorBrush x:Key="SurfaceBrush" Color="#181B1F" />
+          <SolidColorBrush x:Key="BreakWashBrush" Color="#2C2118" />
           <SolidColorBrush x:Key="HairlineBrush" Color="#33FFFFFF" />
           <SolidColorBrush x:Key="InkBrush" Color="#F3F4F6" />
           <SolidColorBrush x:Key="MutedInkBrush" Color="#B4BAC3" />
