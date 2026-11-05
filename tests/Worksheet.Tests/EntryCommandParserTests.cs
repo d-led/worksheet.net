@@ -94,7 +94,9 @@ public sealed class EntryCommandParserTests
         var parse = EntryCommandParser.Parse("Website till 13:30", Today);
 
         Assert.False(parse.Succeeded);
-        Assert.Equal(EntryCommandParser.NothingToContinueMessage, parse.Error);
+        Assert.Equal(
+            "\"till\" and \"for\" start where the last entry ended, and this day has none; write the start, e.g. 09:00 1h30m.",
+            parse.Error);
     }
 
     [Fact]
@@ -250,6 +252,53 @@ public sealed class EntryCommandParserTests
     }
 
     [Fact]
+    public void Nothing_at_all_is_an_empty_line_like_any_other() =>
+        Assert.Equal(EntryCommandParser.EmptyInputMessage, EntryCommandParser.Parse(null, Today).Error);
+
+    [Theory]
+    [InlineData("0.11. Reading 14:00 1h")]
+    [InlineData("1.13. Reading 14:00 1h")]
+    [InlineData("31.4. Reading 14:00 1h")]
+    [InlineData("29.2.2025. Reading 14:00 1h")]
+    public void Refuses_a_date_the_calendar_does_not_have(string line)
+    {
+        var parse = EntryCommandParser.Parse(line, Today);
+
+        Assert.False(parse.Succeeded);
+        Assert.EndsWith("is not a real date.", parse.Error);
+    }
+
+    [Theory]
+    [InlineData("29.2.2024. Reading 14:00 1h")]
+    [InlineData("31.12. Reading 14:00 1h")]
+    [InlineData("1.1. Reading 14:00 1h")]
+    public void Reads_a_date_the_calendar_has(string line)
+    {
+        var parse = EntryCommandParser.Parse(line, Today);
+
+        Assert.True(parse.Succeeded, parse.Error);
+    }
+
+    [Fact]
+    public void A_hash_with_nothing_after_it_is_no_note()
+    {
+        var parse = EntryCommandParser.Parse("Reading 14:00 1h #", Today);
+
+        Assert.True(parse.Succeeded, parse.Error);
+        Assert.Null(parse.Command!.Note);
+        Assert.Equal("Reading", parse.Command.Project);
+    }
+
+    [Fact]
+    public void A_line_that_opens_with_the_note_marker_is_all_note_and_so_no_entry()
+    {
+        var parse = EntryCommandParser.Parse("# note 09:00 1h", Today);
+
+        Assert.False(parse.Succeeded);
+        Assert.Equal(EntryCommandParser.MissingTimeMessage, parse.Error);
+    }
+
+    [Fact]
     public void Refuses_a_line_without_a_time()
     {
         var parse = EntryCommandParser.Parse("Website (login)", Today);
@@ -320,9 +369,13 @@ public sealed class EntryCommandParserTests
     }
 
     [Theory]
-    [InlineData("P 24:00 1h", "'24:00' is not a time; write it like 09:00.")]
-    [InlineData("P 9:60 1h", "'9:60' is not a time; write it like 09:00.")]
-    [InlineData("P 13:00pm 1h", "'13:00pm' is not a time; write it like 09:00.")]
+    [InlineData("Website 24:00 1h", "'24:00' is not a time; write it like 09:00.")]
+    [InlineData("Website 9:60 1h", "'9:60' is not a time; write it like 09:00.")]
+    [InlineData("Website 13:00pm 1h", "'13:00pm' is not a time; write it like 09:00.")]
+    // The same clock, wherever the line puts it: a start, a range's two ends, and a bare one.
+    [InlineData("Website 25:00-13:00", "'25:00' is not a time; write it like 09:00.")]
+    [InlineData("Website 09:00-26:00", "'26:00' is not a time; write it like 09:00.")]
+    [InlineData("Website 25:00", "'25:00' is not a time; write it like 09:00.")]
     public void Refuses_impossible_clocks_with_the_offending_text(string line, string error)
     {
         var parse = EntryCommandParser.Parse(line, Today);

@@ -48,6 +48,11 @@ public sealed class AuditWindowTests
     private static AuditRow[] Rows(Window window) =>
         [.. window.FindControl<ListBox>("Rows")!.ItemsSource!.Cast<AuditRow>()];
 
+    /// <summary>
+    /// Two taps on a row, each one given a turn of the loop: a gesture recogniser that has not seen
+    /// the first tap yet cannot call the second one a double tap, and a row that is not laid out has
+    /// no centre to tap.
+    /// </summary>
     private static void Double(Window window, AuditRow row)
     {
         var item = window.FindControl<ListBox>("Rows")!
@@ -55,13 +60,20 @@ public sealed class AuditWindowTests
             .OfType<ListBoxItem>()
             .First(item => item.DataContext is AuditRow candidate && candidate.Version == row.Version);
 
+        item.BringIntoView();
+        Dispatcher.UIThread.RunJobs();
+
         var centre = item.TranslatePoint(new Point(item.Bounds.Width / 2, item.Bounds.Height / 2), window)
             ?? throw new InvalidOperationException("The row is not laid out.");
 
-        window.MouseDown(centre, MouseButton.Left);
-        window.MouseUp(centre, MouseButton.Left);
-        window.MouseDown(centre, MouseButton.Left);
-        window.MouseUp(centre, MouseButton.Left);
+        Tap(window, centre);
+        Tap(window, centre);
+    }
+
+    private static void Tap(Window window, Point at)
+    {
+        window.MouseDown(at, MouseButton.Left);
+        window.MouseUp(at, MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
     }
 

@@ -23,8 +23,19 @@ public sealed class TintsTests
     [Fact]
     public void Two_names_get_two_tints() => Assert.NotEqual(Tints.Of("Website"), Tints.Of("Mobile app"));
 
-    [Fact]
-    public void A_tint_does_not_change_between_runs() => Assert.Equal("#bed27f", Tints.Of("Website"));
+    /// <summary>
+    /// The colours themselves, one name for each of the six sectors of the wheel, worked out from the
+    /// recipe rather than from the code: a tint that changes is a palette the journal has quietly
+    /// repainted, and a sector or a rounding that drifts shows up here as one name's colour moving.
+    /// </summary>
+    [Theory]
+    [InlineData("Lambda", "#d2817f")]
+    [InlineData("Website", "#bed27f")]
+    [InlineData("Reading", "#7fd2ba")]
+    [InlineData("Mobile app", "#7fc7d2")]
+    [InlineData("Alpha", "#c57fd2")]
+    [InlineData("Client portal", "#d27fa0")]
+    public void A_tint_is_what_it_was(string name, string expected) => Assert.Equal(expected, Tints.Of(name));
 
     [Fact]
     public void Whatever_the_name_the_tint_is_a_light_colour()
@@ -47,8 +58,10 @@ public sealed class TintsTests
         var wash = Channels(Tints.Wash("Website"));
 
         Assert.All(tint.Zip(wash), pair => Assert.True(pair.Second > pair.First, $"a wash is paler: {pair}"));
-        Assert.Equal(Tints.Wash("Website"), Tints.Wash("Website"));
     }
+
+    [Fact]
+    public void A_wash_is_what_it_was() => Assert.Equal("#e2ebc5", Tints.Wash("Website"));
 
     [Fact]
     public void A_break_is_washed_warm_instead() => Assert.Equal("#fceedf", Tints.Wash(Break.Project));

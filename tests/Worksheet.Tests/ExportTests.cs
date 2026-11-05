@@ -206,6 +206,7 @@ public sealed class ExportTests
 
         Assert.Contains("https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css", page);
         Assert.Contains("class=\"progress-bar\" style=\"width:75.0%;background:#", page);
+        Assert.Contains($"<tr style=\"--bs-table-bg:{Tints.Wash("Website")}\">", page);
         Assert.Contains(">Website</td>", page);
         Assert.Contains("75.0 %", page);
         Assert.Contains("4h", page);

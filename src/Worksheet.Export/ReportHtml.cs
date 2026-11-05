@@ -113,8 +113,7 @@ public static class ReportHtml
     private static string ProjectBars(RangeReport report) =>
         Table(
             ["Project"],
-            Rows(report.Projects.Select(project =>
-                BarRow([project.Project], project.Minutes, report.TotalMinutes, Tints.Of(project.Project)))),
+            Rows(report.Projects.Select(project => BarRow([project.Project], project.Minutes, report.TotalMinutes, project.Project))),
             $"""<tr class="table-light fw-semibold"><td>Total</td><td></td><td class="text-end">{Esc(Shares.Hours(report.TotalMinutes))}</td><td class="text-end">100.0 %</td></tr>""");
 
     private static string TopicCard(RangeReport report) =>
@@ -134,7 +133,7 @@ public static class ReportHtml
             [index == 0 ? project.Project : string.Empty, topic.Label],
             topic.Minutes,
             report.TotalMinutes,
-            Tints.Of(project.Project)))));
+            project.Project))));
 
     /// <summary>
     /// A table of bars: the cells that name a row, the bar, the time it stands for, its share. Every
@@ -163,10 +162,13 @@ public static class ReportHtml
     /// <summary>Rows as a page writes them: one per line, each with its own line end.</summary>
     private static string Rows(IEnumerable<string> rows) => string.Concat(rows.Select(row => $"{row}\n"));
 
-    /// <summary>A bar in the project's own pastel; a break gets the warm peach, having no colour of its own.</summary>
-    private static string BarRow(string[] cells, int minutes, int total, string? tint) =>
+    /// <summary>
+    /// A row in the project's own pastel: the wash behind it, and a bar in the tint itself — or, for
+    /// a break, the warm peach, which has no project to be tinted by.
+    /// </summary>
+    private static string BarRow(string[] cells, int minutes, int total, string project) =>
         $"""
-         <tr>{string.Concat(cells.Select(cell => $"<td>{Esc(cell)}</td>"))}<td><div class="progress" role="progressbar" aria-valuenow="{Esc(Shares.Percent(minutes, total))}" aria-valuemin="0" aria-valuemax="100" style="height:10px"><div class="progress-bar" style="width:{Shares.Width(minutes, total)};background:{tint ?? BreakTint}"></div></div></td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Hours(minutes))}</td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Percent(minutes, total))}</td></tr>
+         <tr style="--bs-table-bg:{Tints.Wash(project)}">{string.Concat(cells.Select(cell => $"<td>{Esc(cell)}</td>"))}<td><div class="progress" role="progressbar" aria-valuenow="{Esc(Shares.Percent(minutes, total))}" aria-valuemin="0" aria-valuemax="100" style="height:10px"><div class="progress-bar" style="width:{Shares.Width(minutes, total)};background:{Tints.Of(project) ?? BreakTint}"></div></div></td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Hours(minutes))}</td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Percent(minutes, total))}</td></tr>
          """;
 
     private static string TimelineCard(RangeReport report) =>
