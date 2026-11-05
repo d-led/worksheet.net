@@ -121,7 +121,7 @@ public sealed partial class EntryRowViewModel : ObservableObject, IDayRow
         ProjectText = _state().ProjectName(entry.ProjectId);
         RefreshTopics(entry.TopicId);
         Note = entry.Note ?? string.Empty;
-        Tint = Tints.Of(ProjectText) is { } tint ? new SolidColorBrush(Color.Parse(tint)) : null;
+        Tint = Tints.Of(_state().Catalogue, ProjectText) is { } tint ? new SolidColorBrush(Color.Parse(tint)) : null;
         IsBreak = Break.IsBreak(ProjectText);
 
         _loading = false;

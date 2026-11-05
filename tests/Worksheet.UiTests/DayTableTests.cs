@@ -90,7 +90,7 @@ public sealed class DayTableTests : UiTestBase
         // The stripe is the very colour the exported page draws that project's bar in.
         var stripe = Assert.IsType<SolidColorBrush>(Stripe(rows[0]));
 
-        Assert.Equal(Color.Parse(Tints.Of("Website")!), stripe.Color);
+        Assert.Equal(Color.Parse(Tints.Of(Ledger.Ledger.State.Catalogue, "Website")!), stripe.Color);
         Assert.NotNull(ProjectWash(rows[0]).Background);
         Assert.False(BreakWash(rows[0]).IsVisible);
 

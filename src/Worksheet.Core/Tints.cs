@@ -8,11 +8,15 @@ using System.Globalization;
 namespace Worksheet.Core;
 
 /// <summary>
-/// A pastel for every name, so a day can be read at a glance: the same project carries the same tint
-/// in the window and on the exported page, on every run and on every machine. The recipe is the one
-/// the departures page uses — a hash of the name picks a hue, a low saturation and a high lightness —
-/// with a hash of this application's own, because the framework's is seeded per process and the
-/// colours would then differ between launches.
+/// A pastel for every project, so a day can be read at a glance: the same project carries the same
+/// tint in the window and on the exported page, on every run and on every machine. The recipe is the
+/// one the departures page uses — a hue from the name, a low saturation and a high lightness.
+///
+/// The hue is not hashed from the name. A hash has no spread to offer: it is free to hand two names
+/// hues eighteen degrees apart, which is what "General" and "wiki" got, and pastels that close are
+/// one colour to the eye. Walking the wheel by the golden angle in catalogue order instead keeps
+/// every pair of names as far apart as their number allows, and the walk repeats exactly because
+/// the catalogue it walks is the same one.
 /// </summary>
 public static class Tints
 {
@@ -28,33 +32,45 @@ public static class Tints
     /// </summary>
     private const double WashShare = 0.55;
 
+    /// <summary>
+    /// A turn of the wheel by the golden angle — 137.508°, as a share of the circle. No whole count
+    /// divides it, so the walk keeps every count of names spread: two names land most of the wheel
+    /// apart, twelve are never closer than twenty degrees, and no pair is arbitrarily jammed.
+    /// </summary>
+    private const double GoldenStep = 0.3819660112501051;
+
     /// <summary>The warm a break's row is washed in, which is the theme's own value in its light half.</summary>
     public const string BreakWash = "#fceedf";
 
     /// <summary>
     /// The tint of a name as <c>#rrggbb</c>, or nothing for a break: a pause is the absence of work,
-    /// and a colour of its own would make it look like a project.
+    /// and a colour of its own would make it look like a project. The catalogue is every project the
+    /// ledger knows, archived ones included; a name it does not hold yet takes the tint it will have
+    /// once it is written down.
     /// </summary>
-    public static string? Of(string? name) =>
-        name is null || Break.IsBreak(name) ? null : Hex(Hue(name.Trim()), Saturation, Lightness);
+    public static string? Of(IReadOnlyCollection<string> catalogue, string? name) =>
+        name is null || Break.IsBreak(name) ? null : Hex(Hue(catalogue, name.Trim()), Saturation, Lightness);
 
     /// <summary>
     /// The wash a row of a page is painted with: the project's tint laid over white, or the warm a
     /// break has instead. The window reaches the same colour by drawing the tint over whatever
     /// surface its theme chose, which is why the share is a number and not a second palette.
     /// </summary>
-    public static string Wash(string name) =>
-        Of(name) is { } tint ? Blend(tint, WashShare) : BreakWash;
-
-    /// <summary>The hue a name falls on, as a fraction of the circle, so two projects rarely share one.</summary>
-    private static double Hue(string name) => StableHash(name) % 360 / 360.0;
+    public static string Wash(IReadOnlyCollection<string> catalogue, string name) =>
+        Of(catalogue, name) is { } tint ? Blend(tint, WashShare) : BreakWash;
 
     /// <summary>
-    /// FNV-1a over the name: short, spread well enough for a hue, and the same number on every run
-    /// and every machine, which is the whole point of it.
+    /// The hue a name falls on, as a share of the circle: one golden step for every project that
+    /// sorts before it, so the hues of a catalogue are as far apart as the catalogue's size allows.
+    /// A name's place among the other names is its colour, and a name not written down yet takes the
+    /// place it would take — the very one it keeps once it is.
     /// </summary>
-    private static ulong StableHash(string name) =>
-        name.Aggregate(14695981039346656037UL, (hash, character) => (hash ^ character) * 1099511628211UL);
+    private static double Hue(IReadOnlyCollection<string> catalogue, string name) =>
+        Rank(catalogue, name) * GoldenStep % 1;
+
+    /// <summary>How many of the catalogue's names sort before this one, listed the way the window lists them.</summary>
+    private static int Rank(IReadOnlyCollection<string> catalogue, string name) =>
+        catalogue.Count(other => Dates.Names.Compare(other, name) < 0);
 
     /// <summary>Hue, saturation and lightness — each between 0 and 1 — as a colour.</summary>
     private static string Hex(double hue, double saturation, double lightness)

@@ -29,7 +29,12 @@ public sealed record DayLine(DateOnly Date, string Kind, int Minutes, IReadOnlyL
 /// The range as a materialized object: what the JSON file holds and what the page is drawn from,
 /// so both always agree and nothing has to be read twice.
 /// </summary>
-public sealed record RangeReport(ExportRange Range, int TotalMinutes, IReadOnlyList<ProjectLine> Projects, IReadOnlyList<DayLine> Days)
+public sealed record RangeReport(
+    ExportRange Range,
+    int TotalMinutes,
+    IReadOnlyList<ProjectLine> Projects,
+    IReadOnlyList<DayLine> Days,
+    IReadOnlyCollection<string> Catalogue)
 {
     /// <summary>Days that hold something, counted for the report's headline figures.</summary>
     public int DaysLogged => Days.Count;
@@ -47,7 +52,8 @@ public sealed record RangeReport(ExportRange Range, int TotalMinutes, IReadOnlyL
             range,
             entries.Sum(entry => entry.Minutes),
             ProjectsOf(entries),
-            days);
+            days,
+            state.Catalogue);
     }
 
     /// <summary>Only the days that hold something: an empty day is not detail, it is an absence of it.</summary>

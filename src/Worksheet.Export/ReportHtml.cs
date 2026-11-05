@@ -113,7 +113,7 @@ public static class ReportHtml
     private static string ProjectBars(RangeReport report) =>
         Table(
             ["Project"],
-            Rows(report.Projects.Select(project => BarRow([project.Project], project.Minutes, report.TotalMinutes, project.Project))),
+            Rows(report.Projects.Select(project => BarRow(report, [project.Project], project.Minutes, project.Project))),
             $"""<tr class="table-light fw-semibold"><td>Total</td><td></td><td class="text-end">{Esc(Shares.Hours(report.TotalMinutes))}</td><td class="text-end">100.0 %</td></tr>""");
 
     private static string TopicCard(RangeReport report) =>
@@ -130,9 +130,9 @@ public static class ReportHtml
     /// <summary>A project is named once, on the first of its rows, so the bars start close to the names.</summary>
     private static string TopicRows(RangeReport report) =>
         Rows(report.Projects.SelectMany(project => project.Topics.Select((topic, index) => BarRow(
+            report,
             [index == 0 ? project.Project : string.Empty, topic.Label],
             topic.Minutes,
-            report.TotalMinutes,
             project.Project))));
 
     /// <summary>
@@ -166,9 +166,9 @@ public static class ReportHtml
     /// A row in the project's own pastel: the wash behind it, and a bar in the tint itself — or, for
     /// a break, the warm peach, which has no project to be tinted by.
     /// </summary>
-    private static string BarRow(string[] cells, int minutes, int total, string project) =>
+    private static string BarRow(RangeReport report, string[] cells, int minutes, string project) =>
         $"""
-         <tr style="--bs-table-bg:{Tints.Wash(project)}">{string.Concat(cells.Select(cell => $"<td>{Esc(cell)}</td>"))}<td><div class="progress" role="progressbar" aria-valuenow="{Esc(Shares.Percent(minutes, total))}" aria-valuemin="0" aria-valuemax="100" style="height:10px"><div class="progress-bar" style="width:{Shares.Width(minutes, total)};background:{Tints.Of(project) ?? BreakTint}"></div></div></td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Hours(minutes))}</td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Percent(minutes, total))}</td></tr>
+         <tr style="--bs-table-bg:{Tints.Wash(report.Catalogue, project)}">{string.Concat(cells.Select(cell => $"<td>{Esc(cell)}</td>"))}<td><div class="progress" role="progressbar" aria-valuenow="{Esc(Shares.Percent(minutes, report.TotalMinutes))}" aria-valuemin="0" aria-valuemax="100" style="height:10px"><div class="progress-bar" style="width:{Shares.Width(minutes, report.TotalMinutes)};background:{Tints.Of(report.Catalogue, project) ?? BreakTint}"></div></div></td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Hours(minutes))}</td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Percent(minutes, report.TotalMinutes))}</td></tr>
          """;
 
     private static string TimelineCard(RangeReport report) =>
@@ -260,43 +260,43 @@ public static class ReportHtml
             ? string.Empty
             : report.Range.SpansMoreThanADay
                 ? Days(report)
-                : Entries(report.Days[0]);
+                : Entries(report.Catalogue, report.Days[0]);
 
     /// <summary>The days, folded: each date and its total on the summary, the ranges inside it.</summary>
     private static string Days(RangeReport report) =>
         $"""
          <section class="mb-4">
            <h2 class="h5">Days</h2>
-         {string.Concat(report.Days.Select(Fold))}</section>
+         {string.Concat(report.Days.Select(day => Fold(report.Catalogue, day)))}</section>
 
          """;
 
-    private static string Fold(DayLine day) =>
+    private static string Fold(IReadOnlyCollection<string> catalogue, DayLine day) =>
         $"""
          <details class="card mb-1"><summary class="card-body py-2">
            <span class="fw-semibold">{Esc(day.Date.ToString("dddd MMM yyyy", CultureInfo.InvariantCulture))}</span>
            <span class="text-body-secondary">· {Esc(day.Kind)} · {Esc(Shares.Hours(day.Minutes))}</span>
          </summary>
          <div class="card-body py-2">
-         {Entries(day)}</div></details>
+         {Entries(catalogue, day)}</div></details>
 
          """;
 
-    private static string Entries(DayLine day) =>
+    private static string Entries(IReadOnlyCollection<string> catalogue, DayLine day) =>
         $"""
          <table class="table table-sm align-middle mb-0">
            <thead>
              <tr><th scope="col">From–to</th><th scope="col">Project</th><th scope="col">Topic</th><th scope="col" class="text-end">Time</th><th scope="col">Note</th></tr>
            </thead>
            <tbody>
-         {Rows(day.Entries.Select(EntryRow))}</tbody>
+         {Rows(day.Entries.Select(entry => EntryRow(catalogue, entry)))}</tbody>
          </table>
 
          """;
 
-    private static string EntryRow(EntryLine entry) =>
+    private static string EntryRow(IReadOnlyCollection<string> catalogue, EntryLine entry) =>
         $"""
-         <tr style="--bs-table-bg:{Tints.Wash(entry.Project)}"><td class="text-nowrap">{ClockText.Format(entry.Start)}–{ClockText.Format(entry.End)}</td><td>{Esc(entry.Project)}</td><td>{Esc(entry.Topic ?? string.Empty)}</td><td class="text-end">{Esc(Shares.Hours(entry.Minutes))}</td><td class="text-body-secondary">{Esc(entry.Note ?? string.Empty)}</td></tr>
+         <tr style="--bs-table-bg:{Tints.Wash(catalogue, entry.Project)}"><td class="text-nowrap">{ClockText.Format(entry.Start)}–{ClockText.Format(entry.End)}</td><td>{Esc(entry.Project)}</td><td>{Esc(entry.Topic ?? string.Empty)}</td><td class="text-end">{Esc(Shares.Hours(entry.Minutes))}</td><td class="text-body-secondary">{Esc(entry.Note ?? string.Empty)}</td></tr>
          """;
 
     /// <summary>The page's last word: where the numbers come from, and what the page needs from the net.</summary>

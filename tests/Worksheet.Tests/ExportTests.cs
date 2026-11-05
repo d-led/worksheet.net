@@ -202,11 +202,12 @@ public sealed class ExportTests
         Logged("Website (login) 09:00 1h");
         Logged("Mobile 11:00 3h");
 
-        var page = Html(Report(ExportPeriod.Month));
+        var report = Report(ExportPeriod.Month);
+        var page = Html(report);
 
         Assert.Contains("https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css", page);
         Assert.Contains("class=\"progress-bar\" style=\"width:75.0%;background:#", page);
-        Assert.Contains($"<tr style=\"--bs-table-bg:{Tints.Wash("Website")}\">", page);
+        Assert.Contains($"<tr style=\"--bs-table-bg:{Tints.Wash(report.Catalogue, "Website")}\">", page);
         Assert.Contains(">Website</td>", page);
         Assert.Contains("75.0 %", page);
         Assert.Contains("4h", page);
@@ -218,9 +219,10 @@ public sealed class ExportTests
         Logged("Website 09:00 1h");
         Logged("Break 10:00 30m");
 
-        var page = Html(Report(ExportPeriod.Day));
+        var report = Report(ExportPeriod.Day);
+        var page = Html(report);
 
-        Assert.Contains($"<tr style=\"--bs-table-bg:{Tints.Wash("Website")}\">", page);
+        Assert.Contains($"<tr style=\"--bs-table-bg:{Tints.Wash(report.Catalogue, "Website")}\">", page);
         Assert.Contains($"<tr style=\"--bs-table-bg:{Tints.BreakWash}\">", page);
     }
 
@@ -230,9 +232,10 @@ public sealed class ExportTests
         Logged("Website 09:00 1h");
         Logged("Break 10:00 30m");
 
-        var page = Html(Report(ExportPeriod.Day));
+        var report = Report(ExportPeriod.Day);
+        var page = Html(report);
 
-        Assert.Contains($"background:{Tints.Of("Website")}", page);
+        Assert.Contains($"background:{Tints.Of(report.Catalogue, "Website")}", page);
         Assert.Contains("background:#f3c89a", page);
     }
 

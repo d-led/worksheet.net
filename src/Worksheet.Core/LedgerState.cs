@@ -28,6 +28,13 @@ public sealed class LedgerState
 
     public IReadOnlyDictionary<Guid, Project> Projects => _projects;
 
+    /// <summary>
+    /// Every project the ledger knows by name, archived ones included: a tint is drawn from this
+    /// list, so a project keeps the colour it had after it is put away, and the window and the page
+    /// agree on every name they both show.
+    /// </summary>
+    public IReadOnlyCollection<string> Catalogue => [.. _projects.Values.Select(project => project.Name)];
+
     public IReadOnlyDictionary<Guid, Topic> Topics => _topics;
 
     public IReadOnlyDictionary<EntryId, Entry> Entries => _entries;

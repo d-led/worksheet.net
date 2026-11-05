@@ -55,12 +55,18 @@ Only three brushes are ours (`SurfaceBrush`, `HairlineBrush`, `BreakWashBrush`) 
 translucent, so they blend with whichever background Suki paints in light or dark. The break wash is
 the one opaque colour of the three, because it is a colour someone has to be able to see.
 
-**A project is a colour.** `Tints` hashes the name to a hue, keeps the saturation low and the
-lightness high, and hands out the same pastel in the window, on the exported page and on every run:
-a row is washed in it, its left edge is striped in it at full strength, and the page's bars and day
-rows are drawn in the same one. The row wash is drawn over whatever surface the theme chose rather
-than mixed into a second palette, which is why it needs no dark variant of its own. A break is the
-one row with no tint: it is washed warm instead, since a pause is not a project.
+**A project is a colour.** `Tints` walks the wheel by the golden angle, one step per project in
+catalogue order, keeps the saturation low and the lightness high, and hands out the same pastel in
+the window, on the exported page and on every run: a row is washed in it, its left edge is striped
+in it at full strength, and the page's bars and day rows are drawn in the same one. A hash of the
+name was tried first and is wrong for this: it promises nothing about the *set* of names, and it
+handed "General" and "wiki" two hues eighteen degrees apart, which is one colour to the eye. The
+golden angle keeps every pair as far apart as the number of projects allows — two projects land most
+of the wheel apart, twelve are never closer than twenty degrees — and it needs the catalogue rather
+than the name alone, so a name not written down yet takes the colour of the place it will occupy.
+The row wash is drawn over whatever surface the theme chose rather than mixed into a second palette,
+which is why it needs no dark variant of its own. A break is the one row with no tint: it is washed
+warm instead, since a pause is not a project.
 
 **Typography is a closed set.** `title`, `total`, `body`, `numeric`, `caption`, `meta`, `quiet`.
 No view sets a font size inline; if a size is missing, it is added to the tokens, not to the view.
