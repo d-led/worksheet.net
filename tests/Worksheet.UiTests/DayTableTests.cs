@@ -17,14 +17,8 @@ namespace Worksheet.UiTests;
 
 public sealed class DayTableTests : UiTestBase
 {
-    private static List<Border> EntryRows(Visual root) =>
-        [.. Descendants<Border>(root).Where(border => border.Classes.Contains("row"))];
-
     private static List<Border> GapRows(Visual root) =>
         [.. Descendants<Border>(root).Where(border => border.Classes.Contains("gap"))];
-
-    private static TextBox Cell(Border row, string name) =>
-        Descendants<TextBox>(row).Single(box => box.Classes.Contains(name));
 
     private void Enter()
     {
@@ -215,7 +209,7 @@ public sealed class DayTableTests : UiTestBase
     }
 
     [AvaloniaFact]
-    public void Typing_a_note_in_a_row_saves_it_on_the_entry()
+    public void A_note_is_typed_into_its_cell_without_the_row_being_rebuilt_under_the_caret()
     {
         var day = NewDay();
         Seed(day, "Website 09:00 1h");
@@ -224,10 +218,45 @@ public sealed class DayTableTests : UiTestBase
         Settle();
 
         var noteBox = Cell(Assert.Single(EntryRows(table)), "note-input");
-        noteBox.Text = "called the client";
+        noteBox.Focus();
+
+        Window.KeyTextInput("the ");
+        Settle();
+        Window.KeyTextInput("paper");
+        Settle();
+
+        // Every key lands in the cell: nothing is written while the note is being typed.
+        Assert.True(noteBox.IsFocused);
+        Assert.Equal("the paper", noteBox.Text);
+    }
+
+    [AvaloniaFact]
+    public void A_note_is_kept_when_its_cell_is_left()
+    {
+        var day = NewDay();
+        Seed(day, "Website 09:00 1h");
+
+        var table = Show<DayTable>(day);
+        Settle();
+
+        var row = Assert.Single(EntryRows(table));
+        var noteBox = Cell(row, "note-input");
+
+        noteBox.Focus();
+        Window.KeyTextInput("called the client");
+        Settle();
+        Cell(row, "start-input").Focus();
         Settle();
 
         Assert.Equal("called the client", Assert.Single(Ledger.Ledger.State.Entries).Value.Note);
+    }
+
+    [AvaloniaFact]
+    public void A_note_logged_with_the_line_is_on_the_row()
+    {
+        var row = Assert.Single(EntryRows(Table("Reading 14:00 2h # the LiteDB paper")));
+
+        Assert.Equal("the LiteDB paper", Cell(row, "note-input").Text);
     }
 
     [AvaloniaFact]

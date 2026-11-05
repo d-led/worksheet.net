@@ -59,19 +59,40 @@ public sealed class WorksheetTools : IToolkit
                 ? BadDate(call.Text("date"))
                 : Log(line, day);
 
+    /// <summary>
+    /// The line in the order it carries what it says — a name, a span, then the words after a "#" —
+    /// so a note of its own is read only for a line that cannot be an entry at all.
+    /// </summary>
     private ToolOutcome Log(string line, DateOnly day)
     {
         var parse = EntryCommandParser.Parse(line, day, _ledger.State.EndOfLast);
 
-        if (!parse.Succeeded)
+        if (parse.Succeeded)
         {
-            return ToolOutcome.Refused(parse.Error!);
+            return LogEntry(parse.Command!);
         }
 
-        var composed = _composer.Compose(parse.Command!);
+        return NoteLine.Parse(line) is { } note ? Note(note, day) : ToolOutcome.Refused(parse.Error!);
+    }
+
+    private ToolOutcome LogEntry(EntryCommand command)
+    {
+        var composed = _composer.Compose(command);
 
         return composed.Created
             ? ToolOutcome.Said($"Logged {Reports.Describe(_ledger.State, composed.Entry!)} on {Reports.ShortDate(composed.Entry!.Date)}.")
+            : ToolOutcome.Refused([.. composed.Problems]);
+    }
+
+    /// <summary>A line that is only a note belongs to the range the day ended with, as it does in the window.</summary>
+    private ToolOutcome Note(NoteParse note, DateOnly day)
+    {
+        var composed = note.Succeeded
+            ? _composer.Note(day, note.Note!)
+            : ComposeResult.Refused(note.Error!);
+
+        return composed.Created
+            ? ToolOutcome.Said($"Noted {Reports.Describe(_ledger.State, composed.Entry!)}, {Reports.ShortDate(day)}.")
             : ToolOutcome.Refused([.. composed.Problems]);
     }
 
@@ -210,8 +231,8 @@ public sealed class WorksheetTools : IToolkit
             + "A line may leave its start out — 'Client portal till 16:00', 'Client portal for 1h30m' — "
             + "and then begins where the last range of that day ended. "
             + "One call records one range: a day of four ranges is four calls. "
-            + "A line may name its own day ('3.11. Reading 14:00 45m'); otherwise date is the day it belongs to. "
-            + "A range that cannot be recorded is refused with a sentence saying why, and nothing is written.",
+            + "A line may name its own day ('3.11. Reading 14:00 45m'); otherwise date is the day it belongs to. "            + "A note is written after a '#', either with a range ('Reading 14:00 45m # the LiteDB paper') or on "
+            + "its own ('# the paper'), which notes the range the day ended with. "            + "A range that cannot be recorded is refused with a sentence saying why, and nothing is written.",
             ToolSchema.Of(
                 ("line", ToolProperty.Text("The entry line to record, in the application's own syntax.")),
                 ("date", ToolProperty.Text("The day the line belongs to, 2026-11-03. Defaults to today.", required: false))),

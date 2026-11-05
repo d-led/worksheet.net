@@ -62,6 +62,26 @@ public sealed class McpToolTests
     }
 
     [Fact]
+    public void A_note_of_its_own_notes_the_range_the_day_ended_with()
+    {
+        LogEntry("Reading 14:00 2h", Tuesday);
+
+        var outcome = LogEntry("# the LiteDB paper", Tuesday);
+
+        Assert.Equal("Noted 14:00-16:00 Reading 2h, Tue 3 Nov 2026.", outcome.Text);
+        Assert.Equal("the LiteDB paper", Assert.Single(_ledger.State.Entries).Value.Note);
+    }
+
+    [Fact]
+    public void A_note_with_nothing_to_note_is_refused_in_words()
+    {
+        var outcome = LogEntry("# the paper", Tuesday);
+
+        Assert.True(outcome.IsError);
+        Assert.Equal(NoteLine.NothingToNoteMessage, outcome.Text);
+    }
+
+    [Fact]
     public void A_line_without_its_project_words_is_refused()
     {
         var outcome = Call("log_entry", """{"line":"08:30 2h"}""");

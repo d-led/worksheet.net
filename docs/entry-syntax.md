@@ -4,6 +4,7 @@ One line records one time range. Grammar:
 
 ```
 command   = [ date ] name span [ "#" note ]
+          | "#" note
 name      = project [ "-" ] [ "(" topic ")" ] [ "-" ]
 date      = d "." m "." [ yyyy ] "."
 span      = clock "-" clock            (a range)
@@ -51,6 +52,7 @@ to one. Without `am` or `pm` a time is in 24-hour form: `4:30` is 04:30, not 16:
 | `Reading 12:0 45m` | Reading | — | 12:00 + 45m |
 | `3.11. Reading 14:00 45m` | Reading | — | 2026-11-03, 14:00 + 45m |
 | `Reading 14:00 2h 30m # the LiteDB paper` | Reading | — | 14:00 + 2h30m, note |
+| `# the LiteDB paper` | — (the block the day ended with) | — | its note |
 | `Website (login) till 13:30` | Website | login | last end – 13:30 |
 | `Website for 1h30m` | Website | — | last end + 1h30m |
 | `Website 09:00 till 13:30` | Website | — | 09:00–13:30 |
@@ -76,3 +78,11 @@ to one. Without `am` or `pm` a time is in 24-hour form: `4:30` is 04:30, not 16:
    topic opened, and that is an appended journal entry like any other.
 8. **Errors are messages, not exceptions.** The parser is total: every input
    produces either a command or one sentence explaining what is missing.
+9. **A note is the last thing a line carries.** Whatever follows the `#` is the
+   note, so the mark ends what can be read as a name or a time:
+   `Website 09:00 1h # the paper`. A line with nothing but a note — `# the paper`
+   — is read as one only when it holds no name and no time, which is what makes
+   it unambiguous; it then notes the block the day ended with, the same end `till`
+   and `for` continue from. That is a correction like any other: undo takes it
+   back, and a day with nothing on it has nothing to note. A project's name cannot
+   contain the mark, since everything after it is the note.

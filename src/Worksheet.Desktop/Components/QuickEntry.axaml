@@ -23,7 +23,7 @@
     </TextBox>
 
     <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
-      <TextBlock Classes="legend" Text="project › (topic) › 09:00 › 1h30m" VerticalAlignment="Center" />
+      <TextBlock Classes="legend" Text="project › (topic) › 09:00 › 1h30m › # note" VerticalAlignment="Center" />
       <TextBlock x:Name="NextStep"
                  Grid.Column="1"
                  Classes="hint"

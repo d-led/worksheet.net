@@ -120,6 +120,12 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     /// <summary>What the window showed after the last refresh, to know whether a reload would differ.</summary>
     private string _shown = string.Empty;
 
+    /// <summary>
+    /// True while a row is writing a change of its own: the row shows that change itself, so the
+    /// echo from the ledger must not rebuild the rows and take the focus out of the cell it came from.
+    /// </summary>
+    private bool _aRowIsWriting;
+
     /// <summary>The day on screen, as a plain date.</summary>
     public DateOnly Date => Day;
 
@@ -139,18 +145,34 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
 
     partial void OnMessageChanged(string? value) => OnPropertyChanged(nameof(HasMessage));
 
+    /// <summary>
+    /// The line in the order it carries what it says: a name, a span, and the words after a "#".
+    /// Only a line that cannot be an entry at all — one with no name and no time — is a note of its
+    /// own, so a note never competes with an entry for the same keystrokes.
+    /// </summary>
     [RelayCommand]
     private void Log()
     {
         var parse = EntryCommandParser.Parse(EntryText, Day, _local.Ledger.State.EndOfLast);
 
-        if (!parse.Succeeded)
+        if (parse.Succeeded)
         {
-            Report(parse.Error, isProblem: true);
+            LogEntry(parse.Command!);
             return;
         }
 
-        var composed = _composer.Compose(parse.Command!);
+        if (NoteLine.Parse(EntryText) is { } note)
+        {
+            Note(note);
+            return;
+        }
+
+        Report(parse.Error, isProblem: true);
+    }
+
+    private void LogEntry(EntryCommand command)
+    {
+        var composed = _composer.Compose(command);
 
         if (!composed.Created)
         {
@@ -160,6 +182,29 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
 
         EntryText = string.Empty;
         Report(null, isProblem: false);
+        Refresh();
+    }
+
+    /// <summary>
+    /// A line that is only a note. Work is logged first and commented afterwards, so a note of its
+    /// own belongs to the entry the day ended with — the same end "till" and "for" continue from.
+    /// </summary>
+    private void Note(NoteParse note)
+    {
+        var composed = note.Succeeded
+            ? _composer.Note(Day, note.Note!)
+            : ComposeResult.Refused(note.Error!);
+
+        if (!composed.Created)
+        {
+            Report(string.Join(" ", composed.Problems), isProblem: true);
+            return;
+        }
+
+        var noted = composed.Entry!;
+
+        EntryText = string.Empty;
+        Report($"Noted on {ClockText.Format(noted.Start)}–{ClockText.Format(noted.End)}: \"{noted.Note}\".", isProblem: false);
         Refresh();
     }
 
@@ -346,12 +391,15 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
         {
             var row = new EntryRowViewModel(
                 entry,
-                [.. Projects],
+                Projects,
                 () => _local.Ledger.State,
                 Revise,
-                _composer.Point,
+                Point,
                 Retract,
                 editable);
+
+            // A refused edit is the one case that rebuilds: the box holds the text that was refused,
+            // and only a row built again from the journal shows what is stored instead.
             row.Rejected += (_, _) => Dispatcher.UIThread.Post(RefreshRows);
 
             Rows.Add(row);
@@ -439,7 +487,7 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
             return null;
         }
 
-        var result = _composer.Revise(before, after);
+        var result = FromARow(() => _composer.Revise(before, after));
 
         if (!result.Created)
         {
@@ -449,8 +497,46 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
 
         Report(null, isProblem: false);
         UpdateTotals();
+        _shown = Signature();
 
         return result.Entry;
+    }
+
+    /// <summary>
+    /// A project or topic typed in a row: the name is resolved, and one nobody used yet is opened.
+    /// Every row offers the names of the day, so the list is refreshed once the row has its answer.
+    /// </summary>
+    private ComposeResult Point(Entry entry, string project, string? topic)
+    {
+        var pointed = FromARow(() => _composer.Point(entry, project, topic));
+
+        if (pointed.Created)
+        {
+            RefreshProjects();
+            _shown = Signature();
+        }
+
+        return pointed;
+    }
+
+    /// <summary>
+    /// Runs a change a row asked for. That row has already corrected itself from the answer, so the
+    /// ledger's echo must not rebuild the rows under the control being typed in — a rebuild takes
+    /// the focus, and with it the rest of what was being written. What is on screen is the fold
+    /// again once the row is done, so the next echo that differs is somebody else's and is shown.
+    /// </summary>
+    private T FromARow<T>(Func<T> change)
+    {
+        _aRowIsWriting = true;
+
+        try
+        {
+            return change();
+        }
+        finally
+        {
+            _aRowIsWriting = false;
+        }
     }
 
     private void Retract(EntryId id)
@@ -548,7 +634,8 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
 
     /// <summary>
     /// Says what to write next, and complains as soon as the line is complete enough to be wrong —
-    /// an intersection is visible before Enter, not after it.
+    /// an intersection is visible before Enter, not after it. A line that is already whole is told
+    /// what it can still take: the note, which is the last thing a line carries.
     /// </summary>
     private void UpdateGuide()
     {
@@ -556,7 +643,7 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
         var step = EntryGuide.Next(EntryText, lastEnd);
 
         NextStep = step == EntryStep.Complete
-            ? "complete"
+            ? EntryGuide.Label(EntryStep.Complete)
             : $"next: {EntryGuide.Label(step, EntryText, lastEnd)}";
 
         var parse = EntryCommandParser.Parse(EntryText, Day, _local.Ledger.State.EndOfLast);
@@ -572,17 +659,14 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Reads the fold again after something outside this view changed it — an agent through the
-    /// MCP server, or the tray. What is on screen is always the fold, so it is re-read, not patched.
-    /// </summary>
-    /// <summary>
     /// Reads the fold again after a change landed. A change that cannot be seen here — an agent
     /// logging on another day, a project renamed — leaves the rows alone, because rebuilding them
-    /// would take the cell a person is typing in with it.
+    /// would take the cell a person is typing in with it. A row's own correction is the same case:
+    /// the row is already showing it.
     /// </summary>
     private void Reload()
     {
-        if (Signature() == _shown)
+        if (_aRowIsWriting || Signature() == _shown)
         {
             return;
         }

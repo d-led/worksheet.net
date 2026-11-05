@@ -67,6 +67,13 @@ public abstract class UiTestBase : IDisposable
 
     protected static void Settle() => Dispatcher.UIThread.RunJobs();
 
+    /// <summary>
+    /// The window as it was drawn, kept under <c>artifacts/ui-tests</c> so the build can show what a
+    /// test saw. A test that captures a frame is a test about the glass, not about the tree.
+    /// </summary>
+    protected Frame Shot(string name) =>
+        Frame.Of(Window, Screens.PathFor(GetType().Name, name));
+
     /// <summary>A real click at the middle of the control, so hit testing and bindings both run.</summary>
     protected void Click(Control target)
     {
@@ -75,4 +82,17 @@ public abstract class UiTestBase : IDisposable
     }
 
     protected static IEnumerable<T> Descendants<T>(Visual root) => root.GetVisualDescendants().OfType<T>();
+
+    /// <summary>The rows of a day table: one border per entry, holes carrying their own class.</summary>
+    protected static List<Border> EntryRows(Visual root) =>
+        [.. Descendants<Border>(root).Where(border => border.Classes.Contains("row"))];
+
+    /// <summary>One of the fields of a row, named by the class the template gives it.</summary>
+    protected static TextBox Cell(Border row, string name) =>
+        Descendants<TextBox>(row).Single(box => box.Classes.Contains(name));
+
+    /// <summary>Where a control sits on the window, for a frame's pixels are in that same place.</summary>
+    protected Point Centre(Control control) =>
+        control.TranslatePoint(new Point(control.Bounds.Width / 2, control.Bounds.Height / 2), Window)
+            ?? throw new InvalidOperationException($"{control.GetType().Name} is not laid out.");
 }

@@ -45,6 +45,19 @@ The UI tests never start the application: no tray, no single-instance guard, no 
 test opens one `Window` with one component and a throw-away ledger, which is why they run in
 seconds and cannot interfere with each other.
 
+### What the window really draws
+
+The headless window is drawn by Skia, not by a stand-in: the same text layout and the same
+painting the application ships. A test that captures a frame is therefore a test about the glass —
+`Frame.Of(window, path)` keeps the picture and reads its pixels, so `RenderedDayTests` can say
+that a row really carries its project's colour down its left edge, that a typed note reaches across
+its cell, and that a frozen row is still written out readably.
+
+Each captured frame is written to `artifacts/ui-tests/<test class>/<name>.png` (git-ignored), and
+the build keeps them as the `ui-frames-<os>` artefact — one per platform, which is also how a
+font or layout difference between the platforms is noticed. `WORKSHEET_UI_SHOTS` puts them
+somewhere else.
+
 `tests/Worksheet.TestSupport` holds what both need (a temporary directory that tolerates Windows
 releasing file handles late).
 
@@ -59,7 +72,7 @@ per method, worst first, and exits non-zero if any method is over 10. It merges 
 generated XAML members, and skips the composition roots (`App`, `Program`) — they only wire parts
 together, and every part is measured where it lives.
 
-Current state: 809 methods, no method over CRAP 10, method-average coverage 94.8%. What stays
+Current state: 869 methods, no method over CRAP 10, method-average coverage 95.2%. What stays
 uncovered needs a window server session — the tray, the composition root, the save dialog's file
 picker — or is a guard against a state a test cannot reach on purpose.
 
@@ -162,7 +175,8 @@ how the clipped start column was found.
 
 - **quality** — `ubuntu-latest`, `scripts/analyse.sh` then `scripts/crap.sh`: the analysers with
   warnings as errors, and the CRAP gate over both test projects
-- **test** — `ubuntu-latest`, `windows-latest`, `macos-latest`, `dotnet test Worksheet.slnx`
+- **test** — `ubuntu-latest`, `windows-latest`, `macos-latest`, `dotnet test Worksheet.slnx`,
+  and the frames the UI tests drew, kept as an artefact per platform
 - **package** — one job per RID, each published on its own operating system, then asserted to
   contain exactly one file, renamed to `worksheet-<rid>[.exe]` so all five can share a release
 - **release** — on a `v*` tag, downloads every artifact and attaches it with `gh release create`

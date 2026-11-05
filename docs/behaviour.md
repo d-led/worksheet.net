@@ -23,7 +23,9 @@ and records decisions; it is not a description of any other program's source.
    of that project once its bracket is open. The keyboard walks the offers and takes
    one, and the bracket that comes next is written in already. Once the day holds an
    entry, the line may leave its start out — `till 16:00`, `for 1h30m` — and then
-   begins where the last entry of that day ended.
+   begins where the last entry of that day ended. A note may be a line of its own —
+   `# the paper` — which lands on the entry the day ended with, so work logged in a
+   hurry is commented from the same line a moment later.
 3. Says what kind of day it is — working, flex, sick, holiday or weekend — as a row of
    radios above the table, and freezes the timetable on every day that is not a
    working day.

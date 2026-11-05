@@ -184,7 +184,7 @@ public sealed class DayViewModelTests : IDisposable
         Assert.Equal("next: length 1h30m, or an end 09:00-11:00", day.NextStep);
 
         day.EntryText = "Web (login) 09:00 1h";
-        Assert.Equal("complete", day.NextStep);
+        Assert.Equal("press Enter, or \"#\" and a note", day.NextStep);
     }
 
     [Fact]
@@ -203,7 +203,7 @@ public sealed class DayViewModelTests : IDisposable
         var day = DayWith("Website 09:00 1h");
 
         day.EntryText = "Mobile (app) till 12:00";
-        Assert.Equal("complete", day.NextStep);
+        Assert.Equal("press Enter, or \"#\" and a note", day.NextStep);
 
         day.LogCommand.Execute(null);
 
@@ -294,6 +294,57 @@ public sealed class DayViewModelTests : IDisposable
         Assert.Equal("11:00", mobile.StartText);
         Assert.Equal("12:00", mobile.EndText);
         Assert.Equal("2h", day.Total);
+    }
+
+    [Fact]
+    public void A_note_of_its_own_is_written_on_the_entry_the_day_ended_with()
+    {
+        var day = DayWith("Website 09:00 1h", "Reading 14:00 2h");
+
+        day.EntryText = "# the LiteDB paper";
+        Assert.Equal("press Enter, or \"#\" and a note", day.NextStep);
+
+        day.LogCommand.Execute(null);
+
+        Assert.Equal("the LiteDB paper", ((EntryRowViewModel)day.Rows[^1]).Note);
+        Assert.Equal(string.Empty, day.EntryText);
+        Assert.False(day.MessageIsProblem);
+        Assert.Contains("Noted on 14:00–16:00", day.Message);
+    }
+
+    [Fact]
+    public void A_line_with_a_time_is_an_entry_with_a_note_rather_than_a_note_of_its_own()
+    {
+        var day = DayWith("Website 09:00 1h");
+
+        day.EntryText = "Mobile 10:00 1h # the paper";
+        day.LogCommand.Execute(null);
+
+        Assert.Equal(2, day.Rows.Count);
+        Assert.Equal("the paper", ((EntryRowViewModel)day.Rows[1]).Note);
+    }
+
+    [Fact]
+    public void A_bare_mark_says_what_it_is_waiting_for()
+    {
+        var day = DayWith("Website 09:00 1h");
+
+        day.EntryText = "#";
+
+        Assert.Equal("next: the note after \"#\"", day.NextStep);
+    }
+
+    [Fact]
+    public void A_note_on_a_day_with_nothing_on_it_is_refused_in_words()
+    {
+        var day = DayWith();
+
+        day.EntryText = "# the paper";
+        day.LogCommand.Execute(null);
+
+        Assert.True(day.MessageIsProblem);
+        Assert.Equal(NoteLine.NothingToNoteMessage, day.Message);
+        Assert.Equal("# the paper", day.EntryText);
     }
 
     [Fact]

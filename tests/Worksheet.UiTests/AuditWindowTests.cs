@@ -49,11 +49,13 @@ public sealed class AuditWindowTests
         [.. window.FindControl<ListBox>("Rows")!.ItemsSource!.Cast<AuditRow>()];
 
     /// <summary>
-    /// Two taps on a row, each one given a turn of the loop: a gesture recogniser that has not seen
-    /// the first tap yet cannot call the second one a double tap, and a row that is not laid out has
-    /// no centre to tap.
+    /// <summary>
+    /// Two taps on the row that is wanted, tried again while nothing has opened. A second press only
+    /// counts as a double tap inside the system's double-tap time, and a run that is still busy
+    /// compiling the input path can miss that window through no fault of the window being tested.
+    /// The row is laid out and drawn first: a click is aimed at where the item is on the glass.
     /// </summary>
-    private static void Double(Window window, AuditRow row)
+    private static void Double(Window window, AuditRow row, Func<bool> opened)
     {
         var item = window.FindControl<ListBox>("Rows")!
             .GetVisualDescendants()
@@ -62,19 +64,23 @@ public sealed class AuditWindowTests
 
         item.BringIntoView();
         Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame()?.Dispose();
 
         var centre = item.TranslatePoint(new Point(item.Bounds.Width / 2, item.Bounds.Height / 2), window)
             ?? throw new InvalidOperationException("The row is not laid out.");
 
-        Tap(window, centre);
-        Tap(window, centre);
+        for (var attempt = 0; attempt < 5 && !opened(); attempt++)
+        {
+            Tap(window, centre);
+            Tap(window, centre);
+            Dispatcher.UIThread.RunJobs();
+        }
     }
 
     private static void Tap(Window window, Point at)
     {
         window.MouseDown(at, MouseButton.Left);
         window.MouseUp(at, MouseButton.Left);
-        Dispatcher.UIThread.RunJobs();
     }
 
     [AvaloniaFact]
@@ -126,7 +132,7 @@ public sealed class AuditWindowTests
         using var temp = new TempDirectory("worksheet-audit");
         var window = Opened(temp, out var local, out var opened);
 
-        Double(window, Rows(window)[0]);
+        Double(window, Rows(window)[0], () => opened.Count > 0);
 
         var row = Assert.Single(opened);
         Assert.Equal(3, row.Version);

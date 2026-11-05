@@ -98,10 +98,13 @@ public sealed partial class EntryRowViewModel : ObservableObject, IDayRow
 
     public IRelayCommand RetractCommand { get; }
 
-    /// <summary>Raised when an edit could not be accepted; the day then rebuilds the row.</summary>
+    /// <summary>Raised when an edit could not be accepted; the day then shows the row again from the journal.</summary>
     public event EventHandler? Rejected;
 
-    /// <summary>Both clock fields commit on focus loss, so nothing is half-typed while leaving one.</summary>
+    /// <summary>
+    /// Every field commits when it is left, so nothing is half-typed while the person is in another
+    /// one — and a note, which is words rather than a clock, is written the same way.
+    /// </summary>
     partial void OnStartTextChanged(string value) => RequestRevise();
 
     partial void OnEndTextChanged(string value) => RequestRevise();
@@ -224,9 +227,16 @@ public sealed partial class EntryRowViewModel : ObservableObject, IDayRow
         return true;
     }
 
+    /// <summary>
+    /// Puts the fields back to what the day holds. The values are corrected immediately, so this
+    /// object is never left inconsistent; the word to the day is raised afterwards, and it shows
+    /// the row again. A rebuild rather than a correction in place, because a two-way box is holding
+    /// the text that was refused: a binding publishes the value it last showed, so telling it the
+    /// stored value again is not a change it can see, and only a fresh binding shows what is stored.
+    /// </summary>
     private void Refuse()
     {
-        PutTheEditorsBack(Snapshot);
+        Load(Snapshot);
         Rejected?.Invoke(this, EventArgs.Empty);
     }
 
@@ -283,33 +293,5 @@ public sealed partial class EntryRowViewModel : ObservableObject, IDayRow
         topicId = typed ? _state().MatchTopic(projectId, TopicText).Value?.Id : null;
 
         return !typed || topicId is not null;
-    }
-
-    /// <summary>
-    /// Puts the fields back to what the day holds. The values are corrected immediately, so this
-    /// object is never left inconsistent; telling the controls is deferred, because it happens
-    /// inside the binding's own write and would otherwise be overwritten by it. With no
-    /// synchronisation context — a test, or any non-UI caller — there is no control to tell.
-    /// </summary>
-    private void PutTheEditorsBack(Entry entry)
-    {
-        Load(entry);
-
-        void Tell() 
-        {
-            OnPropertyChanged(nameof(StartText));
-            OnPropertyChanged(nameof(EndText));
-            OnPropertyChanged(nameof(ProjectText));
-            OnPropertyChanged(nameof(TopicText));
-            OnPropertyChanged(nameof(Note));
-        }
-
-        if (SynchronizationContext.Current is { } context)
-        {
-            context.Post(_ => Tell(), null);
-            return;
-        }
-
-        Tell();
     }
 }

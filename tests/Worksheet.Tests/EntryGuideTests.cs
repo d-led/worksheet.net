@@ -40,10 +40,21 @@ public sealed class EntryGuideTests
     [InlineData(EntryStep.Topic, "topic in (brackets), optional")]
     [InlineData(EntryStep.Start, "start, e.g. 09:00")]
     [InlineData(EntryStep.Span, "length 1h30m, or an end 09:00-11:00")]
-    [InlineData(EntryStep.Complete, "press Enter")]
+    [InlineData(EntryStep.Complete, "press Enter, or \"#\" and a note")]
+    [InlineData(EntryStep.Note, "the note after \"#\"")]
     public void Every_step_has_a_sentence(EntryStep step, string expected)
     {
         Assert.Equal(expected, EntryGuide.Label(step));
+    }
+
+    [Theory]
+    [InlineData("#", EntryStep.Note)]
+    [InlineData("#   ", EntryStep.Note)]
+    [InlineData("# the paper", EntryStep.Complete)]
+    [InlineData("  # the paper  ", EntryStep.Complete)]
+    public void A_line_that_is_only_a_note_asks_for_its_words_and_then_is_whole(string typed, EntryStep expected)
+    {
+        Assert.Equal(expected, EntryGuide.Next(typed));
     }
 
     [Theory]

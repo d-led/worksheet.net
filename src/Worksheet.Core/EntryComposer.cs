@@ -245,6 +245,25 @@ public sealed class EntryComposer(Ledger ledger)
         [.. ReferenceProblems(after), .. ShapeProblems(before, after)];
 
     /// <summary>
+    /// Puts a note on the stretch of the day that ended last — the work just logged, which is what a
+    /// note of its own is about. It is a correction like any other, so it is undoable, and a day with
+    /// nothing on it is refused rather than guessed at.
+    /// </summary>
+    public ComposeResult Note(DateOnly day, string note)
+    {
+        if (LastOn(day) is not { } entry)
+        {
+            return ComposeResult.Refused(NoteLine.NothingToNoteMessage);
+        }
+
+        return Revise(entry, entry with { Note = note });
+    }
+
+    /// <summary>The entry the day stopped with: nothing when it holds none.</summary>
+    private Entry? LastOn(DateOnly day) =>
+        ledger.State.EntriesOn(day).MaxBy(entry => entry.Start.ToTimeSpan() + entry.Duration);
+
+    /// <summary>
     /// Points an entry at a project — and a topic of it — by name, which is how a row is corrected
     /// when the project was not in the list yet. A name that is new is opened in the same commit as
     /// the correction, so the row and the catalogue never disagree.

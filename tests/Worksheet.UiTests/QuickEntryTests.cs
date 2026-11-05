@@ -160,4 +160,27 @@ public sealed class QuickEntryTests : UiTestBase
         Assert.True(day.MessageIsProblem);
         Assert.Equal("Website without a time", box.Text);
     }
+
+    [AvaloniaFact]
+    public void A_note_of_its_own_notes_the_range_the_day_ended_with()
+    {
+        var day = NewDay();
+        Seed(day, "Reading 14:00 2h");
+
+        var entry = Show<QuickEntry>(day);
+        var box = entry.FindControl<TextBox>("EntryBox")!;
+
+        box.Focus();
+        Window.KeyTextInput("# the LiteDB paper");
+        Settle();
+
+        Assert.Equal("press Enter, or \"#\" and a note", entry.FindControl<TextBlock>("NextStep")!.Text);
+
+        Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+        Settle();
+
+        Assert.Equal("the LiteDB paper", Assert.Single(Ledger.Ledger.State.Entries).Value.Note);
+        Assert.Equal(string.Empty, box.Text);
+        Assert.Contains("Noted", day.Message);
+    }
 }

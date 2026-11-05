@@ -15,7 +15,8 @@ public enum EntryStep
     Start,
     Span,
     Complete,
-}
+    /// <summary>A line that is only a note: it asks for the words after the "#", then it is whole.</summary>
+    Note,}
 
 /// <summary>
 /// Where the person is in a half-written line. The window uses it to say what comes next instead
@@ -32,7 +33,7 @@ public static partial class EntryGuide
         "topic in (brackets), optional",
         "start, e.g. 09:00",
         "length 1h30m, or an end 09:00-11:00",
-        "press Enter",
+        "press Enter, or \"#\" and a note",
     ];
 
     /// <param name="continuesFrom">
@@ -44,8 +45,13 @@ public static partial class EntryGuide
 
         return typed.Length == 0
             ? EntryStep.Project
-            : Written(typed, continuesFrom) ?? Missing(typed, continuesFrom);
+            : typed.StartsWith('#')
+                ? NoteStep(typed)
+                : Written(typed, continuesFrom) ?? Missing(typed, continuesFrom);
     }
+
+    /// <summary>A note of its own is whole once something follows the mark; a bare "#" is asking for it.</summary>
+    private static EntryStep NoteStep(string typed) => typed.Length > 1 ? EntryStep.Complete : EntryStep.Note;
 
     /// <summary>A line the grammar already accepts, or nothing while it is still half-written.</summary>
     private static EntryStep? Written(string typed, TimeOnly? continuesFrom)
@@ -93,15 +99,24 @@ public static partial class EntryGuide
 
     /// <summary>
     /// What to write at this step, for the hint line. Once the day has an end to continue from,
-    /// the start step offers the shorthands as well as a clock.
+    /// the start step offers the shorthands as well as a clock; the span step needs the word the
+    /// line ends with to know which half of the span is missing.
     /// </summary>
     public static string Label(EntryStep step, string? text = null, TimeOnly? continuesFrom = null) =>
         step switch
         {
             EntryStep.Start when continuesFrom is { } from => StartLabel(from),
-            EntryStep.Span => SpanLabel(EntryCommandParser.SpanWordAtEnd(text ?? string.Empty)?.Word, continuesFrom),
+            EntryStep.Span => SpanLabel(WordAtEndOf(text), continuesFrom),
+            EntryStep.Note => NoteLabel,
             _ => Labels[(int)step],
         };
+
+    /// <summary>The "till" or "for" the line ends with, spelled the way the language spells it.</summary>
+    private static string? WordAtEndOf(string? text) =>
+        EntryCommandParser.SpanWordAtEnd(text ?? string.Empty)?.Word;
+
+    /// <summary>What a note of its own still needs: the words after the mark.</summary>
+    private const string NoteLabel = "the note after \"#\"";
 
     /// <summary>A clock, and the two shorthands — the one that names an end only while an end fits.</summary>
     private static string StartLabel(TimeOnly from) =>

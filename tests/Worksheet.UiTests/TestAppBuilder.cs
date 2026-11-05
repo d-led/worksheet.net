@@ -35,7 +35,13 @@ public sealed class TestApp : Application
 
 public static class TestAppBuilder
 {
+    /// <summary>
+    /// Skia rather than the headless stand-in drawing, so a test can capture the frame as it was
+    /// really drawn and look at its pixels. Text is laid out by the same engine the application
+    /// ships, which is what makes a screenshot an answer to "is it on the glass".
+    /// </summary>
     public static AppBuilder BuildAvaloniaApp() =>
         AppBuilder.Configure<TestApp>()
-            .UseHeadless(new AvaloniaHeadlessPlatformOptions());
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
+            .UseSkia();
 }
