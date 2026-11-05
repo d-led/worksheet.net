@@ -51,8 +51,16 @@ chosen project. A project cannot be opened twice under two spellings, and when t
 matches existing names they are offered as chips.
 
 **SukiUI 7.0.1** for the base look: its theme, its accent colour handling, its control templates.
-Only two brushes are ours (`SurfaceBrush`, `HairlineBrush`) and both are translucent, so they blend
-with whichever background Suki paints in light or dark.
+Only three brushes are ours (`SurfaceBrush`, `HairlineBrush`, `BreakWashBrush`) and the first two are
+translucent, so they blend with whichever background Suki paints in light or dark. The break wash is
+the one opaque colour of the three, because it is a colour someone has to be able to see.
+
+**A project is a colour.** `Tints` hashes the name to a hue, keeps the saturation low and the
+lightness high, and hands out the same pastel in the window, on the exported page and on every run:
+a row is washed in it, its left edge is striped in it at full strength, and the page's bars and day
+rows are drawn in the same one. The row wash is drawn over whatever surface the theme chose rather
+than mixed into a second palette, which is why it needs no dark variant of its own. A break is the
+one row with no tint: it is washed warm instead, since a pause is not a project.
 
 **Typography is a closed set.** `title`, `total`, `body`, `numeric`, `caption`, `meta`, `quiet`.
 No view sets a font size inline; if a size is missing, it is added to the tokens, not to the view.
