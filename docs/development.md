@@ -177,7 +177,7 @@ unsigned download carries the quarantine flag; `install.sh` clears it after copy
 
 | path | responsibility |
 |---|---|
-| `src/Worksheet.Core` | model, journal changes, the fold, undo/redo planning, the catalogue, the entry language |
+| `src/Worksheet.Core` | model, journal changes, the fold, undo/redo planning, the catalogue, the entry language, the project palette |
 | `src/Worksheet.Storage` | LiteDB journal and snapshots, the JSON codec, the data directory, the settings file, the weekly copies |
 | `src/Worksheet.Export` | the range as a materialized object, its JSON file, its HTML page, and the zip |
 | `src/Worksheet.Mcp` | JSON-RPC over the MCP shape, the ten tools, the loopback transport |
