@@ -66,6 +66,10 @@ The table shows absolute times — when a block started and when it ended — on
 start order. Every cell is editable: the times, the project, the topic, the note. A correction is a
 change, so undo takes it back.
 
+A row's left edge carries the tint of its project: a pastel picked from the name, so the same project
+is the same colour in every window, on every run, and on the exported page, where its bar is drawn in
+it too. A break has no tint — a pause is not a project.
+
 The project and topic cells take a name you type, not only one from the list. A name nobody has used
 yet is created when you leave the cell, so a block can be moved onto a new project without returning
 to the entry line.

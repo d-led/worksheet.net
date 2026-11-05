@@ -205,10 +205,22 @@ public sealed class ExportTests
         var page = Html(Report(ExportPeriod.Month));
 
         Assert.Contains("https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css", page);
-        Assert.Contains("class=\"progress-bar\" style=\"width:75.0%\"", page);
+        Assert.Contains("class=\"progress-bar\" style=\"width:75.0%;background:#", page);
         Assert.Contains(">Website</td>", page);
         Assert.Contains("75.0 %", page);
         Assert.Contains("4h", page);
+    }
+
+    [Fact]
+    public void The_page_marks_each_project_in_the_pastel_the_window_gives_it_and_a_break_in_none()
+    {
+        Logged("Website 09:00 1h");
+        Logged("Break 10:00 30m");
+
+        var page = Html(Report(ExportPeriod.Day));
+
+        Assert.Contains($"background:{Tints.Of("Website")}", page);
+        Assert.Contains("background:#ced4da", page);
     }
 
     [Fact]
@@ -231,8 +243,7 @@ public sealed class ExportTests
         Assert.Contains("data-sortable", page);
         Assert.Contains("data-sort=\"text\">Project</button>", page);
         Assert.Contains("data-sort=\"number\">Share</button>", page);
-        Assert.Contains("data-value=\"60\"", page);
-    }
+        Assert.Contains("data-value=\"60\"", page);    }
 
     [Fact]
     public void A_range_of_one_day_lists_its_entries_and_a_longer_one_lists_days()

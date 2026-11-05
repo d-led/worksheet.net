@@ -4,6 +4,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using System.Collections.ObjectModel;
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Worksheet.Core;
@@ -45,6 +46,10 @@ public sealed partial class EntryRowViewModel : ObservableObject, IDayRow
 
     [ObservableProperty]
     private string _note = string.Empty;
+
+    /// <summary>The row's tint: its project's pastel, so a day can be read down its left edge.</summary>
+    [ObservableProperty]
+    private IBrush? _tint;
 
     public EntryRowViewModel(
         Entry entry,
@@ -112,6 +117,7 @@ public sealed partial class EntryRowViewModel : ObservableObject, IDayRow
         ProjectText = _state().ProjectName(entry.ProjectId);
         RefreshTopics(entry.TopicId);
         Note = entry.Note ?? string.Empty;
+        Tint = Tints.Of(ProjectText) is { } tint ? new SolidColorBrush(Color.Parse(tint)) : null;
 
         _loading = false;
     }

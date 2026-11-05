@@ -220,6 +220,11 @@
     <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
   </Style>
 
+  <!-- The project's pastel on a row: a stripe, not a wash, so the fields stay as readable as before. -->
+  <Style Selector="Border.tint">
+    <Setter Property="CornerRadius" Value="2" />
+  </Style>
+
   <!-- An area of the page that is read rather than typed into: a body of text, framed. -->
   <Style Selector="Border.panel">
     <Setter Property="CornerRadius" Value="8" />

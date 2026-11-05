@@ -5,6 +5,7 @@
 
 using System.Globalization;
 using System.Text.Json;
+using Worksheet.Core;
 
 namespace Worksheet.Export;
 
@@ -83,5 +84,5 @@ public static class ReportJson
 
     private static string Day(DateOnly day) => day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-    private static string Clock(TimeOnly time) => time.ToString("HH:mm", CultureInfo.InvariantCulture);
+    private static string Clock(TimeOnly time) => ClockText.Format(time);
 }

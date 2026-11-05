@@ -36,23 +36,11 @@ public sealed record DayLayout(IReadOnlyList<Entry> Entries, IReadOnlyList<DaySl
         return new DayLayout(ordered, GapsBetween(ordered));
     }
 
-    private static List<DaySlot> GapsBetween(IReadOnlyList<Entry> ordered)
-    {
-        var gaps = new List<DaySlot>();
-
-        for (var index = 1; index < ordered.Count; index++)
-        {
-            var previousEnds = Ordered(ordered[index - 1]);
-            var nextStarts = ordered[index].Start.ToTimeSpan();
-
-            if (nextStarts > previousEnds)
-            {
-                gaps.Add(new DaySlot(previousEnds, nextStarts));
-            }
-        }
-
-        return gaps;
-    }
+    private static List<DaySlot> GapsBetween(IReadOnlyList<Entry> ordered) =>
+        [.. ordered
+            .Zip(ordered.Skip(1), (before, after) => (Ends: Ordered(before), Starts: after.Start.ToTimeSpan()))
+            .Where(pair => pair.Starts > pair.Ends)
+            .Select(pair => new DaySlot(pair.Ends, pair.Starts))];
 
     /// <summary>The end of an entry as an offset from midnight; midnight itself stays on the day.</summary>
     private static TimeSpan Ordered(Entry entry) => entry.Start.ToTimeSpan() + entry.Duration;

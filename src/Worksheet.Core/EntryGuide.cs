@@ -81,9 +81,15 @@ public static partial class EntryGuide
     private static EntryStep Typed(string typed) =>
         EntryCommandParser.SpanWordAtEnd(typed) is not null ? EntryStep.Span
         : Clock().IsMatch(typed) ? EntryStep.Span
-        : typed.Contains('(') && !typed.Contains(')') ? EntryStep.Topic
-        : typed.TrimEnd().EndsWith('-') || typed.Contains(')') ? EntryStep.Start
+        : typed.Contains('(') ? Bracketed(typed)
+        : Closed(typed) ? EntryStep.Start
         : EntryStep.Topic;
+
+    /// <summary>An open bracket is waiting for its topic; a closed one leaves the start.</summary>
+    private static EntryStep Bracketed(string typed) => typed.Contains(')') ? EntryStep.Start : EntryStep.Topic;
+
+    /// <summary>A name closed with "-" has said where it ends, so the start comes next.</summary>
+    private static bool Closed(string typed) => typed.TrimEnd().EndsWith('-');
 
     /// <summary>
     /// What to write at this step, for the hint line. Once the day has an end to continue from,

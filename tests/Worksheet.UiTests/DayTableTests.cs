@@ -8,6 +8,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Media;
 using Worksheet.Core;
 using Worksheet.Desktop.Components;
 using Worksheet.Desktop.ViewModels;
@@ -29,6 +30,22 @@ public sealed class DayTableTests : UiTestBase
     {
         Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
         Settle();
+    }
+
+    /// <summary>A day holding these lines, shown as a table and settled.</summary>
+    private DayTable Table(params string[] lines)
+    {
+        var day = NewDay();
+
+        foreach (var line in lines)
+        {
+            Seed(day, line);
+        }
+
+        var table = Show<DayTable>(day);
+        Settle();
+
+        return table;
     }
 
     [AvaloniaFact]
@@ -66,16 +83,21 @@ public sealed class DayTableTests : UiTestBase
     }
 
     [AvaloniaFact]
+    public void A_row_carries_its_projects_pastel_and_a_break_carries_none()
+    {
+        var rows = EntryRows(Table("Website 09:00 1h", "Break 10:00 30m"));
+
+        Assert.NotNull(Stripe(rows[0]));
+        Assert.Null(Stripe(rows[1]));
+    }
+
+    private static IBrush? Stripe(Border row) =>
+        Descendants<Border>(row).Single(border => border.Classes.Contains("tint")).Background;
+
+    [AvaloniaFact]
     public void A_hole_between_entries_is_visible_with_its_length()
     {
-        var day = NewDay();
-        Seed(day, "Website 09:00-10:00");
-        Seed(day, "Mobile 11:00-12:00");
-
-        var table = Show<DayTable>(day);
-        Settle();
-
-        var gap = Assert.Single(GapRows(table));
+        var gap = Assert.Single(GapRows(Table("Website 09:00-10:00", "Mobile 11:00-12:00")));
         var texts = Descendants<TextBlock>(gap).Select(block => block.Text).ToList();
 
         Assert.Contains("10:00 – 11:00", texts);

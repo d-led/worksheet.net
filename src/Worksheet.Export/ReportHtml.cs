@@ -27,6 +27,9 @@ public static class ReportHtml
 
     private const string NothingToDraw = """<p class="text-body-secondary mb-0">Nothing to draw.</p>""";
 
+    /// <summary>What a bar is filled with when the project has no colour of its own: a break.</summary>
+    private const string NoTint = "#ced4da";
+
     /// <summary>The page, block by block in the order it is read; each block ends with its line end.</summary>
     public static string Of(RangeReport report, DateTimeOffset generatedAt)
     {
@@ -110,7 +113,8 @@ public static class ReportHtml
     private static string ProjectBars(RangeReport report) =>
         Table(
             ["Project"],
-            Rows(report.Projects.Select(project => BarRow([project.Project], project.Minutes, report.TotalMinutes))),
+            Rows(report.Projects.Select(project =>
+                BarRow([project.Project], project.Minutes, report.TotalMinutes, Tints.Of(project.Project)))),
             $"""<tr class="table-light fw-semibold"><td>Total</td><td></td><td class="text-end">{Esc(Shares.Hours(report.TotalMinutes))}</td><td class="text-end">100.0 %</td></tr>""");
 
     private static string TopicCard(RangeReport report) =>
@@ -126,11 +130,11 @@ public static class ReportHtml
 
     /// <summary>A project is named once, on the first of its rows, so the bars start close to the names.</summary>
     private static string TopicRows(RangeReport report) =>
-        Rows(
-            report.Projects.SelectMany(project => project.Topics.Select((topic, index) => BarRow(
-                [index == 0 ? project.Project : string.Empty, topic.Label],
-                topic.Minutes,
-                report.TotalMinutes))));
+        Rows(report.Projects.SelectMany(project => project.Topics.Select((topic, index) => BarRow(
+            [index == 0 ? project.Project : string.Empty, topic.Label],
+            topic.Minutes,
+            report.TotalMinutes,
+            Tints.Of(project.Project)))));
 
     /// <summary>
     /// A table of bars: the cells that name a row, the bar, the time it stands for, its share. Every
@@ -159,9 +163,10 @@ public static class ReportHtml
     /// <summary>Rows as a page writes them: one per line, each with its own line end.</summary>
     private static string Rows(IEnumerable<string> rows) => string.Concat(rows.Select(row => $"{row}\n"));
 
-    private static string BarRow(string[] cells, int minutes, int total) =>
+    /// <summary>A bar in the project's own pastel; a break gets the page's grey, having no colour of its own.</summary>
+    private static string BarRow(string[] cells, int minutes, int total, string? tint) =>
         $"""
-         <tr>{string.Concat(cells.Select(cell => $"<td>{Esc(cell)}</td>"))}<td><div class="progress" role="progressbar" aria-valuenow="{Esc(Shares.Percent(minutes, total))}" aria-valuemin="0" aria-valuemax="100" style="height:10px"><div class="progress-bar" style="width:{Shares.Width(minutes, total)}"></div></div></td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Hours(minutes))}</td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Percent(minutes, total))}</td></tr>
+         <tr>{string.Concat(cells.Select(cell => $"<td>{Esc(cell)}</td>"))}<td><div class="progress" role="progressbar" aria-valuenow="{Esc(Shares.Percent(minutes, total))}" aria-valuemin="0" aria-valuemax="100" style="height:10px"><div class="progress-bar" style="width:{Shares.Width(minutes, total)};background:{tint ?? NoTint}"></div></div></td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Hours(minutes))}</td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Percent(minutes, total))}</td></tr>
          """;
 
     private static string TimelineCard(RangeReport report) =>

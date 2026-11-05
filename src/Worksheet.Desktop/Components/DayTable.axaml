@@ -14,7 +14,7 @@
   -->
   <Grid RowDefinitions="Auto,*" RowSpacing="2">
 
-    <Grid Grid.Row="0" ColumnDefinitions="64,64,*,*,150,26" ColumnSpacing="6" Margin="10,0,10,3">
+    <Grid Grid.Row="0" ColumnDefinitions="64,64,*,*,150,26" ColumnSpacing="6" Margin="21,0,10,3">
       <TextBlock Grid.Column="0" Classes="caption" Text="START" VerticalAlignment="Center" />
       <TextBlock Grid.Column="1" Classes="caption" Text="END" VerticalAlignment="Center" />
       <TextBlock Grid.Column="2" Classes="caption" Text="PROJECT" VerticalAlignment="Center" />
@@ -30,7 +30,12 @@
 
             <DataTemplate DataType="vm:EntryRowViewModel">
               <Border Classes="row" IsEnabled="{Binding IsEditable}">
-                <Grid ColumnDefinitions="64,64,*,*,150,26" ColumnSpacing="6">
+                <Grid ColumnDefinitions="4,*" ColumnSpacing="7">
+
+                  <!-- The project's own pastel: the day read down its left edge. A break has none. -->
+                  <Border Classes="tint" Background="{Binding Tint}" />
+
+                  <Grid Grid.Column="1" ColumnDefinitions="64,64,*,*,150,26" ColumnSpacing="6">
 
                   <TextBox Grid.Column="0"
                            Classes="cell start-input"
@@ -67,26 +72,27 @@
                           Content="✕"
                           Command="{Binding RetractCommand}"
                           ToolTip.Tip="Retract this entry" />
+                  </Grid>
                 </Grid>
               </Border>
             </DataTemplate>
 
             <DataTemplate DataType="vm:GapRowViewModel">
               <Border Classes="gap">
-                <Grid ColumnDefinitions="64,64,*,*,150,26" ColumnSpacing="6">
+                <Grid ColumnDefinitions="11,64,64,*,*,150,26" ColumnSpacing="6">
 
-                  <TextBlock Grid.Column="0"
+                  <TextBlock Grid.Column="1"
                              Grid.ColumnSpan="2"
                              Classes="gap-span"
                              Text="{Binding Span}"
                              VerticalAlignment="Center" />
 
-                  <TextBlock Grid.Column="2"
+                  <TextBlock Grid.Column="3"
                              Classes="gap-note"
                              Text="{Binding Length}"
                              VerticalAlignment="Center" />
 
-                  <StackPanel Grid.Column="4"
+                  <StackPanel Grid.Column="5"
                               Grid.ColumnSpan="2"
                               Orientation="Horizontal"
                               Spacing="6"

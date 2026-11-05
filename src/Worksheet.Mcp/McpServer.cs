@@ -78,31 +78,27 @@ public sealed class McpServer(IToolkit toolkit)
     {
         var id = IdOf(request);
 
-        if (MethodOf(request) is not { } method)
-        {
-            return Answered(id, envelope => envelope["error"] = Error(-32600, "A request needs a method."));
-        }
-
-        switch (method)
-        {
-            case "initialize":
-                return Answered(id, envelope => envelope["result"] = Initialize(request));
-            case "ping":
-                return Answered(id, envelope => envelope["result"] = new JsonObject());
-            case "tools/list":
-                return Answered(id, envelope => envelope["result"] = Listed());
-            case "tools/call":
-                return CallTool(request, id);
-        }
-
-        // Notifications are one-way: an unknown one is dropped, the way the specification asks.
-        if (id is null || method.StartsWith("notifications/", StringComparison.Ordinal))
-        {
-            return null;
-        }
-
-        return Answered(id, envelope => envelope["error"] = Error(-32601, $"'{method}' is not a method this server has."));
+        return MethodOf(request) is { } method
+            ? Dispatch(request, id, method)
+            : Answered(id, envelope => envelope["error"] = Error(-32600, "A request needs a method."));
     }
+
+    /// <summary>One method, one answer. Anything else is a notification or a mistake, and both are quiet.</summary>
+    private string? Dispatch(JsonElement request, JsonElement? id, string method) =>
+        method switch
+        {
+            "initialize" => Answered(id, envelope => envelope["result"] = Initialize(request)),
+            "ping" => Answered(id, envelope => envelope["result"] = new JsonObject()),
+            "tools/list" => Answered(id, envelope => envelope["result"] = Listed()),
+            "tools/call" => CallTool(request, id),
+            _ => UnheardOf(id, method),
+        };
+
+    /// <summary>Notifications are one-way: an unknown one is dropped, the way the specification asks.</summary>
+    private static string? UnheardOf(JsonElement? id, string method) =>
+        id is null || method.StartsWith("notifications/", StringComparison.Ordinal)
+            ? null
+            : Answered(id, envelope => envelope["error"] = Error(-32601, $"'{method}' is not a method this server has."));
 
     /// <summary>
     /// The client's own version is echoed back when this server speaks it; otherwise the server

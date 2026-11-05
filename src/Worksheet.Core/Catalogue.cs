@@ -148,24 +148,19 @@ public sealed class Catalogue(Ledger ledger)
     /// <summary>Two topics become one: the entries of the source move onto the target, and it goes.</summary>
     private CatalogueResult MergeTopic(Topic from, Topic into)
     {
-        var changes = new List<LedgerEvent>();
-
-        if (into.Archived)
-        {
-            changes.Add(new TopicRestored(into, [], []));
-        }
-
-        foreach (var entry in EntriesOn(from.Id))
-        {
-            changes.Add(new EntryRevised(entry, entry with { TopicId = into.Id }));
-        }
-
-        changes.Add(new TopicRemoved(from, [], []));
-
-        ledger.Commit([new Batch([.. changes])]);
+        ledger.Commit([new Batch(
+        [
+            .. Revival(into),
+            .. EntriesOn(from.Id).Select(entry => (LedgerEvent)new EntryRevised(entry, entry with { TopicId = into.Id })),
+            new TopicRemoved(from, [], []),
+        ])]);
 
         return CatalogueResult.Done;
     }
+
+    /// <summary>Merging into a topic that was out of use brings it back, since its name was asked for.</summary>
+    private static LedgerEvent[] Revival(Topic into) =>
+        into.Archived ? [new TopicRestored(into, [], [])] : [];
 
     /// <summary>A source topic taken out in favour of the target's topic of the same name.</summary>
     private static LedgerEvent[] Joining(Topic topic, Topic twin) =>
