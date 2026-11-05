@@ -282,13 +282,19 @@ public sealed class ExportTests
         Logged("Website (login) 10:00 1h");
         Logged("Mobile (checkout) 11:00 1h");
 
-        var page = Html(Report(ExportPeriod.Day));
+        var report = Report(ExportPeriod.Day);
+        var page = Html(report);
 
         Assert.Contains("https://cdn.jsdelivr.net/npm/mermaid@12.3.0/dist/mermaid.esm.min.mjs", page);
         Assert.Contains("<pre class=\"mermaid\">", page);
 
-        // Compact mode, asked for in the frontmatter, so the bars of a project share a row.
-        Assert.Contains("<pre class=\"mermaid\">\n---\ndisplayMode: compact\n---\ngantt", page);
+        // Compact mode and the chart's styling are asked for in mermaid's own frontmatter.
+        Assert.Contains("<pre class=\"mermaid\">\n---\ndisplayMode: compact\nconfig:\n  theme: base\n", page);
+
+        // Each bar is drawn in the pastel its project carries in the window and in the page's bars.
+        Assert.Contains($"fill: {Tints.Of(report.Catalogue, "Website")};", page);
+        Assert.Contains($"fill: {Tints.Of(report.Catalogue, "Mobile")};", page);
+        Assert.Equal(3, Regex.Count(page, @"\[id\$='-e\d+'\] \{ fill: #"));
 
         // One swimlane per project, and a bar per range inside it — not a row per range, and not a
         // lane per range either.
@@ -305,6 +311,24 @@ public sealed class ExportTests
             "section Website\n +login 1h :e\\d+, 2026-11-03 09:00, 60m\n +login 1h :e\\d+, 2026-11-03 10:00, 60m",
             page);
         Assert.Matches("section Mobile\n +checkout 1h :e\\d+, 2026-11-03 11:00, 60m", page);
+    }
+
+    [Fact]
+    public void The_chart_can_be_zoomed_without_fetching_anything_for_it()
+    {
+        Logged("Website 09:00 1h");
+
+        var page = Html(Report(ExportPeriod.Day));
+
+        // The viewport scrolls, three buttons step the scale, and the wheel and a drag are the
+        // page's own — the only things it loads are still Bootstrap and mermaid.
+        Assert.Contains("class=\"gantt\" data-gantt", page);
+        Assert.Contains("data-gantt-zoom=\"in\"", page);
+        Assert.Contains("data-gantt-zoom=\"out\"", page);
+        Assert.Contains("data-gantt-zoom=\"reset\"", page);
+        Assert.Contains("function setupGanttZoom()", page);
+        Assert.Contains("await mermaid.run();", page);
+        Assert.Contains("setupGanttZoom();", page);
     }
 
     [Fact]

@@ -211,6 +211,18 @@
     <Setter Property="BorderThickness" Value="0" />
   </Style>
 
+  <!--
+    A piece of news that stands for a moment and then goes: a quiet green tint of its own, so it is
+    read as an answer to something that was just done rather than as part of the day.
+  -->
+  <Style Selector="Border.banner">
+    <Setter Property="Background" Value="{DynamicResource BannerBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="12,7" />
+  </Style>
+
   <Style Selector="Border.row">
     <Setter Property="CornerRadius" Value="8" />
     <Setter Property="Padding" Value="5,3" />

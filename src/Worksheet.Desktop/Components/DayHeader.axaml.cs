@@ -25,6 +25,7 @@ public partial class DayHeader : UserControl
         if (DataContext is DayViewModel day)
         {
             day.SaveExport = SaveAsync;
+            day.RevealFile = Reveal.Show;
             WireExportMenu(day);
             WireScreens();
         }

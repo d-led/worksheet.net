@@ -1,0 +1,41 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Worksheet.Desktop.ViewModels"
+             x:Class="Worksheet.Desktop.Components.ExportBanner"
+             x:DataType="vm:DayViewModel">
+
+  <!--
+    Where the last export went. A save dialog has already asked where the file should go, so this
+    does not ask again: it names the file, tells the folder it is in, and offers the one thing worth
+    doing next — to be shown it — beside the one that puts the news away.
+  -->
+  <Border Classes="banner" IsVisible="{Binding HasExported}">
+    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+
+      <StackPanel Grid.Column="0" Spacing="1" VerticalAlignment="Center">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <TextBlock Text="Exported" />
+          <TextBlock Text="{Binding Exported.FileName}" FontWeight="SemiBold" />
+        </StackPanel>
+        <TextBlock Classes="quiet"
+                   Text="{Binding Exported.Folder}"
+                   TextTrimming="CharacterEllipsis"
+                   ToolTip.Tip="{Binding Exported.FullPath}" />
+      </StackPanel>
+
+      <Button x:Name="Reveal"
+              Grid.Column="1"
+              Classes="row-word"
+              Content="Show in folder"
+              Command="{Binding Exported.RevealCommand}"
+              VerticalAlignment="Center" />
+
+      <Button Grid.Column="2"
+              Classes="row-action"
+              Content="✕"
+              Command="{Binding Exported.DismissCommand}"
+              ToolTip.Tip="Put this away"
+              VerticalAlignment="Center" />
+    </Grid>
+  </Border>
+</UserControl>

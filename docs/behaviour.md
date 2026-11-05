@@ -56,6 +56,11 @@ and records decisions; it is not a description of any other program's source.
    its kind and its origin and its body included — with a change opened whole,
    its body written out with an indent and coloured. The audit reads the file as
    it was written; it is not a second copy of anything.
+9. Exports a range as one zip — the data and a page — through the platform's save
+   dialog. What was written is announced under the heading: the file, the folder
+   it went to, and one action that selects it in the platform's file manager. A
+   dismissed dialog writes nothing and says so; the notice is put away without
+   touching the file, and the next export replaces it.
 
 ## Rules the application enforces
 

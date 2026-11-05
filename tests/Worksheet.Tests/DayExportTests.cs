@@ -47,7 +47,7 @@ public sealed class DayExportTests : IDisposable
     }
 
     [Fact]
-    public async Task Exporting_a_month_hands_over_the_zip_and_says_where_it_went()
+    public async Task Exporting_a_month_hands_over_the_zip_and_shows_where_it_went()
     {
         var day = DayWith("Website (login) 09:00 1h");
         ExportFile? handed = null;
@@ -60,8 +60,51 @@ public sealed class DayExportTests : IDisposable
         await day.ExportMonthCommand.ExecuteAsync(null);
 
         Assert.Equal("2026-11-04-0930-worksheet-2026-11.zip", handed!.FileName);
-        Assert.Equal("Exported 2026-11-04-0930-worksheet-2026-11.zip.", day.Message);
-        Assert.False(day.MessageIsProblem);
+        Assert.True(day.HasExported);
+        Assert.Equal("2026-11-04-0930-worksheet-2026-11.zip", day.Exported!.FileName);
+        Assert.Equal("/somewhere", day.Exported.Folder);
+        Assert.Equal("/somewhere/2026-11-04-0930-worksheet-2026-11.zip", day.Exported.FullPath);
+
+        // The banner is the news, so the status line does not say the same thing again.
+        Assert.False(day.HasMessage);
+    }
+
+    [Fact]
+    public async Task The_notice_hands_the_file_to_the_window_to_be_shown()
+    {
+        var day = DayWith("Website 09:00 1h");
+        string? shown = null;
+        day.RevealFile = path => shown = path;
+        day.SaveExport = _ => Task.FromResult<string?>("/somewhere/x.zip");
+
+        await day.ExportDayCommand.ExecuteAsync(null);
+        day.Exported!.RevealCommand.Execute(null);
+
+        Assert.Equal("/somewhere/x.zip", shown);
+    }
+
+    [Fact]
+    public async Task A_window_that_cannot_show_a_file_offers_no_button_for_it()
+    {
+        var day = DayWith("Website 09:00 1h");
+        day.SaveExport = _ => Task.FromResult<string?>("/somewhere/x.zip");
+
+        await day.ExportDayCommand.ExecuteAsync(null);
+
+        Assert.False(day.Exported!.RevealCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task The_notice_is_put_away_when_it_is_dismissed()
+    {
+        var day = DayWith("Website 09:00 1h");
+        day.SaveExport = _ => Task.FromResult<string?>("/somewhere/x.zip");
+
+        await day.ExportDayCommand.ExecuteAsync(null);
+        day.Exported!.DismissCommand.Execute(null);
+
+        Assert.False(day.HasExported);
+        Assert.Null(day.Exported);
     }
 
     [Fact]

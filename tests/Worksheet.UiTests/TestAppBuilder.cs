@@ -23,6 +23,12 @@ public sealed class TestApp : Application
 {
     public override void Initialize()
     {
+        // The very brushes the application wears, so a captured frame says what a person sees.
+        Resources.MergedDictionaries.Add(new ResourceInclude(new Uri("avares://Worksheet.Desktop/"))
+        {
+            Source = new Uri("avares://Worksheet.Desktop/Styles/Brushes.axaml"),
+        });
+
         Styles.Add(new SukiTheme());
 
         // The same token file the application uses, so the tests see what a user sees.

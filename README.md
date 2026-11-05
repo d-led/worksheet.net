@@ -115,9 +115,14 @@ it covers — `2026-11-04-0930-worksheet-2026-11.zip` — and holds two files:
   only when a reader of the older file would read the newer one wrongly, so a script can check it
   and stop.
 - `worksheet-2026-11.html` — totals with shares, a bar per project and a bar per project and topic, a
-  lane per project and topic over the days of the range, and a foldable list of the days. A heading
-  sorts its table, by name or by time, whichever way it is pressed twice. Bootstrap comes from a CDN;
-  without a connection the page still reads, unstyled.
+  gantt of the range as it was worked, and a foldable list of the days. A heading sorts its table, by
+  name or by time, whichever way it is pressed twice. The gantt draws each project's bars in the same
+  pastel the window stripes its rows in, and it zooms: `+` and `−` on the chart, ⌘ or Ctrl with the
+  wheel, and a drag to pan a range too long to read at once. Bootstrap and mermaid come from a CDN;
+  without a connection the page still reads, unstyled, and only the chart is missing.
+
+Once the file is written, a banner under the heading names it and the folder it went to, and *Show in
+folder* selects it in Finder, Explorer or the file manager the platform has.
 
 Days that hold nothing are left out; the page says so at the bottom.
 

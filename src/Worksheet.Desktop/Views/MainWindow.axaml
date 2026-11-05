@@ -19,15 +19,18 @@ Width="1000"
   </suki:SukiWindow.KeyBindings>
 
   <!--
-    The window is a composition of five components and nothing else, on one flat page.
+    The window is a composition of six components and nothing else, on one flat page. The banner
+    stands between the heading and the day: what the heading's export just did is news about the
+    day, and it goes as soon as it has been read.
   -->
   <Border Classes="page" Padding="20,12,20,16">
-    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="12">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" RowSpacing="12">
       <c:DayHeader x:Name="Header" Grid.Row="0" />
-      <c:DayStatus x:Name="DayKind" Grid.Row="1" />
-      <c:QuickEntry x:Name="Entry" Grid.Row="2" IsVisible="{Binding !IsFrozen}" />
-      <c:DayTable x:Name="Table" Grid.Row="3" />
-      <c:StatusLine x:Name="Status" Grid.Row="4" />
+      <c:ExportBanner x:Name="Exported" Grid.Row="1" />
+      <c:DayStatus x:Name="DayKind" Grid.Row="2" />
+      <c:QuickEntry x:Name="Entry" Grid.Row="3" IsVisible="{Binding !IsFrozen}" />
+      <c:DayTable x:Name="Table" Grid.Row="4" />
+      <c:StatusLine x:Name="Status" Grid.Row="5" />
     </Grid>
   </Border>
 

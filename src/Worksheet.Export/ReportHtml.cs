@@ -11,8 +11,8 @@ namespace Worksheet.Export;
 /// <summary>
 /// The report as one page: totals with their shares, a bar per project and a bar per project and
 /// topic, a gantt of the range as it was worked, and a foldable list of the days. Bootstrap from a
-/// CDN gives it its typography and its bars, mermaid from a CDN draws the gantt, and the one script
-/// of the page's own sorts a table when a heading is pressed.
+/// CDN gives it its typography and its bars, mermaid from a CDN draws the gantt, and the page's own
+/// two inline scripts sort a table when a heading is pressed and zoom the chart.
 /// </summary>
 public static class ReportHtml
 {
@@ -62,9 +62,24 @@ public static class ReportHtml
            <meta name="viewport" content="width=device-width, initial-scale=1">
            <title>Worksheet — {Esc(report.Range.Label)}</title>
            <link href="{Bootstrap}" rel="stylesheet">
-         </head>
+         {ChartStyle}</head>
 
          """;
+
+    /// <summary>
+    /// The viewport the chart is read in: it scrolls, and the zoom scales the canvas in place. What
+    /// the chart *looks* like is mermaid's own business and is set in the diagram's frontmatter; this
+    /// sheet only says how big it is on the page and how it moves.
+    /// </summary>
+    private const string ChartStyle = """
+        <style>
+          .gantt-tools { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; }
+          .gantt-view { overflow: auto; max-height: 70vh; cursor: grab; border: 1px solid #dee2e6; border-radius: 6px; }
+          .gantt-view.dragging { cursor: grabbing; }
+          .gantt-canvas svg { max-width: none !important; }
+        </style>
+
+        """;
 
     private static string Header(RangeReport report) =>
         $"""
@@ -187,26 +202,51 @@ public static class ReportHtml
     /// section bands, which is more picture than a page carried by hand can justify — and its
     /// sections are the thing the hand-drawn lanes could not do. Up to two months every range keeps
     /// its own bar; beyond that a bar per project per day, because a year of single afternoons is a
-    /// thicket rather than a picture. The frontmatter asks mermaid for compact mode, so a project's
-    /// bars share a row instead of each taking a lane of its own.
+    /// thicket rather than a picture.
+    ///
+    /// The chart is styled the way mermaid styles one: compact mode and the colours in the
+    /// frontmatter, where `themeVariables` sets what every chart of the page shares — the font, the
+    /// grid, the bands behind the bars — and `themeCSS` gives each bar the pastel of its project, the
+    /// very colour the window stripes that project's row in.
     /// </summary>
     private static string Gantt(RangeReport report)
     {
         var perEntry = report.Range.Days <= 62;
 
-        // The bars are numbered before they are grouped, so a section's tasks keep one running id.
-        var numbered = Bars(report, perEntry)
-            .Select((bar, index) => (bar.Project, Line: $"        {Label(bar.Label)} :e{index + 1}, {bar.Start}, {bar.Minutes}m"));
+        // The bars are numbered before they are grouped, so a section's tasks keep one running id —
+        // and the same id names the bar in the stylesheet the frontmatter carries.
+        var bars = Bars(report, perEntry)
+            .Select((bar, index) => new ChartBar(bar.Project, $"e{index + 1}", bar.Label, bar.Start, bar.Minutes))
+            .ToList();
 
-        var sections = numbered
+        var sections = bars
             .GroupBy(bar => bar.Project)
-            .SelectMany(project => new[] { $"    section {Label(project.Key)}" }.Concat(project.Select(bar => bar.Line)));
+            .SelectMany(project => new[] { $"    section {Label(project.Key)}" }
+                .Concat(project.Select(bar => $"        {Label(bar.Label)} :{bar.Id}, {bar.Start}, {bar.Minutes}m")));
 
         return MermaidBlock(
             Rows(
             [
                 "---",
                 "displayMode: compact",
+                "config:",
+                "  theme: base",
+                $"  themeCSS: \"{ChartCss(report, bars)}\"",
+                "  themeVariables:",
+                $"    fontFamily: {ChartFont}",
+                "    fontSize: 12px",
+                $"    titleColor: '{Ink}'",
+                $"    sectionBkgColor: '{Band}'",
+                $"    altSectionBkgColor: '{BandAlt}'",
+                $"    sectionBkgColor2: '{BandAlt}'",
+                $"    gridColor: '{Grid}'",
+                $"    taskBkgColor: '{BreakTint}'",
+                $"    taskBorderColor: '{BreakTint}'",
+                $"    taskTextColor: '{Ink}'",
+                $"    taskTextLightColor: '{Ink}'",
+                $"    taskTextDarkColor: '{Ink}'",
+                $"    taskTextOutsideColor: '{Ink}'",
+                "    todayLineColor: 'transparent'",
                 "---",
                 "gantt",
                 $"    title {Label(report.Range.Label)}",
@@ -216,6 +256,35 @@ public static class ReportHtml
                 .. sections,
             ]));
     }
+
+    /// <summary>One bar of the chart: what it says, where it starts, how long it is, and the id it is drawn under.</summary>
+    private sealed record ChartBar(string Project, string Id, string Label, string Start, int Minutes);
+
+    /// <summary>
+    /// A rule per bar, in the pastel of its project: the colour is the one worked out for the
+    /// catalogue, so a project reads the same in the window, in the page's bars and in the chart. A
+    /// break has no tint of its own, so its bar takes the warm the page already gives it. Mermaid
+    /// draws each bar under an id of its own, prefixed by the svg's, hence the suffix match.
+    /// </summary>
+    private static string ChartCss(RangeReport report, IEnumerable<ChartBar> bars) =>
+        string.Concat(bars.Select(bar => BarRule(Tints.Of(report.Catalogue, bar.Project) ?? BreakTint, bar.Id)));
+
+    private static string BarRule(string tint, string id) =>
+        $"[id$='-{id}'] {{ fill: {tint}; stroke: {tint} }} ";
+
+    /// <summary>The page's ink, for the chart's title and for the words beside a bar.</summary>
+    private const string Ink = "#111827";
+
+    /// <summary>A band behind a section, and the one beside it, quiet enough for a bar to sit on.</summary>
+    private const string Band = "#f1f3f5";
+
+    private const string BandAlt = "#f8f9fa";
+
+    /// <summary>The chart's gridlines: the hairline a Bootstrap table draws between rows.</summary>
+    private const string Grid = "#dee2e6";
+
+    /// <summary>The font the chart's labels are set in, which is the page's own system stack.</summary>
+    private const string ChartFont = "system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
 
     /// <summary>Every bar of the chart in section order, each still knowing its project.</summary>
     private static IEnumerable<(string Project, string Label, string Start, int Minutes)> Bars(RangeReport report, bool perEntry) =>
@@ -245,8 +314,25 @@ public static class ReportHtml
                 IsoDay(day.Date),
                 Math.Min(day.Minutes, 24 * 60)));
 
+    /// <summary>
+    /// The chart in a viewport of its own: a year of bars is wider than the page, so it scrolls, and
+    /// the three buttons beside it zoom in, out and back to the whole width. Nothing here is fetched:
+    /// the buttons and the drag are the page's own script.
+    /// </summary>
     private static string MermaidBlock(string diagram) =>
-        $"<div class=\"overflow-auto\"><pre class=\"mermaid\">\n{diagram.Replace("<", "&lt;").Replace(">", "&gt;")}</pre></div>\n";
+        $"""
+         <div class="gantt" data-gantt>
+           <div class="gantt-tools">
+             <button type="button" class="btn btn-sm btn-outline-secondary" data-gantt-zoom="out" title="Zoom out">−</button>
+             <button type="button" class="btn btn-sm btn-outline-secondary" data-gantt-zoom="in" title="Zoom in">+</button>
+             <button type="button" class="btn btn-sm btn-outline-secondary" data-gantt-zoom="reset" title="The whole width">Reset</button>
+             <span class="small text-body-secondary ms-2">⌘/Ctrl + scroll to zoom · drag to pan</span>
+           </div>
+           <div class="gantt-view"><div class="gantt-canvas"><pre class="mermaid">
+         {diagram.Replace("<", "&lt;").Replace(">", "&gt;")}</pre></div></div>
+         </div>
+
+         """;
 
     /// <summary>A label mermaid reads: no colon, which starts a task's data, no quote, and one line.</summary>
     private static string Label(string text) =>
@@ -309,23 +395,96 @@ public static class ReportHtml
         """;
 
     /// <summary>
-    /// The two scripts: mermaid, which draws the gantt, and the page's own, which sorts a table by the
-    /// number in the cell when the column is time or share and by the name otherwise. The sorter is
-    /// inline, so the tables work from a file with no connection; the gantt does not.
+    /// The scripts: mermaid, which draws the gantt, and the page's own, which sorts a table by the
+    /// number in the cell when the column is time or share and by the name otherwise, and which
+    /// zooms the chart. Both are inline, so the tables and the zoom work from a file with no
+    /// connection; only drawing the chart needs one.
     /// </summary>
     private static string Scripts() =>
         $$"""
           <script type="module">
             import mermaid from '{{Mermaid}}';
             mermaid.initialize({
-              startOnLoad: true,
+              startOnLoad: false,
               securityLevel: 'strict',
               gantt: { barHeight: 16, barGap: 6, topPadding: 40, gridLineStartPadding: 20, fontSize: 11, sectionFontSize: 13 }
             });
+            await mermaid.run();
+            setupGanttZoom();
           </script>
           {{Sorter}}
+          {{Zoomer}}
 
           """;
+
+    /// <summary>
+    /// The chart's zoom: a step in and out, back to the whole width, ⌘ or Ctrl with the wheel, and a
+    /// drag that pans the viewport. Zooming widens the box the chart is drawn in, so the scroll range
+    /// grows with the picture and a long range can be read a piece at a time.
+    /// </summary>
+    private const string Zoomer = """
+        <script>
+          function setupGanttZoom() {
+            for (const gantt of document.querySelectorAll('[data-gantt]')) {
+              const view = gantt.querySelector('.gantt-view');
+              const canvas = gantt.querySelector('.gantt-canvas');
+
+              if (!view || !canvas || !canvas.querySelector('svg')) {
+                continue;
+              }
+
+              const fitted = view.clientWidth;
+              let zoom = 1;
+
+              const apply = next => {
+                zoom = Math.min(4, Math.max(0.5, next));
+                canvas.style.width = Math.round(fitted * zoom) + 'px';
+              };
+
+              for (const button of gantt.querySelectorAll('[data-gantt-zoom]')) {
+                button.addEventListener('click', () => {
+                  const step = button.dataset.ganttZoom;
+                  apply(step === 'in' ? zoom * 1.25 : step === 'out' ? zoom / 1.25 : 1);
+                });
+              }
+
+              view.addEventListener('wheel', event => {
+                if (!event.ctrlKey && !event.metaKey) {
+                  return;
+                }
+
+                event.preventDefault();
+                apply(event.deltaY < 0 ? zoom * 1.1 : zoom / 1.1);
+              }, { passive: false });
+
+              let drag = null;
+
+              view.addEventListener('pointerdown', event => {
+                drag = { x: event.clientX, y: event.clientY, left: view.scrollLeft, top: view.scrollTop };
+                view.classList.add('dragging');
+                view.setPointerCapture(event.pointerId);
+              });
+
+              view.addEventListener('pointermove', event => {
+                if (!drag) {
+                  return;
+                }
+
+                view.scrollLeft = drag.left - (event.clientX - drag.x);
+                view.scrollTop = drag.top - (event.clientY - drag.y);
+              });
+
+              for (const done of ['pointerup', 'pointercancel']) {
+                view.addEventListener(done, () => {
+                  drag = null;
+                  view.classList.remove('dragging');
+                });
+              }
+            }
+          }
+        </script>
+
+        """;
 
     /// <summary>Pressing a heading sorts its column, by the number in the cell when it is time or share.</summary>
     private const string Sorter = """

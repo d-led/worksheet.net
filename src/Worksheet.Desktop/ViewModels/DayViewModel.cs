@@ -241,6 +241,20 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     public Func<ExportFile, Task<string?>>? SaveExport { get; set; }
 
     /// <summary>
+    /// Shows a file in the platform's file manager. The window supplies it, since what showing a
+    /// file means belongs to the platform; nothing is opened when a test exports.
+    /// </summary>
+    public Action<string>? RevealFile { get; set; }
+
+    /// <summary>The last export, while it is worth saying so; nothing after it is dismissed.</summary>
+    [ObservableProperty]
+    private ExportNoticeViewModel? _exported;
+
+    public bool HasExported => Exported is not null;
+
+    partial void OnExportedChanged(ExportNoticeViewModel? value) => OnPropertyChanged(nameof(HasExported));
+
+    /// <summary>
     /// The range is the period the day on screen belongs to: that day, its month, its quarter, its
     /// year. Building it here keeps the report and the page in one place, and the zip in one file.
     /// </summary>
@@ -290,8 +304,12 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
             return;
         }
 
-        Report($"Exported {Path.GetFileName(path)}.", isProblem: false);
+        Exported = new ExportNoticeViewModel(path, RevealFile, DismissExport);
+        Report(null, isProblem: false);
     }
+
+    /// <summary>Puts the notice away; the export itself is written and stays where it went.</summary>
+    private void DismissExport() => Exported = null;
 
     [RelayCommand]
     private void PreviousDay() => SelectedDate = Day.AddDays(-1).ToDateTime(TimeOnly.MinValue);

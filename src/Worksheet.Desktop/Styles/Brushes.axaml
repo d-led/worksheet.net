@@ -1,0 +1,39 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!--
+    The colours the window says itself, in both appearances. SukiUI paints the surfaces and the
+    controls; these are the few the application has opinions about — its page, its surface, its ink,
+    its hairlines, the banner an export leaves, and the journal's JSON. They live in a dictionary of
+    their own so that a test window can wear the very ones a person sees.
+  -->
+  <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Light">
+      <SolidColorBrush x:Key="PageBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="BannerBrush" Color="#EDF7EE" />
+      <SolidColorBrush x:Key="HairlineBrush" Color="#24000000" />
+      <SolidColorBrush x:Key="InkBrush" Color="#111827" />
+      <SolidColorBrush x:Key="MutedInkBrush" Color="#374151" />
+      <SolidColorBrush x:Key="JsonNameBrush" Color="#1F6FEB" />
+      <SolidColorBrush x:Key="JsonTextBrush" Color="#0F766E" />
+      <SolidColorBrush x:Key="JsonNumberBrush" Color="#9A3412" />
+      <SolidColorBrush x:Key="JsonKeywordBrush" Color="#7C3AED" />
+      <SolidColorBrush x:Key="JsonPunctuationBrush" Color="#4B5563" />
+    </ResourceDictionary>
+    <ResourceDictionary x:Key="Dark">
+      <SolidColorBrush x:Key="PageBrush" Color="#101215" />
+      <SolidColorBrush x:Key="SurfaceBrush" Color="#181B1F" />
+      <SolidColorBrush x:Key="BannerBrush" Color="#17251A" />
+      <SolidColorBrush x:Key="HairlineBrush" Color="#33FFFFFF" />
+      <SolidColorBrush x:Key="InkBrush" Color="#F3F4F6" />
+      <SolidColorBrush x:Key="MutedInkBrush" Color="#B4BAC3" />
+      <SolidColorBrush x:Key="JsonNameBrush" Color="#79B8FF" />
+      <SolidColorBrush x:Key="JsonTextBrush" Color="#5EEAD4" />
+      <SolidColorBrush x:Key="JsonNumberBrush" Color="#FDBA74" />
+      <SolidColorBrush x:Key="JsonKeywordBrush" Color="#C4B5FD" />
+      <SolidColorBrush x:Key="JsonPunctuationBrush" Color="#9CA3AF" />
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+
+</ResourceDictionary>
