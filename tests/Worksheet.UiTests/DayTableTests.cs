@@ -261,6 +261,29 @@ public sealed class DayTableTests : UiTestBase
     }
 
     [AvaloniaFact]
+    public void A_breaks_note_is_editable_and_kept()
+    {
+        var day = NewDay();
+        Seed(day, "Break 12:30 45m");
+
+        var table = Show<DayTable>(day);
+        Settle();
+
+        var row = Assert.Single(EntryRows(table));
+        var noteBox = Cell(row, "note-input");
+
+        Assert.True(noteBox.IsEffectivelyEnabled);
+
+        noteBox.Focus();
+        Window.KeyTextInput("lunch");
+        Settle();
+        Cell(row, "start-input").Focus();
+        Settle();
+
+        Assert.Equal("lunch", Assert.Single(Ledger.Ledger.State.Entries).Value.Note);
+    }
+
+    [AvaloniaFact]
     public void Typing_an_end_in_a_row_changes_the_block()
     {
         var day = NewDay();
