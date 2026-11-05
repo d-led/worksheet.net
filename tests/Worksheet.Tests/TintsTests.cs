@@ -115,7 +115,7 @@ public sealed class TintsTests
     public void A_wash_is_what_it_was() => Assert.Equal("#ebc5c5", Tints.Wash(["Website"], "Website"));
 
     [Fact]
-    public void A_break_is_washed_warm_instead() => Assert.Equal("#fceedf", Tints.Wash([], Break.Project));
+    public void A_break_is_washed_in_nothing_at_all() => Assert.Equal("transparent", Tints.Wash([], Break.Project));
 
     [Fact]
     public void A_break_has_no_tint_of_its_own()

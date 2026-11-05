@@ -214,7 +214,7 @@ public sealed class ExportTests
     }
 
     [Fact]
-    public void A_day_row_is_washed_in_its_projects_tint_and_a_break_row_in_the_warm_one()
+    public void A_day_row_is_washed_in_its_projects_tint_and_a_break_row_in_nothing()
     {
         Logged("Website 09:00 1h");
         Logged("Break 10:00 30m");
@@ -223,7 +223,7 @@ public sealed class ExportTests
         var page = Html(report);
 
         Assert.Contains($"<tr style=\"--bs-table-bg:{Tints.Wash(report.Catalogue, "Website")}\">", page);
-        Assert.Contains($"<tr style=\"--bs-table-bg:{Tints.BreakWash}\">", page);
+        Assert.Contains($"<tr style=\"--bs-table-bg:{Tints.NoWash}\">", page);
     }
 
     [Fact]

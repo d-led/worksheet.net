@@ -32,14 +32,16 @@
               <Border Classes="row" IsEnabled="{Binding IsEditable}">
                 <Panel>
 
-                  <!-- Behind the fields: the project's pastel at a wash, then a break's warm one. -->
+                  <!-- Behind the fields: the project's pastel at a wash. A break is not painted:
+                       a pause is not a project, and a colour of its own would make it look like one. -->
                   <Border Classes="project-wash" Background="{Binding Tint}" />
-                  <Border Classes="break-wash" IsVisible="{Binding IsBreak}" />
 
                   <Grid ColumnDefinitions="4,*" ColumnSpacing="7">
 
-                    <!-- The project's own pastel: the day read down its left edge. A break has none. -->
+                    <!-- The project's own pastel: the day read down its left edge. A break carries no
+                         colour at all, so its edge is a quiet grey mark where a project has its tint. -->
                     <Border Classes="tint" Background="{Binding Tint}" />
+                    <Border Classes="break-mark" IsVisible="{Binding IsBreak}" />
 
                     <Grid Grid.Column="1" ColumnDefinitions="64,64,*,*,150,26" ColumnSpacing="6">
 

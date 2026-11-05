@@ -51,15 +51,35 @@ public sealed class RenderedDayTests : UiTestBase
         var rows = EntryRows(table);
         Assert.Equal(3, rows.Count);
 
-        var (websiteX, websiteY) = OnTheStripe(rows[0]);
-        var (mobileX, mobileY) = OnTheStripe(rows[1]);
+        var (websiteX, websiteY) = OnTheEdge(rows[0]);
+        var (mobileX, mobileY) = OnTheEdge(rows[1]);
 
         Assert.Equal(ColourOf(Tints.Of(Ledger.Ledger.State.Catalogue, "Website")), frame.At(websiteX, websiteY));
         Assert.Equal(ColourOf(Tints.Of(Ledger.Ledger.State.Catalogue, "Mobile")), frame.At(mobileX, mobileY));
     }
 
+    [AvaloniaFact]
+    public void A_break_is_marked_in_grey_at_its_edge_rather_than_in_a_projects_colour()
+    {
+        var table = DayOnScreen("Website 09:00 1h", "Break 10:00 30m");
+        var rows = EntryRows(table);
+
+        using var frame = Shot("break-row");
+
+        var (projectX, projectY) = OnTheEdge(rows[0]);
+        var (breakX, breakY) = OnTheEdge(rows[1]);
+
+        // A project's edge is its pastel; a pause has no colour of its own, so its edge is a grey mark.
+        Assert.True(Chroma(frame.At(projectX, projectY)) > 24, $"a project's edge is its tint: {frame.At(projectX, projectY)}");
+        Assert.True(Chroma(frame.At(breakX, breakY)) < 16, $"a break's edge is grey: {frame.At(breakX, breakY)}");
+    }
+
+    /// <summary>How far a colour is from grey: the spread between its widest and narrowest channel.</summary>
+    private static int Chroma(Color colour) =>
+        Math.Max(colour.R, Math.Max(colour.G, colour.B)) - Math.Min(colour.R, Math.Min(colour.G, colour.B));
+
     /// <summary>A point inside the stripe: its middle, which the rounded ends cannot reach.</summary>
-    private (int X, int Y) OnTheStripe(Border row)
+    private (int X, int Y) OnTheEdge(Border row)
     {
         var stripe = Stripe(row);
         var centre = stripe.TranslatePoint(new Point(stripe.Bounds.Width / 2, stripe.Bounds.Height / 2), Window)

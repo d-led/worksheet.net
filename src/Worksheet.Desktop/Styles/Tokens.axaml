@@ -236,13 +236,14 @@
   </Style>
 
   <!--
-    A break's row is washed warm instead of carrying a stripe: a pause is not a project, and the
-    one row that is not work should say so before the eye reads its name. The colour is a theme
-    resource, because a peach that reads well on white glares on a dark surface.
+    A break carries no tint of its own: a pause is not a project, and any colour would make it look
+    like one. Its row is left as the surface it sits on, and the edge keeps the stripe's place as a
+    quiet grey mark, so a pause is still read down the same edge as the work around it.
   -->
-  <Style Selector="Border.break-wash">
-    <Setter Property="Background" Value="{DynamicResource BreakWashBrush}" />
-    <Setter Property="CornerRadius" Value="7" />
+  <Style Selector="Border.break-mark">
+    <Setter Property="Background" Value="{DynamicResource MutedInkBrush}" />
+    <Setter Property="Opacity" Value="0.45" />
+    <Setter Property="CornerRadius" Value="2" />
   </Style>
 
   <!-- An area of the page that is read rather than typed into: a body of text, framed. -->

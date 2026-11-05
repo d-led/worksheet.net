@@ -79,8 +79,9 @@ strength: a pastel worked out from the project's place in the catalogue, so the 
 same colour in every window, on every run, and on the exported page, where its bars and its day rows
 are drawn in it too. The colours are spread as far apart as the number of projects allows — two
 projects land most of the wheel apart, a dozen are never closer than twenty degrees — so two names
-never turn out to be the same colour by accident. A break carries no such tint — a pause is not a
-project — and its row is washed warm instead, so it reads as a pause before the name does.
+never turn out to be the same colour by accident. A break is the one row with no colour at all — a
+pause is not a project — so it sits on the window's own surface, its edge a quiet grey mark where a
+project has its stripe, and the exported page leaves its row unpainted too.
 
 The project and topic cells take a name you type, not only one from the list. A name nobody has used
 yet is created when you leave the cell, so a block can be moved onto a new project without returning

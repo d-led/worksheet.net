@@ -39,9 +39,6 @@ public static class Tints
     /// </summary>
     private const double GoldenStep = 0.3819660112501051;
 
-    /// <summary>The warm a break's row is washed in, which is the theme's own value in its light half.</summary>
-    public const string BreakWash = "#fceedf";
-
     /// <summary>
     /// The tint of a name as <c>#rrggbb</c>, or nothing for a break: a pause is the absence of work,
     /// and a colour of its own would make it look like a project. The catalogue is every project the
@@ -51,13 +48,17 @@ public static class Tints
     public static string? Of(IReadOnlyCollection<string> catalogue, string? name) =>
         name is null || Break.IsBreak(name) ? null : Hex(Hue(catalogue, name.Trim()), Saturation, Lightness);
 
+    /// <summary>What a page paints under a row that is not a project's: nothing at all.</summary>
+    public const string NoWash = "transparent";
+
     /// <summary>
-    /// The wash a row of a page is painted with: the project's tint laid over white, or the warm a
-    /// break has instead. The window reaches the same colour by drawing the tint over whatever
-    /// surface its theme chose, which is why the share is a number and not a second palette.
+    /// The wash a row of a page is painted with: the project's tint laid over white, or nothing for a
+    /// break, which carries no tint of its own. The window reaches the same colour by drawing the
+    /// tint over whatever surface its theme chose, which is why the share is a number and not a
+    /// second palette.
     /// </summary>
     public static string Wash(IReadOnlyCollection<string> catalogue, string name) =>
-        Of(catalogue, name) is { } tint ? Blend(tint, WashShare) : BreakWash;
+        Of(catalogue, name) is { } tint ? Blend(tint, WashShare) : NoWash;
 
     /// <summary>
     /// The hue a name falls on, as a share of the circle: one golden step for every project that
