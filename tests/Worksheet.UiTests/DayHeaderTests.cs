@@ -119,14 +119,16 @@ public sealed class DayHeaderTests : UiTestBase
     }
 
     [AvaloniaFact]
-    public void Today_returns_to_the_day_the_application_started_on()
+    public void Today_returns_to_the_day_it_is_now()
     {
         var day = NewDay();
         var header = Show<DayHeader>(day);
 
         Click(header.FindControl<Button>("PreviousDay")!);
+        MoveTo(Today.AddDays(1));
         Click(header.FindControl<Button>("Today")!);
 
+        Assert.Equal(Today.AddDays(1), day.Date);
         Assert.StartsWith("Today", day.DayTitle);
     }
 }

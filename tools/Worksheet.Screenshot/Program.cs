@@ -54,7 +54,7 @@ foreach (var line in only switch { "break" => TheHole(), "status" => TheFrozenDa
     Compose(local, line, today);
 }
 
-var day = new DayViewModel(local, today)
+var day = new DayViewModel(local, () => At(today))
 {
     EntryText = typing ?? string.Empty,
 };
@@ -147,6 +147,9 @@ static Window Projects(LocalLedger local)
 }
 
 // The whole application, at the size the documentation shows.
+// The clock of the picture: noon on the day it draws, so nothing in it depends on when it is drawn.
+static DateTimeOffset At(DateOnly day) => new(day.ToDateTime(new TimeOnly(12, 0)));
+
 static Window FullWindow(DayViewModel day) =>
     new MainWindow
     {
@@ -165,7 +168,7 @@ static Window StatusAndOneRow(LocalLedger local, DateOnly today)
 {
     new DayCalendar(local.Ledger).Declare(today, DayKind.Sick);
 
-    var frozen = new DayViewModel(local, today);
+    var frozen = new DayViewModel(local, () => At(today));
 
     return Surface(
         frozen,

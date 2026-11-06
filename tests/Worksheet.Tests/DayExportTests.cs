@@ -35,7 +35,12 @@ public sealed class DayExportTests : IDisposable
 
     private DayViewModel DayWith(params string[] lines)
     {
-        var day = new DayViewModel(_local, Today, () => Exported);
+        // The clock says the export is taken on the 4th and the day on screen is the 3rd, so a file
+        // named right cannot be taking its day from the moment it was written.
+        var day = new DayViewModel(_local, () => Exported)
+        {
+            SelectedDate = Today.ToDateTime(TimeOnly.MinValue),
+        };
 
         foreach (var line in lines)
         {

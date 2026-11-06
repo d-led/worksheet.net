@@ -47,7 +47,7 @@
     <Button x:Name="Today"
             Grid.Column="4"
             Content="Today"
-            Command="{Binding TodayCommand}"
+            Command="{Binding ShowTodayCommand}"
             VerticalAlignment="Center" />
 
     <TextBlock x:Name="Total"

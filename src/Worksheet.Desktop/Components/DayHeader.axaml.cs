@@ -43,7 +43,7 @@ public partial class DayHeader : UserControl
         }
 
         _opening = true;
-        calendar.SelectedDate = day.SelectedDate;
+        calendar.SelectedDate = day.Date.ToDateTime(TimeOnly.MinValue);
         _opening = false;
         calendar.Focus();
     }
@@ -58,7 +58,7 @@ public partial class DayHeader : UserControl
 
         if (DataContext is DayViewModel day)
         {
-            day.SelectedDate = picked;
+            day.Show(DateOnly.FromDateTime(picked));
         }
 
         HideCalendarOf(sender);

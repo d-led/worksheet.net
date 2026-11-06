@@ -86,6 +86,11 @@ public sealed class App : Application
         var day = new DayViewModel(_local);
         day.Screens = new WindowScreens(ShowSettings, ShowManage, ShowConnect, ShowAudit, OpenDataFolder);
         _window = new MainWindow { DataContext = day };
+
+        // Being looked at again is what re-reads the clock: a window left open overnight must not
+        // go on saying "Today" about the day it was showing when it was last touched.
+        _window.Activated += (_, _) => CurrentDay?.ReviewToday();
+
         _window.CloseProcedure = new ClosingProcedure(
             () => _resolver?.HasShownCloseNotice ?? true,
             ShowCloseNotice);
@@ -258,6 +263,10 @@ public sealed class App : Application
         {
             return;
         }
+
+        // The application may have been running since yesterday, and the window is about to be
+        // looked at: today is read from the clock again before the first frame of it is drawn.
+        CurrentDay?.ReviewToday();
 
         _window.Show();
         _window.WindowState = WindowState.Normal;

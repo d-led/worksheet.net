@@ -24,10 +24,15 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     private readonly LocalLedger _local;
     private readonly EntryComposer _composer;
     private readonly DayCalendar _calendar;
-    private readonly DateOnly _today;
-    private readonly Func<DateTimeOffset> _now;
+    private readonly Func<DateTimeOffset> _clock;
     private readonly IDisposable _untilTheLedgerChanges;
 
+    /// <summary>
+    /// The day the person picked, or nothing while the window follows the calendar. Today is not
+    /// kept anywhere: a day nobody picked is read from the clock whenever it is asked for, so a
+    /// window left open overnight is about today when it is looked at again, and a day somebody
+    /// did pick stays where it was put.
+    /// </summary>
     [ObservableProperty]
     private DateTime? _selectedDate;
 
@@ -75,20 +80,18 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     private EntryProposals _proposals = EntryProposals.None;
     private int _chosen;
 
-    public DayViewModel(LocalLedger local, DateOnly? today = null, Func<DateTimeOffset>? now = null)
+    public DayViewModel(LocalLedger local, Func<DateTimeOffset>? clock = null)
     {
         ArgumentNullException.ThrowIfNull(local);
 
         _local = local;
         _composer = new EntryComposer(local.Ledger);
         _calendar = new DayCalendar(local.Ledger);
-        _today = today ?? DateOnly.FromDateTime(DateTime.Today);
-        _now = now ?? (() => DateTimeOffset.Now);
-        _selectedDate = _today.ToDateTime(TimeOnly.MinValue);
+        _clock = clock ?? (() => DateTimeOffset.Now);
 
         Refresh();
 
-        _untilTheLedgerChanges = local.Ledger.Subscribe(new Watch(_ => Reload()));
+        _untilTheLedgerChanges = local.Ledger.Subscribe(new Watch(_ => Redraw()));
     }
 
     public void Dispose() => _untilTheLedgerChanges.Dispose();
@@ -115,9 +118,13 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
 
     public bool HasValidation => !string.IsNullOrEmpty(Validation);
 
-    private DateOnly Day => DateOnly.FromDateTime(SelectedDate ?? _today.ToDateTime(TimeOnly.MinValue));
+    /// <summary>What the clock says the day is now, asked every time it is needed.</summary>
+    private DateOnly Today => DateOnly.FromDateTime(_clock().LocalDateTime);
 
-    /// <summary>What the window showed after the last refresh, to know whether a reload would differ.</summary>
+    /// <summary>The day on screen: the one the person picked, or today while none was picked.</summary>
+    private DateOnly Day => SelectedDate is { } picked ? DateOnly.FromDateTime(picked) : Today;
+
+    /// <summary>What the window showed after the last refresh, to know whether drawing it again would differ.</summary>
     private string _shown = string.Empty;
 
     /// <summary>
@@ -128,6 +135,20 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
 
     /// <summary>The day on screen, as a plain date.</summary>
     public DateOnly Date => Day;
+
+    /// <summary>
+    /// Puts a day on screen. The day the clock says is not kept, so picking today picks nothing:
+    /// that is what makes a window on today keep up with the calendar, and walking back onto today
+    /// mean being on today again.
+    /// </summary>
+    public void Show(DateOnly day) =>
+        SelectedDate = day == Today ? null : day.ToDateTime(TimeOnly.MinValue);
+
+    /// <summary>
+    /// The window is on screen again. It may have been running since yesterday, so what it would
+    /// draw now is drawn: a page that was following the calendar is about the new day.
+    /// </summary>
+    public void ReviewToday() => Redraw();
 
     partial void OnSelectedDateChanged(DateTime? value)
     {
@@ -261,7 +282,7 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     public ExportFile BuildExport(ExportPeriod period)
     {
         var report = RangeReport.Of(_local.Ledger.State, ExportRange.For(period, Day));
-        var generatedAt = _now();
+        var generatedAt = _clock();
 
         return new ExportFile(ExportBundle.ZipName(report, generatedAt), ExportBundle.Zip(report, generatedAt));
     }
@@ -312,12 +333,26 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     private void DismissExport() => Exported = null;
 
     [RelayCommand]
-    private void PreviousDay() => SelectedDate = Day.AddDays(-1).ToDateTime(TimeOnly.MinValue);
-    [RelayCommand]
-    private void NextDay() => SelectedDate = Day.AddDays(1).ToDateTime(TimeOnly.MinValue);
+    private void PreviousDay() => Show(Day.AddDays(-1));
 
     [RelayCommand]
-    private void Today() => SelectedDate = _today.ToDateTime(TimeOnly.MinValue);
+    private void NextDay() => Show(Day.AddDays(1));
+
+    /// <summary>
+    /// Follows the calendar again, whatever day was picked. A page that was already following it is
+    /// drawn again only if the clock moved under it, since that is the one thing a press can reveal.
+    /// </summary>
+    [RelayCommand]
+    private void ShowToday()
+    {
+        if (SelectedDate is null)
+        {
+            Redraw();
+            return;
+        }
+
+        SelectedDate = null;
+    }
 
     private void Refresh()
     {
@@ -490,7 +525,7 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     /// would put a German weekday in front of the English word "Today".
     /// </summary>
     private string DescribeDay(DateOnly day) =>
-        day == _today
+        day == Today
             ? $"Today, {day.ToString("d MMMM", Dates.English)}"
             : day.ToString("dddd d MMMM", Dates.English);
 
@@ -677,12 +712,12 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Reads the fold again after a change landed. A change that cannot be seen here — an agent
-    /// logging on another day, a project renamed — leaves the rows alone, because rebuilding them
-    /// would take the cell a person is typing in with it. A row's own correction is the same case:
-    /// the row is already showing it.
+    /// Draws the page again when what it would show differs from what it shows. A change that cannot
+    /// be seen here — an agent logging on another day, a project renamed, the night passing under a
+    /// window that follows the calendar — would otherwise rebuild the rows and take the cell a person
+    /// is typing in with it. A row's own correction is the same case: the row already shows it.
     /// </summary>
-    private void Reload()
+    private void Redraw()
     {
         if (_aRowIsWriting || Signature() == _shown)
         {

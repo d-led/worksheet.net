@@ -27,6 +27,9 @@ public abstract class UiTestBase : IDisposable
 
     private readonly TempDirectory _temp = new("worksheet-ui");
 
+    /// <summary>The day the window's clock stands on; a test that lets the night pass moves it.</summary>
+    private DateOnly _clockDay = Today;
+
     protected UiTestBase() => Ledger = LocalLedger.Open(_temp.Path, SnapshotPolicy.Disabled);
 
     protected LocalLedger Ledger { get; }
@@ -40,7 +43,16 @@ public abstract class UiTestBase : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    protected DayViewModel NewDay() => new(Ledger, Today);
+    protected DayViewModel NewDay() => new(Ledger, () => At(_clockDay));
+
+    /// <summary>Moves the window's clock to another day, as the night does.</summary>
+    protected void MoveTo(DateOnly day) => _clockDay = day;
+
+    /// <summary>
+    /// Noon on a day: far enough from either midnight that no time zone the suite may run in can
+    /// make the clock say another date.
+    /// </summary>
+    protected static DateTimeOffset At(DateOnly day) => new(day.ToDateTime(new TimeOnly(12, 0)));
 
     protected TControl Show<TControl>(DayViewModel day)
         where TControl : Control, new() => Show(day, new TControl());

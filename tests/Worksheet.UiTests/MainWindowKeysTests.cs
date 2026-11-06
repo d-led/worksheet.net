@@ -27,12 +27,12 @@ public sealed class MainWindowKeysTests : UiTestBase
 
         window.KeyPressQwerty(PhysicalKey.ArrowRight, RawInputModifiers.None);
         Settle();
-        Assert.Equal(Day(4), day.SelectedDate);
+        Assert.Equal(Day(4), day.Date);
 
         window.KeyPressQwerty(PhysicalKey.ArrowLeft, RawInputModifiers.None);
         window.KeyPressQwerty(PhysicalKey.ArrowLeft, RawInputModifiers.None);
         Settle();
-        Assert.Equal(Day(2), day.SelectedDate);
+        Assert.Equal(Day(2), day.Date);
 
         window.Close();
     }
@@ -64,7 +64,7 @@ public sealed class MainWindowKeysTests : UiTestBase
         window.KeyPressQwerty(PhysicalKey.ArrowLeft, RawInputModifiers.None);
         Settle();
 
-        Assert.Equal(Day(3), day.SelectedDate);
+        Assert.Equal(Day(3), day.Date);
 
         window.Close();
     }
@@ -77,13 +77,13 @@ public sealed class MainWindowKeysTests : UiTestBase
         window.KeyPressQwerty(PhysicalKey.A, RawInputModifiers.None);
         Settle();
 
-        Assert.Equal(Day(3), day.SelectedDate);
+        Assert.Equal(Day(3), day.Date);
 
         window.Close();
     }
 
-    private static DateTime Day(int dayOfNovember) =>
-        new(Today.Year, Today.Month, dayOfNovember, 0, 0, 0, DateTimeKind.Unspecified);
+    private static DateOnly Day(int dayOfNovember) =>
+        new(Today.Year, Today.Month, dayOfNovember);
 
     private (MainWindow Window, DayViewModel Day) Open()
     {

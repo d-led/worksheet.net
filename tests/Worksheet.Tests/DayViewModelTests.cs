@@ -22,6 +22,13 @@ public sealed class DayViewModelTests : IDisposable
 
     private static readonly DateOnly Saturday = new(2026, 11, 7);
 
+    /// <summary>
+    /// A clock at noon on the day it is asked for, so a test can let the night pass without waiting
+    /// for it — and so nothing depends on where or when the suite runs.
+    /// </summary>
+    private static Func<DateTimeOffset> Noon(Func<DateOnly> day) =>
+        () => new(day().ToDateTime(new TimeOnly(12, 0)));
+
     private readonly TempDirectory _temp = new("worksheet-view");
     private readonly LocalLedger _local;
 
@@ -35,7 +42,7 @@ public sealed class DayViewModelTests : IDisposable
 
     private DayViewModel DayWith(params string[] lines)
     {
-        var day = new DayViewModel(_local, Today);
+        var day = new DayViewModel(_local, Noon(() => Today));
 
         foreach (var line in lines)
         {
@@ -60,7 +67,7 @@ public sealed class DayViewModelTests : IDisposable
             // A German machine used to write "Donnerstag" in front of the English word "Today".
             CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE");
 
-            var day = new DayViewModel(_local, Today);
+            var day = new DayViewModel(_local, Noon(() => Today));
             Assert.Equal("Today, 3 November", day.DayTitle);
 
             day.SelectedDate = Today.AddDays(1).ToDateTime(TimeOnly.MinValue);
@@ -70,6 +77,89 @@ public sealed class DayViewModelTests : IDisposable
         {
             CultureInfo.CurrentCulture = before;
         }
+    }
+
+    [Fact]
+    public void A_window_left_open_overnight_is_about_the_new_day_when_it_is_looked_at_again()
+    {
+        var today = Today;
+        var window = new DayViewModel(_local, Noon(() => today));
+
+        // The application was not closed: the night passed under it.
+        today = Today.AddDays(1);
+        window.ReviewToday();
+
+        Assert.Equal(Today.AddDays(1), window.Date);
+        Assert.StartsWith("Today", window.DayTitle);
+    }
+
+    [Fact]
+    public void A_line_written_after_midnight_belongs_to_the_new_day()
+    {
+        var today = Today;
+        var window = new DayViewModel(_local, Noon(() => today));
+
+        today = Today.AddDays(1);
+        window.EntryText = "Website 09:00 1h";
+        window.LogCommand.Execute(null);
+
+        Assert.Equal(Today.AddDays(1), window.Date);
+        Assert.Single(window.Rows);
+        Assert.Empty(_local.Ledger.State.EntriesOn(Today));
+    }
+
+    [Fact]
+    public void A_day_the_person_picked_is_where_it_stays_when_the_night_passes()
+    {
+        var today = Today;
+        var window = new DayViewModel(_local, Noon(() => today));
+
+        window.NextDayCommand.Execute(null);
+        today = Today.AddDays(2);
+        window.ReviewToday();
+
+        Assert.Equal(Today.AddDays(1), window.Date);
+        Assert.DoesNotContain("Today", window.DayTitle);
+    }
+
+    [Fact]
+    public void Walking_back_onto_today_hands_the_window_back_to_the_clock()
+    {
+        var today = Today;
+        var window = new DayViewModel(_local, Noon(() => today));
+
+        window.NextDayCommand.Execute(null);
+        window.PreviousDayCommand.Execute(null);
+        today = Today.AddDays(1);
+        window.ReviewToday();
+
+        Assert.Equal(Today.AddDays(1), window.Date);
+    }
+
+    [Fact]
+    public void Today_goes_to_the_day_it_is_now_not_the_one_the_window_opened_on()
+    {
+        var today = Today;
+        var window = new DayViewModel(_local, Noon(() => today));
+
+        window.NextDayCommand.Execute(null);
+        today = Today.AddDays(2);
+        window.ShowTodayCommand.Execute(null);
+
+        Assert.Equal(Today.AddDays(2), window.Date);
+        Assert.StartsWith("Today", window.DayTitle);
+    }
+
+    [Fact]
+    public void Today_draws_the_page_again_when_the_clock_moved_under_it()
+    {
+        var today = Today;
+        var window = new DayViewModel(_local, Noon(() => today));
+
+        today = Today.AddDays(1);
+        window.ShowTodayCommand.Execute(null);
+
+        Assert.Equal("Today, 4 November", window.DayTitle);
     }
 
     [Fact]
@@ -173,7 +263,7 @@ public sealed class DayViewModelTests : IDisposable
     [Fact]
     public void The_hint_says_what_to_write_next()
     {
-        var day = new DayViewModel(_local, Today);
+        var day = new DayViewModel(_local, Noon(() => Today));
 
         Assert.Equal("next: project", day.NextStep);
 
@@ -491,7 +581,7 @@ public sealed class DayViewModelTests : IDisposable
     [Fact]
     public void A_saturday_starts_as_a_weekend_and_is_frozen()
     {
-        var day = new DayViewModel(_local, Saturday);
+        var day = new DayViewModel(_local, Noon(() => Saturday));
 
         Assert.True(day.IsFrozen);
         Assert.Equal("Weekend", day.Kinds.Single(option => option.IsSelected).Label);
@@ -528,7 +618,7 @@ public sealed class DayViewModelTests : IDisposable
     [Fact]
     public void Working_a_saturday_back_makes_it_editable_again()
     {
-        var day = new DayViewModel(_local, Saturday);
+        var day = new DayViewModel(_local, Noon(() => Saturday));
 
         day.Kinds.Single(option => option.Kind == DayKind.Working).IsSelected = true;
         day.EntryText = "Website 09:00 1h";

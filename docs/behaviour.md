@@ -17,7 +17,12 @@ and records decisions; it is not a description of any other program's source.
    time on them. The left and right arrows move to the day before and after,
    unless the caret is in a text field, which then keeps them for itself. A field
    takes what was typed when it is left, and Enter takes it the same way — a cell
-   of the day is settled, a number in the settings is saved.
+   of the day is settled, a number in the settings is saved. The window opens on
+   the day it is now, and it keeps no copy of that day: while it shows today it
+   reads the clock again every time it is brought back or acted in, so an
+   application left running overnight is about the new day rather than the one it
+   started on. A day walked to or picked from the calendar stays where it was put,
+   and *Today* hands the window back to the clock.
 2. Accepts an entry as one line of text (see `entry-syntax.md`), completing the names
    it is made of: the known projects while a project is being typed, then the topics
    of that project once its bracket is open. The keyboard walks the offers and takes

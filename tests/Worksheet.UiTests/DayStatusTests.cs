@@ -40,7 +40,8 @@ public sealed class DayStatusTests : UiTestBase
     [AvaloniaFact]
     public void A_saturday_offers_five_statuses_with_the_weekend_already_chosen()
     {
-        var day = new DayViewModel(Ledger, Saturday);
+        MoveTo(Saturday);
+        var day = NewDay();
 
         var panel = Show(day, StatusOverTable());
 
@@ -69,7 +70,8 @@ public sealed class DayStatusTests : UiTestBase
     [AvaloniaFact]
     public void Working_a_saturday_back_thaws_the_table()
     {
-        var day = new DayViewModel(Ledger, Saturday);
+        MoveTo(Saturday);
+        var day = NewDay();
 
         var panel = Show(day, StatusOverTable());
         Assert.True(day.IsFrozen);
