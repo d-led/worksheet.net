@@ -210,6 +210,8 @@ is decided. No view sets one inline.
 - `docs/design-review.md` — what was wrong with the first window, and the shape that replaced it.
 - `docs/entry-syntax.md` — the grammar of one line, with examples.
 - `docs/behaviour.md` — what the application does, and what it deliberately does not do.
+- `docs/state-machines.md` — the states each part has, what may follow what, what must stay true,
+  and the states the code can reach but should not.
 
 Some choices in the window look like omissions and are not:
 
