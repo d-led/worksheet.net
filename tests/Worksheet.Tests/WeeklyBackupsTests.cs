@@ -88,4 +88,34 @@ public sealed class WeeklyBackupsTests : IDisposable
         Assert.Throws<IOException>(() => broken.Take());
         Assert.Empty(Copied);
     }
+
+    [Fact]
+    public void A_copy_that_stops_halfway_is_not_kept_as_the_week_it_was_writing()
+    {
+        var noRoom = true;
+
+        var backups = new WeeklyBackups(
+            _temp.Path,
+            target =>
+            {
+                File.WriteAllText(target, noRoom ? "half a cop" : "a copy");
+
+                if (noRoom)
+                {
+                    throw new IOException("no room");
+                }
+            },
+            () => _now);
+
+        Assert.Throws<IOException>(() => backups.Take());
+
+        // The room is there again: the week is still the one that has to be copied.
+        noRoom = false;
+
+        var written = backups.Take();
+
+        Assert.Equal("ledger-2026-W44.db", Path.GetFileName(written));
+        Assert.Equal(["ledger-2026-W44.db"], Copied);
+        Assert.Equal("a copy", File.ReadAllText(written!));
+    }
 }

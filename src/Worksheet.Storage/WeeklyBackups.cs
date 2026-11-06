@@ -23,6 +23,12 @@ public sealed class WeeklyBackups(string folder, Action<string> copy, Func<DateT
     private const string Suffix = ".db";
 
     /// <summary>
+    /// What a copy is written to before it has a week's name. A copy that stopped halfway — no room,
+    /// or the process ending — is then not the week it was writing, and the next poll takes it again.
+    /// </summary>
+    private const string HalfWritten = ".part";
+
+    /// <summary>
     /// Copies the journal when the week that has just closed has no copy yet, drops the oldest beyond
     /// the four kept, and answers with the file written — or with nothing when that week is done.
     /// </summary>
@@ -34,13 +40,19 @@ public sealed class WeeklyBackups(string folder, Action<string> copy, Func<DateT
         }
 
         var target = Path.Combine(folder, Name(ClosedWeek(now())));
+        var half = target + HalfWritten;
+
+        // A copy an earlier attempt did not finish is not a copy: nothing can tell it from a week
+        // that is done, so it goes before the week is taken again.
+        File.Delete(half);
 
         if (File.Exists(target))
         {
             return null;
         }
 
-        copy(target);
+        copy(half);
+        File.Move(half, target);
         Keep();
 
         return target;
