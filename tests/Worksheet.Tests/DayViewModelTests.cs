@@ -390,6 +390,32 @@ public sealed class DayViewModelTests : IDisposable
     }
 
     [Fact]
+    public void A_correction_moves_the_hole_beside_it_too()
+    {
+        var day = DayWith("Website 09:00-10:00", "Mobile 11:00-12:00");
+
+        EntryRow(day).EndText = "10:30";
+
+        var gap = Assert.Single(Gaps(day));
+        Assert.Equal("10:30 – 11:00", gap.Span);
+        Assert.Equal("30m", gap.Length);
+        Assert.Equal(3, day.Rows.Count);
+    }
+
+    [Fact]
+    public void A_hole_the_correction_opens_between_two_blocks_sits_between_them()
+    {
+        var day = DayWith("Website 09:00-10:00", "Mobile 10:00-11:00");
+        Assert.Empty(Gaps(day));
+
+        EntryRow(day).EndText = "09:30";
+
+        Assert.Equal(3, day.Rows.Count);
+        Assert.IsType<GapRowViewModel>(day.Rows[1]);
+        Assert.Equal("09:30 – 10:00", Assert.Single(Gaps(day)).Span);
+    }
+
+    [Fact]
     public void A_clock_left_as_it_was_typed_is_shown_the_way_the_day_keeps_it()
     {
         var day = DayWith("Website 09:00 1h");
@@ -590,6 +616,19 @@ public sealed class DayViewModelTests : IDisposable
         day.RedoCommand.Execute(null);
         Assert.Equal("There is nothing to redo.", day.Message);
         Assert.Single(day.Rows);
+    }
+
+    [Fact]
+    public void A_name_typed_in_a_row_after_an_undo_forgets_what_could_be_redone()
+    {
+        var day = DayWith("Website 09:00 1h", "Mobile 10:00 1h");
+        day.UndoCommand.Execute(null);
+        Assert.True(day.CanRedo);
+
+        EntryRow(day).ProjectText = "Reading";
+
+        Assert.False(day.CanRedo);
+        Assert.Equal("Reading", EntryRow(day).ProjectText);
     }
 
     [Fact]

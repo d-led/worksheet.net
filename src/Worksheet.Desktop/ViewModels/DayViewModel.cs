@@ -436,31 +436,93 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     {
         Rows.Clear();
 
-        var layout = DayLayout.Of(_local.Ledger.State.EntriesOn(Day));
+        foreach (var row in RowsOf(DayLayout.Of(_local.Ledger.State.EntriesOn(Day)), RowFor))
+        {
+            Rows.Add(row);
+        }
+    }
+
+    /// <summary>
+    /// The day as rows: every entry, and the hole the day leaves after it. One walk, so a hole can
+    /// only ever sit between the two blocks that leave it.
+    /// </summary>
+    private IEnumerable<IDayRow> RowsOf(DayLayout layout, Func<Entry, EntryRowViewModel> entryRow)
+    {
         var gaps = layout.Gaps.ToLookup(gap => gap.Start);
         var editable = !IsFrozen;
 
         foreach (var entry in layout.Entries)
         {
-            var row = new EntryRowViewModel(
-                entry,
-                Projects,
-                () => _local.Ledger.State,
-                Revise,
-                Point,
-                Retract,
-                editable);
-
-            // A refused edit is the one case that rebuilds: the box holds the text that was refused,
-            // and only a row built again from the journal shows what is stored instead.
-            row.Rejected += (_, _) => Dispatcher.UIThread.Post(RefreshRows);
-
-            Rows.Add(row);
+            yield return entryRow(entry);
 
             foreach (var gap in gaps[entry.Start.ToTimeSpan() + entry.Duration])
             {
-                Rows.Add(new GapRowViewModel(gap, FillGap, RecordBreak, editable));
+                yield return new GapRowViewModel(gap, FillGap, RecordBreak, editable);
             }
+        }
+    }
+
+    private EntryRowViewModel RowFor(Entry entry)
+    {
+        var row = new EntryRowViewModel(entry, Projects, () => _local.Ledger.State, Revise, Point, Retract, !IsFrozen);
+
+        // A refused edit is the one case that rebuilds: the box holds the text that was refused,
+        // and only a row built again from the journal shows what is stored instead.
+        row.Rejected += (_, _) => Dispatcher.UIThread.Post(RefreshRows);
+
+        return row;
+    }
+
+    /// <summary>
+    /// Puts the holes back where the day now leaves them, leaving every entry row exactly as it is:
+    /// an accepted correction comes from the cell someone is typing in, and only the holes beside it
+    /// moved. So the hole rows are the only ones built again.
+    /// </summary>
+    private void RefreshGaps()
+    {
+        var wanted = WantedRows();
+
+        for (var index = 0; index < Math.Min(wanted.Count, Rows.Count); index++)
+        {
+            Put(index, wanted[index]);
+        }
+
+        Trim(wanted.Count);
+
+        foreach (var row in wanted.Skip(Rows.Count))
+        {
+            Rows.Add(row);
+        }
+    }
+
+    /// <summary>The day's rows as they should read now, an entry keeping the row it already has.</summary>
+    private List<IDayRow> WantedRows()
+    {
+        var kept = Rows.OfType<EntryRowViewModel>().ToDictionary(row => row.Id);
+
+        return
+        [
+            .. RowsOf(
+                DayLayout.Of(_local.Ledger.State.EntriesOn(Day)),
+                entry => kept.GetValueOrDefault(entry.Id) ?? RowFor(entry)),
+        ];
+    }
+
+    /// <summary>One row replaced only when it is not the row that belongs there.</summary>
+    private void Put(int index, IDayRow row)
+    {
+        if (!ReferenceEquals(Rows[index], row))
+        {
+            Rows[index] = row;
+        }
+    }
+
+    /// <summary>Drops what the day no longer has: a correction that closes a hole leaves one row too many.</summary>
+    private void Trim(int count)
+    {
+        while (Rows.Count > count)
+        {
+            Rows.RemoveAt(Rows.Count - 1);
         }
     }
 
@@ -530,8 +592,8 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
             : day.ToString("dddd d MMMM", Dates.English);
 
     /// <summary>
-    /// A correction of one row. On success the rows are left alone, so the control that was being
-    /// edited keeps focus; only the numbers beside it move.
+    /// A correction of one row. On success the entry rows are left alone — only the holes beside the
+    /// corrected block move — so the control that was being edited keeps focus.
     /// </summary>
     private Entry? Revise(Entry after)
     {
@@ -550,6 +612,7 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
 
         Report(null, isProblem: false);
         UpdateTotals();
+        RefreshGaps();
         _shown = Signature();
 
         return result.Entry;
@@ -566,6 +629,7 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
         if (pointed.Created)
         {
             RefreshProjects();
+            UpdateTotals();
             _shown = Signature();
         }
 

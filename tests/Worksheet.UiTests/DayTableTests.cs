@@ -306,6 +306,33 @@ public sealed class DayTableTests : UiTestBase
     }
 
     [AvaloniaFact]
+    public void A_correction_moves_the_hole_beside_it_and_leaves_the_cell_being_typed_in_alone()
+    {
+        var day = NewDay();
+        Seed(day, "Website 09:00-10:00");
+        Seed(day, "Mobile 11:00-12:00");
+
+        var table = Show<DayTable>(day);
+        Settle();
+
+        var row = EntryRows(table)[0];
+        var endBox = Cell(row, "end-input");
+        var noteBox = Cell(row, "note-input");
+
+        endBox.Focus();
+        endBox.Text = "10:30";
+        noteBox.Focus();
+        Settle();
+
+        // The hole follows the block: it now starts where the corrected entry ends.
+        var texts = Descendants<TextBlock>(Assert.Single(GapRows(table))).Select(block => block.Text).ToList();
+        Assert.Contains("10:30 – 11:00", texts);
+
+        // Only the hole was built again, so the caret is still where the correction left it.
+        Assert.True(noteBox.IsFocused);
+    }
+
+    [AvaloniaFact]
     public void Pressing_enter_in_a_clock_field_takes_the_time_typed()
     {
         var day = NewDay();
