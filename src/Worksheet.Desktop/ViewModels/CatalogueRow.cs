@@ -19,8 +19,11 @@ public enum CatalogueKind
 /// <summary>What a row asks of the panel it sits in.</summary>
 public interface ICataloguePanel
 {
-    /// <summary>Gives the row the typed name, or merges it into whatever already answers to it.</summary>
-    void Rename(CatalogueRow row, string name);
+    /// <summary>
+    /// Gives the row the typed name, or merges it into whatever already answers to it, and answers
+    /// whether the name was taken.
+    /// </summary>
+    bool Rename(CatalogueRow row, string name);
 
     /// <summary>Takes the row out of the catalogue; what it holds keeps the name it had.</summary>
     void Archive(CatalogueRow row);
@@ -39,8 +42,10 @@ public sealed partial class CatalogueRow : ObservableObject
     private readonly ICataloguePanel _panel;
 
     /// <summary>
-    /// Set by the first decision taken on this row. Enter settles the name, and leaving the field
-    /// straight after would otherwise read the same keystroke as a second decision.
+    /// Set by the first decision taken on this row and cleared again when the panel would not take
+    /// it. Enter settles the name, and leaving the field straight after would otherwise read the
+    /// same keystroke as a second decision; a refused name, on the other hand, leaves the row able
+    /// to take another.
     /// </summary>
     private bool _settled;
 
@@ -101,9 +106,7 @@ public sealed partial class CatalogueRow : ObservableObject
             return;
         }
 
-        _settled = true;
-
-        _panel.Rename(this, Draft);
+        _settled = _panel.Rename(this, Draft);
     }
 
     /// <summary>Escape: the field goes back to the name in the journal, and nothing is written.</summary>

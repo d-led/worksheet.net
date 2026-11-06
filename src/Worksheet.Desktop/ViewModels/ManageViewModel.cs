@@ -66,17 +66,19 @@ public sealed partial class ManageViewModel : ObservableObject, ICataloguePanel,
 
     partial void OnSelectedProjectChanged(CatalogueRow? value) => RefreshTopics();
 
-    public void Rename(CatalogueRow row, string name)
+    public bool Rename(CatalogueRow row, string name)
     {
         ArgumentNullException.ThrowIfNull(row);
 
         var twin = Twin(row, name);
 
-        Report(
-            row.IsProject
-                ? _catalogue.RenameProject(row.Name, name)
-                : _catalogue.RenameTopic(row.Project ?? string.Empty, row.Name, name),
-            twin is null ? Renamed(row, name) : Merged(row, twin));
+        var result = row.IsProject
+            ? _catalogue.RenameProject(row.Name, name)
+            : _catalogue.RenameTopic(row.Project ?? string.Empty, row.Name, name);
+
+        Report(result, twin is null ? Renamed(row, name) : Merged(row, twin));
+
+        return result.Accepted;
     }
 
     public void Archive(CatalogueRow row)

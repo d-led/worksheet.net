@@ -105,6 +105,23 @@ public sealed class ManageViewModelTests
     }
 
     [Fact]
+    public void A_name_that_was_refused_leaves_the_row_able_to_take_another()
+    {
+        var panel = Opened();
+        var website = Row(panel, "Website");
+
+        Typed(website, "   ");
+        website.CommitCommand.Execute(null);
+        Assert.True(panel.MessageIsProblem);
+
+        Typed(website, "Client portal");
+        website.CommitCommand.Execute(null);
+
+        Assert.Equal(["Client portal", "Mobile"], Names(panel.Projects));
+        Assert.False(panel.MessageIsProblem);
+    }
+
+    [Fact]
     public void A_name_that_is_already_there_is_announced_as_a_merge()
     {
         var panel = Opened();
