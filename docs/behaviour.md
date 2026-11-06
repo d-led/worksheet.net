@@ -17,7 +17,10 @@ and records decisions; it is not a description of any other program's source.
    time on them. The left and right arrows move to the day before and after,
    unless the caret is in a text field, which then keeps them for itself. A field
    takes what was typed when it is left, and Enter takes it the same way — a cell
-   of the day is settled, a number in the settings is saved. The window opens on
+   of the day is settled, a number in the settings is saved. A clock is then shown
+   back the way the day keeps it, to the minute: `9:5` left in a start cell reads
+   `09:05`, and `7:30pm` reads `19:30` — the same spelling the journal stores.
+   The window opens on
    the day it is now, and it keeps no copy of that day: while it shows today it
    reads the clock again every time it is brought back or acted in, so an
    application left running overnight is about the new day rather than the one it

@@ -324,6 +324,27 @@ public sealed class DayTableTests : UiTestBase
     }
 
     [AvaloniaFact]
+    public void A_clock_leaving_its_cell_reads_the_way_the_day_keeps_it()
+    {
+        var day = NewDay();
+        Seed(day, "Website 09:00 1h");
+
+        var table = Show<DayTable>(day);
+        Settle();
+
+        var row = Assert.Single(EntryRows(table));
+        var startBox = Cell(row, "start-input");
+
+        startBox.Focus();
+        startBox.Text = "9:5";
+        Cell(row, "note-input").Focus();
+        Settle();
+
+        Assert.Equal("09:05", startBox.Text);
+        Assert.Equal(new TimeOnly(9, 5), Assert.Single(Ledger.Ledger.State.Entries).Value.Start);
+    }
+
+    [AvaloniaFact]
     public void Pressing_enter_in_a_project_field_takes_the_name_typed()
     {
         var day = NewDay();

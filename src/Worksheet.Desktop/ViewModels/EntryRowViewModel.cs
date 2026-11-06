@@ -175,10 +175,26 @@ public sealed partial class EntryRowViewModel : ObservableObject, IDayRow
 
         if (ReadEditors() is { } after && Accept(after))
         {
+            WriteClocksAsTheDayKeepsThem();
             return;
         }
 
         Refuse();
+    }
+
+    /// <summary>
+    /// Writes both clocks back the way the day spells them. A cell is left holding what was typed —
+    /// <c>9:5</c>, <c>7:30pm</c> — while the entry it describes is already that minute; correcting the
+    /// spelling as the cell is left keeps the row reading the same however it was filled in.
+    /// </summary>
+    private void WriteClocksAsTheDayKeepsThem()
+    {
+        _loading = true;
+
+        StartText = ClockText.Format(Snapshot.Start);
+        EndText = ClockText.Format(Snapshot.End);
+
+        _loading = false;
     }
 
     /// <summary>

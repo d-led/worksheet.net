@@ -156,5 +156,24 @@ public sealed class EventCodecTests
         Assert.DoesNotContain("\"before\"", json);
     }
 
+    [Fact]
+    public void A_clock_is_stored_the_way_the_day_shows_it()
+    {
+        var json = EventCodec.Encode(new EntryLogged(TheEntry()));
+
+        Assert.Contains("\"start\":\"09:00\"", json);
+        Assert.DoesNotContain("09:00:00", json);
+    }
+
+    [Fact]
+    public void A_clock_stored_with_seconds_still_reads()
+    {
+        var stored = EventCodec.Encode(new EntryLogged(TheEntry())).Replace("\"09:00\"", "\"09:05:37\"", StringComparison.Ordinal);
+
+        var decoded = Assert.IsType<EntryLogged>(EventCodec.Decode("entry.logged", stored));
+
+        Assert.Equal(new TimeOnly(9, 5), decoded.Entry.Start);
+    }
+
     private sealed record UnknownChange : LedgerEvent;
 }

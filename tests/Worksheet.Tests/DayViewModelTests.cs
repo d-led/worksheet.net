@@ -390,6 +390,18 @@ public sealed class DayViewModelTests : IDisposable
     }
 
     [Fact]
+    public void A_clock_left_as_it_was_typed_is_shown_the_way_the_day_keeps_it()
+    {
+        var day = DayWith("Website 09:00 1h");
+
+        EntryRow(day).StartText = "9:5";
+
+        Assert.Equal("09:05", EntryRow(day).StartText);
+        Assert.Equal("10:00", EntryRow(day).EndText);
+        Assert.Equal(new TimeOnly(9, 5), EntryRow(day).Snapshot.Start);
+    }
+
+    [Fact]
     public void An_end_before_the_start_puts_the_fields_back()
     {
         var day = DayWith("Website 09:00 1h");
