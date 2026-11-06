@@ -22,6 +22,14 @@ public sealed class DayExportTests : IDisposable
     /// <summary>The moment the export is taken, so the file names do not depend on the clock.</summary>
     private static readonly DateTimeOffset Exported = new(2026, 11, 4, 9, 30, 0, TimeSpan.FromHours(1));
 
+    /// <summary>
+    /// Where the save dialog says the file went: one folder deep, and the folder's name holds no
+    /// separator, so the folder the notice reads back is the same word on every host.
+    /// </summary>
+    private const string Where = "somewhere";
+
+    private static string Saved(string name) => Path.Combine(Where, name);
+
     private readonly TempDirectory _temp = new("worksheet-export");
     private readonly LocalLedger _local;
 
@@ -59,7 +67,7 @@ public sealed class DayExportTests : IDisposable
         day.SaveExport = file =>
         {
             handed = file;
-            return Task.FromResult<string?>("/somewhere/2026-11-04-0930-worksheet-2026-11.zip");
+            return Task.FromResult<string?>(Saved("2026-11-04-0930-worksheet-2026-11.zip"));
         };
 
         await day.ExportMonthCommand.ExecuteAsync(null);
@@ -67,8 +75,8 @@ public sealed class DayExportTests : IDisposable
         Assert.Equal("2026-11-04-0930-worksheet-2026-11.zip", handed!.FileName);
         Assert.True(day.HasExported);
         Assert.Equal("2026-11-04-0930-worksheet-2026-11.zip", day.Exported!.FileName);
-        Assert.Equal("/somewhere", day.Exported.Folder);
-        Assert.Equal("/somewhere/2026-11-04-0930-worksheet-2026-11.zip", day.Exported.FullPath);
+        Assert.Equal(Where, day.Exported.Folder);
+        Assert.Equal(Saved("2026-11-04-0930-worksheet-2026-11.zip"), day.Exported.FullPath);
 
         // The banner is the news, so the status line does not say the same thing again.
         Assert.False(day.HasMessage);
@@ -80,19 +88,19 @@ public sealed class DayExportTests : IDisposable
         var day = DayWith("Website 09:00 1h");
         string? shown = null;
         day.RevealFile = path => shown = path;
-        day.SaveExport = _ => Task.FromResult<string?>("/somewhere/x.zip");
+        day.SaveExport = _ => Task.FromResult<string?>(Saved("x.zip"));
 
         await day.ExportDayCommand.ExecuteAsync(null);
         day.Exported!.RevealCommand.Execute(null);
 
-        Assert.Equal("/somewhere/x.zip", shown);
+        Assert.Equal(Saved("x.zip"), shown);
     }
 
     [Fact]
     public async Task A_window_that_cannot_show_a_file_offers_no_button_for_it()
     {
         var day = DayWith("Website 09:00 1h");
-        day.SaveExport = _ => Task.FromResult<string?>("/somewhere/x.zip");
+        day.SaveExport = _ => Task.FromResult<string?>(Saved("x.zip"));
 
         await day.ExportDayCommand.ExecuteAsync(null);
 
@@ -103,7 +111,7 @@ public sealed class DayExportTests : IDisposable
     public async Task The_notice_is_put_away_when_it_is_dismissed()
     {
         var day = DayWith("Website 09:00 1h");
-        day.SaveExport = _ => Task.FromResult<string?>("/somewhere/x.zip");
+        day.SaveExport = _ => Task.FromResult<string?>(Saved("x.zip"));
 
         await day.ExportDayCommand.ExecuteAsync(null);
         day.Exported!.DismissCommand.Execute(null);
@@ -120,7 +128,7 @@ public sealed class DayExportTests : IDisposable
         day.SaveExport = file =>
         {
             handed = file;
-            return Task.FromResult<string?>("/somewhere/x.zip");
+            return Task.FromResult<string?>(Saved("x.zip"));
         };
 
         await day.ExportMonthCommand.ExecuteAsync(null);
@@ -140,7 +148,7 @@ public sealed class DayExportTests : IDisposable
         day.SaveExport = file =>
         {
             names.Add(file.FileName);
-            return Task.FromResult<string?>("/somewhere/x.zip");
+            return Task.FromResult<string?>(Saved("x.zip"));
         };
 
         await day.ExportDayCommand.ExecuteAsync(null);

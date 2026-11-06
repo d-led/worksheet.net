@@ -13,7 +13,12 @@ namespace Worksheet.Tests;
 /// </summary>
 public sealed class RevealTests
 {
-    private const string Exported = "/somewhere/worksheet-2026-11.zip";
+    /// <summary>
+    /// A file one folder deep, and the folder's name holds no separator, so every host reads the
+    /// path the same way: <see cref="Path.GetDirectoryName(string)"/> is the host's, not the asked
+    /// platform's, and a test that hard-coded "/somewhere" would fail on Windows.
+    /// </summary>
+    private static readonly string Exported = Path.Combine("somewhere", "worksheet-2026-11.zip");
 
     [Fact]
     public void The_mac_asks_the_finder_to_select_the_file()
@@ -41,7 +46,7 @@ public sealed class RevealTests
         var start = Reveal.StartInfoFor(Exported, windows: false, macOS: false);
 
         Assert.Equal("xdg-open", start.FileName);
-        Assert.Equal(["/somewhere"], start.ArgumentList);
+        Assert.Equal(["somewhere"], start.ArgumentList);
         Assert.True(start.UseShellExecute);
     }
 }

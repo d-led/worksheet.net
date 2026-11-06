@@ -30,12 +30,16 @@ public static class ReportHtml
     /// <summary>What a bar is filled with when the row is a break: the warm peach, since a pause is not a project.</summary>
     private const string BreakTint = "#f3c89a";
 
-    /// <summary>The page, block by block in the order it is read; each block ends with its line end.</summary>
+    /// <summary>
+    /// The page, block by block in the order it is read; each block ends with its line end, and every
+    /// line end is LF, whoever built it — the blocks are raw string literals, and those keep the line
+    /// ends of the file they were checked out with, which on Windows is another kind.
+    /// </summary>
     public static string Of(RangeReport report, DateTimeOffset generatedAt)
     {
         ArgumentNullException.ThrowIfNull(report);
 
-        return string.Concat(Blocks(report, generatedAt));
+        return string.Concat(Blocks(report, generatedAt)).ReplaceLineEndings("\n");
     }
 
     private static IEnumerable<string> Blocks(RangeReport report, DateTimeOffset generatedAt) =>

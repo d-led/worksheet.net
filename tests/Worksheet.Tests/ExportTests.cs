@@ -276,6 +276,18 @@ public sealed class ExportTests
     }
 
     [Fact]
+    public void The_page_is_written_with_one_kind_of_line_end_whatever_built_it()
+    {
+        Logged("Website (login) 09:00 1h");
+
+        var page = Html(Report(ExportPeriod.Day));
+
+        // The page is made of raw string literals, which keep the line ends of the file they were
+        // checked out with: a page built from a CRLF checkout must not be a different file.
+        Assert.DoesNotContain('\r', page);
+    }
+
+    [Fact]
     public void The_timeline_is_a_gantt_in_a_swimlane_per_project()
     {
         Logged("Website (login) 09:00 1h");

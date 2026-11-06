@@ -17,7 +17,11 @@ namespace Worksheet.UiTests;
 /// </summary>
 public sealed class ExportBannerTests : UiTestBase
 {
-    private const string Written = "/somewhere/2026-11-04-0930-worksheet-2026-11.zip";
+    /// <summary>
+    /// The path the save dialog answered with: one folder deep, so no separator in it is the host's
+    /// and the folder shown is the same word everywhere.
+    /// </summary>
+    private static readonly string Written = Path.Combine("somewhere", "2026-11-04-0930-worksheet-2026-11.zip");
 
     /// <summary>The banner of a day that exported once, over a window that can show the file.</summary>
     private async Task<(DayViewModel Day, List<string> Revealed)> Exported()
@@ -51,7 +55,7 @@ public sealed class ExportBannerTests : UiTestBase
 
         Assert.True(banner.IsVisible);
         Assert.Contains("2026-11-04-0930-worksheet-2026-11.zip", Shown(banner));
-        Assert.Contains("/somewhere", Shown(banner));
+        Assert.Contains("somewhere", Shown(banner));
 
         // Kept as a picture too: the banner is a thing a person reads at a glance, not a list of
         // parts, and what it looks like is only answerable from the frame.
