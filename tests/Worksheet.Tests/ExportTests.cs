@@ -365,6 +365,28 @@ public sealed class ExportTests
     }
 
     [Fact]
+    public void A_range_of_one_day_names_no_busiest_day_of_it()
+    {
+        Logged("Website 09:00 1h");
+        Logged("Mobile 11:00 2h");
+
+        var day = Html(Report(ExportPeriod.Day));
+
+        Assert.DoesNotContain("Busiest day", day);
+        Assert.Contains(">Total</span> <span class=\"fs-5 fw-semibold\">3h</span>", day);
+        Assert.Contains(">Projects</span> <span class=\"fs-5 fw-semibold\">2</span>", day);
+    }
+
+    [Fact]
+    public void A_range_of_more_than_one_day_still_names_its_busiest()
+    {
+        Logged("3.11. Website 09:00 1h");
+        Logged("4.11. Mobile 09:00 2h");
+
+        Assert.Contains("Busiest day</span> <span class=\"fs-5 fw-semibold\">Wed 4 Nov · 2h</span>", Html(Report(ExportPeriod.Month)));
+    }
+
+    [Fact]
     public void The_page_is_written_with_one_kind_of_line_end_whatever_built_it()
     {
         Logged("Website (login) 09:00 1h");

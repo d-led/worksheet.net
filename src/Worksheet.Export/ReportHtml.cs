@@ -95,24 +95,45 @@ public static class ReportHtml
          """;
 
     /// <summary>
-    /// Four figures on one line, the way Bootstrap's own typography puts them: a muted label and a
+    /// The figures on one line, the way Bootstrap's own typography puts them: a muted label and a
     /// value, no boxes. The dates and the time of generation are small print below.
     /// </summary>
     private static string Summary(RangeReport report, DateTimeOffset generatedAt) =>
         $"""
          <section class="mb-4">
-           <p class="mb-1">
-             <span class="text-body-secondary">Total</span> <span class="fs-5 fw-semibold">{Esc(Shares.Hours(report.TotalMinutes))}</span>
-             <span class="text-body-secondary ms-4">Days logged</span> <span class="fs-5 fw-semibold">{report.DaysLogged}</span>
-             <span class="text-body-secondary ms-4">Projects</span> <span class="fs-5 fw-semibold">{report.Projects.Count}</span>
-             <span class="text-body-secondary ms-4">Busiest day</span> <span class="fs-5 fw-semibold">{Esc(Busiest(report))}</span>
-           </p>
+           <p class="mb-1">{Figures(report)}</p>
            <p class="text-body-secondary small mb-0">
              {Esc(DayText(report.Range.From))} – {Esc(DayText(report.Range.To))} · generated {Esc(Moment(generatedAt))}
            </p>
          </section>
 
          """;
+
+    /// <summary>
+    /// The figures a range has to show, in reading order. The busiest day is one only for a range of
+    /// more than one: a day's own page already says that day in its heading, and the figure would be
+    /// the heading read back.
+    /// </summary>
+    private static string Figures(RangeReport report)
+    {
+        var figures = new List<string>
+        {
+            Figure("Total", Esc(Shares.Hours(report.TotalMinutes)), first: true),
+            Figure("Days logged", report.DaysLogged.ToString(CultureInfo.InvariantCulture)),
+            Figure("Projects", report.Projects.Count.ToString(CultureInfo.InvariantCulture)),
+        };
+
+        if (report.Range.SpansMoreThanADay)
+        {
+            figures.Add(Figure("Busiest day", Esc(Busiest(report))));
+        }
+
+        return string.Join(' ', figures);
+    }
+
+    /// <summary>A label with its value beside it, spaced from the figure before unless it is the first.</summary>
+    private static string Figure(string label, string value, bool first = false) =>
+        $"""<span class="text-body-secondary{(first ? string.Empty : " ms-4")}">{label}</span> <span class="fs-5 fw-semibold">{value}</span>""";
 
     /// <summary>
     /// One bar per project on the row that names it: a share is a length, and a bar of that length
