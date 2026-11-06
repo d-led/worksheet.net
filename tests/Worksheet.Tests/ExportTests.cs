@@ -258,8 +258,85 @@ public sealed class ExportTests
 
         Assert.Contains("data-sortable", page);
         Assert.Contains("data-sort=\"text\">Project</button>", page);
+        Assert.Contains("data-sort=\"number\" data-direction=\"descending\">Time</button>", page);
         Assert.Contains("data-sort=\"number\">Share</button>", page);
-        Assert.Contains("data-value=\"60\"", page);    }
+        Assert.Contains("data-value=\"60\"", page);
+    }
+
+    /// <summary>One card of the page: its heading and the table under it.</summary>
+    private static string Card(string page, string heading) =>
+        Regex.Match(page, $"<h2[^>]*>{heading}</h2>.*?</table>", RegexOptions.Singleline).Value;
+
+    /// <summary>The names each bar row of a card carries, in the order the page draws them.</summary>
+    private static string[][] BarNames(string card) =>
+        [.. Regex.Matches(card, "<tr style=\"--bs-table-bg:[^\"]*\">(?:<td>[^<]*</td>)+")
+            .Select(row => Regex.Matches(row.Value, "<td>([^<]*)</td>").Select(cell => cell.Groups[1].Value).ToArray())];
+
+    [Fact]
+    public void The_project_table_puts_the_project_that_took_the_most_time_first()
+    {
+        Logged("Website 09:00 1h");
+        Logged("Mobile 11:00 3h");
+        Logged("Reading 14:00 30m");
+
+        var rows = BarNames(Card(Html(Report(ExportPeriod.Day)), "Where the time went"));
+
+        Assert.Equal(["Mobile", "Website", "Reading"], rows.Select(row => row[0]));
+    }
+
+    [Fact]
+    public void The_topic_table_puts_the_most_time_first_across_projects_and_within_one()
+    {
+        Logged("Website (login) 09:00 30m");
+        Logged("Website (reports) 10:00 1h");
+        Logged("Mobile (checkout) 11:00 2h");
+
+        var rows = BarNames(Card(Html(Report(ExportPeriod.Day)), "By project and topic"));
+
+        Assert.Equal(["Mobile", "Website", ""], rows.Select(row => row[0]));
+        Assert.Equal(["checkout", "reports", "login"], rows.Select(row => row[1]));
+    }
+
+    [Fact]
+    public void A_bar_row_reads_the_time_before_the_bar_and_the_share_after_it()
+    {
+        Logged("Website 09:00 1h");
+
+        var report = Report(ExportPeriod.Day);
+        var wash = Tints.Wash(report.Catalogue, "Website");
+
+        Assert.Contains(
+            $"<tr style=\"--bs-table-bg:{wash}\"><td>Website</td><td class=\"text-end text-nowrap\" data-value=\"60\">1h</td><td><div class=\"progress\"",
+            Html(report));
+    }
+
+    /// <summary>The From–to of every range the page lists, in the order it lists them.</summary>
+    private static string[] EntrySpans(string page) =>
+        [.. Regex.Matches(page, "<tr style=\"--bs-table-bg:[^\"]*\"><td class=\"text-nowrap\">([^<]*)</td>")
+            .Select(match => match.Groups[1].Value)];
+
+    [Fact]
+    public void The_ranges_of_a_day_come_longest_first()
+    {
+        Logged("Website 09:00 1h");
+        Logged("Mobile 11:00 2h");
+        Logged("Reading 13:30 30m");
+
+        var page = Html(Report(ExportPeriod.Day));
+
+        Assert.Equal(["11:00–13:00", "09:00–10:00", "13:30–14:00"], EntrySpans(page));
+    }
+
+    [Fact]
+    public void Two_ranges_of_the_same_length_stay_in_clock_order()
+    {
+        Logged("Website 14:00 1h");
+        Logged("Mobile 09:00 1h");
+
+        var page = Html(Report(ExportPeriod.Day));
+
+        Assert.Equal(["09:00–10:00", "14:00–15:00"], EntrySpans(page));
+    }
 
     [Fact]
     public void A_range_of_one_day_lists_its_entries_and_a_longer_one_lists_days()
@@ -273,6 +350,18 @@ public sealed class ExportTests
         Assert.DoesNotContain(">Days<", day);
         Assert.Contains(">Days<", month);
         Assert.Contains("<summary", month);
+    }
+
+    [Fact]
+    public void A_folded_day_is_named_by_its_number_as_well_as_its_weekday_and_month()
+    {
+        Logged("3.11. Website 09:00 1h");
+        Logged("4.11. Website 09:00 1h");
+
+        var month = Html(Report(ExportPeriod.Month));
+
+        Assert.Contains("Tuesday 3 Nov 2026", month);
+        Assert.Contains("Wednesday 4 Nov 2026", month);
     }
 
     [Fact]

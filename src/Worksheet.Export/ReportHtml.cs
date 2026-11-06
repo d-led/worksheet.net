@@ -132,8 +132,8 @@ public static class ReportHtml
     private static string ProjectBars(RangeReport report) =>
         Table(
             ["Project"],
-            Rows(report.Projects.Select(project => BarRow(report, [project.Project], project.Minutes, project.Project))),
-            $"""<tr class="table-light fw-semibold"><td>Total</td><td></td><td class="text-end">{Esc(Shares.Hours(report.TotalMinutes))}</td><td class="text-end">100.0 %</td></tr>""");
+            Rows(LargestFirst(report.Projects).Select(project => BarRow(report, [project.Project], project.Minutes, project.Project))),
+            $"""<tr class="table-light fw-semibold"><td>Total</td><td class="text-end">{Esc(Shares.Hours(report.TotalMinutes))}</td><td></td><td class="text-end">100.0 %</td></tr>""");
 
     private static string TopicCard(RangeReport report) =>
         $"""
@@ -146,22 +146,39 @@ public static class ReportHtml
 
          """;
 
-    /// <summary>A project is named once, on the first of its rows, so the bars start close to the names.</summary>
+    /// <summary>
+    /// A project is named once, on the first of its rows — its longest topic — so the bars start
+    /// close to the names.
+    /// </summary>
     private static string TopicRows(RangeReport report) =>
-        Rows(report.Projects.SelectMany(project => project.Topics.Select((topic, index) => BarRow(
+        Rows(LargestFirst(report.Projects).SelectMany(project => LargestFirst(project.Topics).Select((topic, index) => BarRow(
             report,
             [index == 0 ? project.Project : string.Empty, topic.Label],
             topic.Minutes,
             project.Project))));
 
+    /// <summary>Most time first, by name where two are worth the same: the card answers where the time went.</summary>
+    private static IEnumerable<ProjectLine> LargestFirst(IEnumerable<ProjectLine> projects) =>
+        projects.OrderByDescending(project => project.Minutes).ThenBy(project => project.Project, Dates.Names);
+
+    /// <summary>The same within one project, so the topic that took the longest is the row naming it.</summary>
+    private static IEnumerable<TopicLine> LargestFirst(IEnumerable<TopicLine> topics) =>
+        topics.OrderByDescending(topic => topic.Minutes).ThenBy(topic => topic.Label, Dates.Names);
+
+    /// <summary>The ranges of a day, the longest first, and in clock order where two are as long.</summary>
+    private static IEnumerable<EntryLine> LargestFirst(IEnumerable<EntryLine> entries) =>
+        entries.OrderByDescending(entry => entry.Minutes).ThenBy(entry => entry.Start);
+
     /// <summary>
-    /// A table of bars: the cells that name a row, the bar, the time it stands for, its share. Every
-    /// heading but the bar sorts, and the footer stays where it is while the rows move.
+    /// A table of bars: the cells that name a row, the time it stands for, the bar of that length and
+    /// its share. Every heading but the bar sorts, and the rows come largest first until one is
+    /// pressed, which is why the time heading says it is sorted down. The footer is the table's own
+    /// total, so it stays where it is while the rows move.
     /// </summary>
     private static string Table(string[] headings, string rows, string footer = "") =>
         $"""
          <table class="table table-sm align-middle mb-0" data-sortable>
-           <thead><tr>{string.Concat(headings.Select(heading => Column(heading, "text", string.Empty)))}<th scope="col" style="width:45%"></th>{Column("Time", "number", "text-end")}{Column("Share", "number", "text-end")}</tr></thead>
+           <thead><tr>{string.Concat(headings.Select(heading => Column(heading, "text", string.Empty)))}{Column("Time", "number", "text-end", "descending")}<th scope="col" style="width:45%"></th>{Column("Share", "number", "text-end")}</tr></thead>
            <tbody>
          {rows}  </tbody>
          {(footer.Length == 0 ? string.Empty : $"<tfoot>\n{footer}\n</tfoot>\n")}</table>
@@ -169,25 +186,28 @@ public static class ReportHtml
          """;
 
     /// <summary>A heading cell, carrying the classes of a number's column when it has any.</summary>
-    private static string Column(string heading, string kind, string classes) =>
-        classes.Length == 0
-            ? $"""<th scope="col">{Sorting(heading, kind, classes)}</th>"""
-            : $"""<th scope="col" class="{classes}">{Sorting(heading, kind, classes)}</th>""";
+    private static string Column(string heading, string kind, string classes, string? direction = null) =>
+        $"""<th scope="col"{Attribute("class", classes)}{Attribute("aria-sort", direction)}>{Sorting(heading, kind, classes, direction)}</th>""";
 
     /// <summary>A heading that sorts its column when pressed, and says which way it is sorted now.</summary>
-    private static string Sorting(string heading, string kind, string classes) =>
-        $"""<button type="button" class="btn btn-link p-0 fw-semibold text-reset {classes}" data-sort="{kind}">{Esc(heading)}</button>""";
+    private static string Sorting(string heading, string kind, string classes, string? direction = null) =>
+        $"""<button type="button" class="btn btn-link p-0 fw-semibold text-reset {classes}" data-sort="{kind}"{Attribute("data-direction", direction)}>{Esc(heading)}</button>""";
+
+    /// <summary>An attribute, or nothing at all when there is nothing to say.</summary>
+    private static string Attribute(string name, string? value) =>
+        string.IsNullOrEmpty(value) ? string.Empty : $" {name}=\"{value}\"";
 
     /// <summary>Rows as a page writes them: one per line, each with its own line end.</summary>
     private static string Rows(IEnumerable<string> rows) => string.Concat(rows.Select(row => $"{row}\n"));
 
     /// <summary>
     /// A row in the project's own pastel: the wash behind it, and a bar in the tint itself — or, for
-    /// a break, the warm peach, which has no project to be tinted by.
+    /// a break, the warm peach, which has no project to be tinted by. The time comes after the names
+    /// and before the bar, so a row is read as "this much, drawn this long" from left to right.
     /// </summary>
     private static string BarRow(RangeReport report, string[] cells, int minutes, string project) =>
         $"""
-         <tr style="--bs-table-bg:{Tints.Wash(report.Catalogue, project)}">{string.Concat(cells.Select(cell => $"<td>{Esc(cell)}</td>"))}<td><div class="progress" role="progressbar" aria-valuenow="{Esc(Shares.Percent(minutes, report.TotalMinutes))}" aria-valuemin="0" aria-valuemax="100" style="height:10px"><div class="progress-bar" style="width:{Shares.Width(minutes, report.TotalMinutes)};background:{Tints.Of(report.Catalogue, project) ?? BreakTint}"></div></div></td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Hours(minutes))}</td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Percent(minutes, report.TotalMinutes))}</td></tr>
+         <tr style="--bs-table-bg:{Tints.Wash(report.Catalogue, project)}">{string.Concat(cells.Select(cell => $"<td>{Esc(cell)}</td>"))}<td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Hours(minutes))}</td><td><div class="progress" role="progressbar" aria-valuenow="{Esc(Shares.Percent(minutes, report.TotalMinutes))}" aria-valuemin="0" aria-valuemax="100" style="height:10px"><div class="progress-bar" style="width:{Shares.Width(minutes, report.TotalMinutes)};background:{Tints.Of(report.Catalogue, project) ?? BreakTint}"></div></div></td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Percent(minutes, report.TotalMinutes))}</td></tr>
          """;
 
     private static string TimelineCard(RangeReport report) =>
@@ -361,10 +381,11 @@ public static class ReportHtml
 
          """;
 
+    /// <summary>A day folded: its date and its total on the summary, the ranges inside it.</summary>
     private static string Fold(IReadOnlyCollection<string> catalogue, DayLine day) =>
         $"""
          <details class="card mb-1"><summary class="card-body py-2">
-           <span class="fw-semibold">{Esc(day.Date.ToString("dddd MMM yyyy", CultureInfo.InvariantCulture))}</span>
+           <span class="fw-semibold">{Esc(day.Date.ToString("dddd d MMM yyyy", CultureInfo.InvariantCulture))}</span>
            <span class="text-body-secondary">· {Esc(day.Kind)} · {Esc(Shares.Hours(day.Minutes))}</span>
          </summary>
          <div class="card-body py-2">
@@ -372,6 +393,10 @@ public static class ReportHtml
 
          """;
 
+    /// <summary>
+    /// The ranges of a day, the longest first — the order the cards above use — with the clock
+    /// deciding between two of a length, so a day of equal blocks still reads forwards.
+    /// </summary>
     private static string Entries(IReadOnlyCollection<string> catalogue, DayLine day) =>
         $"""
          <table class="table table-sm align-middle mb-0">
@@ -379,7 +404,7 @@ public static class ReportHtml
              <tr><th scope="col">From–to</th><th scope="col">Project</th><th scope="col">Topic</th><th scope="col" class="text-end">Time</th><th scope="col">Note</th></tr>
            </thead>
            <tbody>
-         {Rows(day.Entries.Select(entry => EntryRow(catalogue, entry)))}</tbody>
+         {Rows(LargestFirst(day.Entries).Select(entry => EntryRow(catalogue, entry)))}</tbody>
          </table>
 
          """;
