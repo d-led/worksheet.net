@@ -19,7 +19,10 @@ irm https://raw.githubusercontent.com/d-led/worksheet.net/main/install.ps1 | iex
 ```
 
 Each installs one self-contained binary. They fetch the newest build of `main`, so there is no
-release to wait for. How those builds are made: `docs/development.md`.
+release to wait for. On macOS and Linux it lands in `~/.local/bin` (`WORKSHEET_BIN_DIR` moves it, and
+the installer says so if that folder is not on your `PATH`); on Windows it goes to
+`%LOCALAPPDATA%\Programs\Worksheet` and is added to your `PATH`. How those builds are made:
+`docs/development.md`.
 
 Or take the file yourself. These links always give the newest build:
 
@@ -44,6 +47,7 @@ One line records one time range. Type it, press Enter.
 | `Client portal (login) 08:30 2h30m` | a project, a topic, a start and a length |
 | `Client portal (reports) 11:00-12:30` | a range instead of a length |
 | `Break 12:30 45m` | no topic |
+| `Break 12:30 45m lunch with Anna` | a break, with its comment |
 | `Reading 14:00 2h 30m # the paper` | spaced units and a note |
 | `Reading 14:00 2h the paper` | the same note without the mark |
 | `# the paper` | a note on its own, on the block the day ended with |
@@ -110,7 +114,8 @@ machine says what a report made on another says.
 closes when a day is picked or the focus leaves it, and its icon is an outline with no number on it —
 next to a day on screen, a number of its own would read as another date. A window showing today keeps
 up with the clock: brought back after midnight it is about the new day, not the one the application
-started on. A day you walked to or picked stays where you put it until `Today` is pressed.
+started on. A day you picked stays where you put it — today is the one day that follows the clock,
+and walking back onto today hands the window to it again.
 
 ## Export a range
 
@@ -123,11 +128,12 @@ it covers — `2026-11-04-0930-worksheet-2026-11.zip` — and holds two files:
   only when a reader of the older file would read the newer one wrongly, so a script can check it
   and stop.
 - `worksheet-2026-11.html` — totals with shares, a bar per project and a bar per project and topic, a
-  gantt of the range as it was worked, and a foldable list of the days. A heading sorts its table, by
-  name or by time, whichever way it is pressed twice. The gantt draws each project's bars in the same
-  pastel the window stripes its rows in, and it zooms: `+` and `−` on the chart, ⌘ or Ctrl with the
-  wheel, and a drag to pan a range too long to read at once. Bootstrap and mermaid come from a CDN;
-  without a connection the page still reads, unstyled, and only the chart is missing.
+  gantt of the range as it was worked, and a foldable list of the days. A heading sorts its table by
+  what its cells hold — a name, a time or a share — and pressing it again turns the order round. The
+  gantt draws each project's bars in the same pastel the window stripes its rows in, and it zooms:
+  `+`, `−` and *Reset* on the chart, ⌘ or Ctrl with the wheel, and a drag to pan a range too long to
+  read at once. Bootstrap and mermaid come from a CDN; without a connection the page still reads,
+  unstyled, and only the chart is missing.
 
 Once the file is written, a banner under the heading names it and the folder it went to, and *Show in
 folder* selects it in Finder, Explorer or the file manager the platform has.
