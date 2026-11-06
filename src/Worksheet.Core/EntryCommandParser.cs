@@ -46,16 +46,73 @@ public static partial class EntryCommandParser
         return dateError is null ? ReadSpan(rest, date, note, continueFrom) : EntryParse.Fail(dateError);
     }
 
+    /// <summary>
+    /// The span is the last one a line carries — the fields are read from the right — and whatever
+    /// follows it is the note, whether or not the line spent a "#" on the mark: nothing else may
+    /// follow a span, so those words cannot be anything else. They are taken one at a time, and only
+    /// when they carry nothing a span is made of, so a length typed wrong is still refused rather
+    /// than written down as a comment.
+    /// </summary>
     private static EntryParse ReadSpan(string rest, DateOnly date, string? note, Func<DateOnly, TimeOnly?>? continueFrom)
     {
-        var span = MatchSpan(rest, continueFrom?.Invoke(date));
+        var found = SpanIn(rest, continueFrom?.Invoke(date), peel: note is null);
 
-        if (span.Error is not null)
+        return found.Span is { Matched: true } span
+            ? Build(found.Line[..span.Index], span, date, note ?? Words(found.Trailing))
+            : EntryParse.Fail(found.Span.Error ?? MissingTimeMessage);
+    }
+
+    /// <summary>The words a line carried after its span, or nothing when it carried none.</summary>
+    private static string? Words(string trailing) => trailing.Length > 0 ? trailing : null;
+
+    /// <summary>The line a span was found in, the span, and the words peeled off its end.</summary>
+    private readonly record struct FoundSpan(string Line, SpanParse Span, string Trailing);
+
+    /// <summary>
+    /// Walks in from the end of a line until a span is at its end, answering where the span is and
+    /// what was taken off to reach it. Words are taken only while the line says nothing about its
+    /// note — a "#" is the person saying where the note begins — and only words no span is made of.
+    /// </summary>
+    private static FoundSpan SpanIn(string line, TimeOnly? continuesFrom, bool peel)
+    {
+        var body = line;
+        var trailing = string.Empty;
+
+        while (true)
         {
-            return EntryParse.Fail(span.Error);
+            var span = MatchSpan(body, continuesFrom);
+
+            if (span.Matched || span.Error is not null || !peel || !PeelLastWord(ref body, ref trailing))
+            {
+                return new FoundSpan(body, span, trailing);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Takes the last word off a line when it cannot be part of a span — no digit and no colon —
+    /// answering whether it did, and putting it in front of the words already taken.
+    /// </summary>
+    private static bool PeelLastWord(ref string body, ref string trailing)
+    {
+        var split = body.LastIndexOf(' ');
+
+        if (split < 1)
+        {
+            return false;
         }
 
-        return span.Matched ? Build(rest[..span.Index], span, date, note) : EntryParse.Fail(MissingTimeMessage);
+        var word = body[(split + 1)..];
+
+        if (word.Any(char.IsDigit) || word.Contains(':'))
+        {
+            return false;
+        }
+
+        body = body[..split].TrimEnd();
+        trailing = trailing.Length == 0 ? word : $"{word} {trailing}";
+
+        return true;
     }
 
     private static EntryParse Build(string head, SpanParse span, DateOnly date, string? note)

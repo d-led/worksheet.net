@@ -299,6 +299,41 @@ public sealed class EntryCommandParserTests
     }
 
     [Fact]
+    public void The_words_after_the_span_are_the_note_without_a_mark()
+    {
+        var parse = EntryCommandParser.Parse("wiki (main) 08:30-9:0 mirror analysis", Today);
+
+        Assert.True(parse.Succeeded, parse.Error);
+        Assert.Equal("wiki", parse.Command!.Project);
+        Assert.Equal("main", parse.Command.Topic);
+        Assert.Equal(new TimeOnly(8, 30), parse.Command.Start);
+        Assert.Equal(TimeSpan.FromMinutes(30), parse.Command.Duration);
+        Assert.Equal("mirror analysis", parse.Command.Note);
+    }
+
+    [Fact]
+    public void A_note_without_a_mark_leaves_the_span_whole_and_the_name_alone()
+    {
+        var parse = EntryCommandParser.Parse("Work for the client 09:00 till 13:30 two talks", Today);
+
+        Assert.True(parse.Succeeded, parse.Error);
+        Assert.Equal("Work for the client", parse.Command!.Project);
+        Assert.Equal(TimeSpan.FromMinutes(270), parse.Command.Duration);
+        Assert.Equal("two talks", parse.Command.Note);
+    }
+
+    [Fact]
+    public void A_word_a_span_could_be_made_of_is_never_taken_as_the_note()
+    {
+        // "1h30" is a length someone mistyped. Taken as a note it would write a zero-length entry
+        // annotated with a broken duration, so the line is refused instead.
+        var parse = EntryCommandParser.Parse("Website 09:00 1h30", Today);
+
+        Assert.False(parse.Succeeded);
+        Assert.Equal(EntryCommandParser.MissingTimeMessage, parse.Error);
+    }
+
+    [Fact]
     public void Refuses_a_line_without_a_time()
     {
         var parse = EntryCommandParser.Parse("Website (login)", Today);

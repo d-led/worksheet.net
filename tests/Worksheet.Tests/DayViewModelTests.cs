@@ -163,6 +163,35 @@ public sealed class DayViewModelTests : IDisposable
     }
 
     [Fact]
+    public void The_line_typed_into_the_field_becomes_a_row_with_its_comment()
+    {
+        var day = DayWith();
+
+        day.EntryText = "wiki (main) 08:30-9:0 mirror analysis";
+        day.LogCommand.Execute(null);
+
+        var row = Assert.IsType<EntryRowViewModel>(Assert.Single(day.Rows));
+        Assert.Equal("wiki", row.ProjectText);
+        Assert.Equal("main", row.TopicText);
+        Assert.Equal("08:30", row.StartText);
+        Assert.Equal("09:00", row.EndText);
+        Assert.Equal("mirror analysis", row.Note);
+    }
+
+    [Fact]
+    public void A_break_carries_the_comment_written_after_its_times()
+    {
+        var day = DayWith("Website 09:00 1h", "Mobile 11:00 1h");
+
+        day.EntryText = "Break 10:00-11:00 lunch with Anna";
+        day.LogCommand.Execute(null);
+
+        var lunched = day.Rows.OfType<EntryRowViewModel>().Single(row => row.IsBreak);
+        Assert.Equal("lunch with Anna", lunched.Note);
+        Assert.Empty(Gaps(day));
+    }
+
+    [Fact]
     public void A_day_shows_what_a_writer_outside_the_window_logged()
     {
         var day = DayWith("Website 09:00 1h");

@@ -60,8 +60,8 @@ public sealed class WorksheetTools : IToolkit
                 : Log(line, day);
 
     /// <summary>
-    /// The line in the order it carries what it says — a name, a span, then the words after a "#" —
-    /// so a note of its own is read only for a line that cannot be an entry at all.
+    /// The line in the order it carries what it says — a name, a span, then its note — so a note of
+    /// its own is read only for a line that cannot be an entry at all.
     /// </summary>
     private ToolOutcome Log(string line, DateOnly day)
     {
@@ -231,8 +231,10 @@ public sealed class WorksheetTools : IToolkit
             + "A line may leave its start out — 'Client portal till 16:00', 'Client portal for 1h30m' — "
             + "and then begins where the last range of that day ended. "
             + "One call records one range: a day of four ranges is four calls. "
-            + "A line may name its own day ('3.11. Reading 14:00 45m'); otherwise date is the day it belongs to. "            + "A note is written after a '#', either with a range ('Reading 14:00 45m # the LiteDB paper') or on "
-            + "its own ('# the paper'), which notes the range the day ended with. "            + "A range that cannot be recorded is refused with a sentence saying why, and nothing is written.",
+            + "A line may name its own day ('3.11. Reading 14:00 45m'); otherwise date is the day it belongs to. "
+            + "A note is written after the range, with or without a '#': 'Reading 14:00 45m # the LiteDB paper'. "
+            + "A line that is only a note ('# the paper') notes the range the day ended with. "
+            + "A range that cannot be recorded is refused with a sentence saying why, and nothing is written.",
             ToolSchema.Of(
                 ("line", ToolProperty.Text("The entry line to record, in the application's own syntax.")),
                 ("date", ToolProperty.Text("The day the line belongs to, 2026-11-03. Defaults to today.", required: false))),

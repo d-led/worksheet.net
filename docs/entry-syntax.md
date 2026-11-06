@@ -3,7 +3,7 @@
 One line records one time range. Grammar:
 
 ```
-command   = [ date ] name span [ "#" note ]
+command   = [ date ] name span [ note ]
           | "#" note
 name      = project [ "-" ] [ "(" topic ")" ] [ "-" ]
 date      = d "." m "." [ yyyy ] "."
@@ -15,10 +15,19 @@ span      = clock "-" clock            (a range)
           | [ clock ] "for" duration   (the length, from the same start)
 clock     = H ":" M [ "am" | "pm" ]   (H and M are one or two digits: 9:05, 09:05, 9:5, 12:0)
 duration  = { digits ( "h" | "m" ) }   (the Go duration shape: 3h30m, 90m, 2h, 2h 30m)
+note      = [ "#" ] words
 ```
 
 Everything is trimmed; the fields are recognised from the right, so a project
 name may contain spaces and digits.
+
+Whatever a line carries after its span is its note, whether or not a `#`
+introduces it: nothing else may follow a span, so those words cannot be read as
+anything else — `wiki (main) 08:30-9:0 mirror analysis`. The mark keeps a purpose:
+after it anything at all is the note, numbers included (`# review 2h of video`),
+while a word a span could be made of — one with a digit or a colon in it — is
+never taken as an unmarked note, so a length typed wrong (`09:00 1h30`) is
+refused rather than written down as a comment.
 
 Once the day holds an entry, the start can be left out: `till 13:30` and `for
 1h30m` both begin where the last entry of that day ended. `until` is read as
@@ -80,9 +89,12 @@ to one. Without `am` or `pm` a time is in 24-hour form: `4:30` is 04:30, not 16:
    produces either a command or one sentence explaining what is missing.
 9. **A note is the last thing a line carries.** Whatever follows the `#` is the
    note, so the mark ends what can be read as a name or a time:
-   `Website 09:00 1h # the paper`. A line with nothing but a note — `# the paper`
-   — is read as one only when it holds no name and no time, which is what makes
-   it unambiguous; it then notes the block the day ended with, the same end `till`
-   and `for` continue from. That is a correction like any other: undo takes it
-   back, and a day with nothing on it has nothing to note. A project's name cannot
-   contain the mark, since everything after it is the note.
+   `Website 09:00 1h # the paper`. Without the mark the words after the span are
+   the note — `Website 09:00 1h the paper` — but only the ones that hold no digit
+   and no colon, since anything else may be a span that was typed wrong. A line
+   with nothing but a note — `# the paper` — is read as one only when it holds no
+   name and no time, which is what makes it unambiguous; it then notes the block
+   the day ended with, the same end `till` and `for` continue from. That is a
+   correction like any other: undo takes it back, and a day with nothing on it
+   has nothing to note. A project's name cannot contain the mark, since everything
+   after it is the note.

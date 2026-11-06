@@ -45,6 +45,7 @@ One line records one time range. Type it, press Enter.
 | `Client portal (reports) 11:00-12:30` | a range instead of a length |
 | `Break 12:30 45m` | no topic |
 | `Reading 14:00 2h 30m # the paper` | spaced units and a note |
+| `Reading 14:00 2h the paper` | the same note without the mark |
 | `# the paper` | a note on its own, on the block the day ended with |
 | `3.11. Reading 14:00 45m` | another day than the one on screen |
 | `Reading till 16:00` | an end only: it begins where the last block ended |
@@ -61,11 +62,14 @@ a time, or in `till`/`for`, is refused rather than swallowed: close it with `-`,
 written for you: `(` after a project, `)` after a topic. A line that cannot be recorded is refused
 in one sentence beside it.
 
-A note is the last thing a line carries: `Reading 14:00 2h # the paper`. It can also be a line of
-its own — type `# the paper` and press Enter, and it lands on the block the day ended with, the same
-block `till` and `for` continue from. A line is only read as such a note when it holds no name and
-no time of its own, so a note never competes with an entry for the same keystrokes: comments
-thought of after the work is logged are written without leaving the entry line.
+A note is the last thing a line carries: `Reading 14:00 2h # the paper`, and the mark is optional —
+the words after the time are the note too, since nothing else may follow a span. The `#` is still
+worth typing when the note holds numbers: after the mark anything is the note, while a word a time
+could be made of is refused rather than taken. A note can also be a line of its own — type
+`# the paper` and press Enter, and it lands on the block the day ended with, the same block `till`
+and `for` continue from. A line is only read as such a note when it holds no name and no time of its
+own, so a note never competes with an entry for the same keystrokes: comments thought of after the
+work is logged are written without leaving the entry line.
 
 ## Fix a day
 
