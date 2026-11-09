@@ -11,6 +11,7 @@ namespace Worksheet.Export;
 public enum ExportPeriod
 {
     Day,
+    Week,
     Month,
     Quarter,
     Year,
@@ -24,11 +25,15 @@ public sealed record ExportRange(DateOnly From, DateOnly To, string Label, Expor
     /// <summary>Whether the daily detail is worth printing: one day is its own detail.</summary>
     public bool SpansMoreThanADay => Days > 1;
 
-    /// <summary>The whole month, quarter or year the day belongs to; a day is itself.</summary>
+    /// <summary>
+    /// The day itself, the Monday-to-Sunday week around it, or the whole month, quarter or year it
+    /// belongs to.
+    /// </summary>
     public static ExportRange For(ExportPeriod period, DateOnly anchor) =>
         period switch
         {
             ExportPeriod.Day => new ExportRange(anchor, anchor, anchor.ToString("ddd d MMM yyyy", CultureInfo.InvariantCulture), period),
+            ExportPeriod.Week => WeekOf(anchor),
             ExportPeriod.Month => MonthOf(anchor),
             ExportPeriod.Quarter => QuarterOf(anchor),
             _ => YearOf(anchor),
@@ -39,12 +44,29 @@ public sealed record ExportRange(DateOnly From, DateOnly To, string Label, Expor
         Period switch
         {
             ExportPeriod.Day => $"worksheet-{From:yyyy-MM-dd}",
+            ExportPeriod.Week => $"worksheet-{ISOWeek.GetYear(From)}-W{ISOWeek.GetWeekOfYear(From):D2}",
             ExportPeriod.Month => $"worksheet-{From:yyyy-MM}",
             ExportPeriod.Quarter => $"worksheet-{From:yyyy}-Q{Quarter}",
             _ => $"worksheet-{From:yyyy}",
         };
 
     public int Quarter => (From.Month - 1) / 3 + 1;
+
+    /// <summary>
+    /// The week as it is lived: Monday to Sunday, whichever day of it was on screen. The file is
+    /// named for the ISO week of that Monday, so a week that spans the turn of a year still sorts
+    /// where it belongs.
+    /// </summary>
+    private static ExportRange WeekOf(DateOnly anchor)
+    {
+        var from = anchor.AddDays(-(((int)anchor.DayOfWeek + 6) % 7));
+
+        return new ExportRange(
+            from,
+            from.AddDays(6),
+            $"Week of {from.ToString("d MMM yyyy", CultureInfo.InvariantCulture)}",
+            ExportPeriod.Week);
+    }
 
     private static ExportRange MonthOf(DateOnly anchor)
     {

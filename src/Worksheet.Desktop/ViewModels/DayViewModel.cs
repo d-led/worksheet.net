@@ -277,8 +277,9 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     partial void OnExportedChanged(ExportNoticeViewModel? value) => OnPropertyChanged(nameof(HasExported));
 
     /// <summary>
-    /// The range is the period the day on screen belongs to: that day, its month, its quarter, its
-    /// year. Building it here keeps the report and the page in one place, and the zip in one file.
+    /// The range is the period the day on screen belongs to: that day, its week, its month, its
+    /// quarter, its year. Building it here keeps the report and the page in one place, and the zip
+    /// in one file.
     /// </summary>
     public ExportFile BuildExport(ExportPeriod period)
     {
@@ -290,6 +291,9 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
 
     [RelayCommand]
     private Task ExportDayAsync() => Export(ExportPeriod.Day);
+
+    [RelayCommand]
+    private Task ExportWeekAsync() => Export(ExportPeriod.Week);
 
     [RelayCommand]
     private Task ExportMonthAsync() => Export(ExportPeriod.Month);
@@ -305,6 +309,7 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
         period switch
         {
             ExportPeriod.Day => ExportDayCommand,
+            ExportPeriod.Week => ExportWeekCommand,
             ExportPeriod.Month => ExportMonthCommand,
             ExportPeriod.Quarter => ExportQuarterCommand,
             _ => ExportYearCommand,

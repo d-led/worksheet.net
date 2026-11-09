@@ -53,6 +53,7 @@ public static class ReportHtml
         TopicCard(report),
         TimelineCard(report),
         Detail(report),
+        DayByProjectCard(report),
         Footer,
         "</main>\n",
         Scripts(),
@@ -443,6 +444,54 @@ public static class ReportHtml
          <tr style="--bs-table-bg:{Tints.Wash(catalogue, entry.Project)}"><td class="text-nowrap">{ClockText.Format(entry.Start)}–{ClockText.Format(entry.End)}</td><td>{Esc(entry.Project)}</td><td>{Esc(entry.Topic ?? string.Empty)}</td><td class="text-end">{Esc(Shares.Hours(entry.Minutes))}</td><td class="text-body-secondary">{Esc(entry.Note ?? string.Empty)}</td></tr>
          """;
 
+    /// <summary>
+    /// The range the other way round, as the page's last table: a row per day and a column per
+    /// project, so what each project took on each day can be read off at a glance. The days card
+    /// answers the same question one day at a time; this one answers it a project at a time. A range
+    /// of one day is its own detail, so it carries no second reading of the same rows.
+    /// </summary>
+    private static string DayByProjectCard(RangeReport report) =>
+        report.Range.SpansMoreThanADay
+            ? $"""
+               <section class="card mb-4">
+                 <div class="card-body">
+                   <h2 class="h5 mb-3">Each day, project by project</h2>
+                   {DaysByProject(report)}
+                 </div>
+               </section>
+
+               """
+            : string.Empty;
+
+    private static string DaysByProject(RangeReport report) =>
+        $"""
+         <div class="table-responsive">
+           <table class="table table-sm align-middle mb-0">
+             <thead><tr><th scope="col">Day</th>{string.Concat(report.Projects.Select(project => $"<th scope=\"col\" class=\"text-end\">{Esc(project.Project)}</th>"))}<th scope="col" class="text-end">Total</th></tr></thead>
+             <tbody>
+         {Rows(report.Days.Select(day => DayRow(report, day)))}  </tbody>
+             <tfoot><tr class="table-light fw-semibold"><td>Total</td>{string.Concat(report.Projects.Select(project => $"<td class=\"text-end\">{Esc(Shares.Hours(project.Minutes))}</td>"))}<td class="text-end">{Esc(Shares.Hours(report.TotalMinutes))}</td></tr></tfoot>
+           </table>
+         </div>
+
+         """;
+
+    /// <summary>One day of that table: what each project took, and what the day was worth in all.</summary>
+    private static string DayRow(RangeReport report, DayLine day) =>
+        $"""
+         <tr><td class="text-nowrap">{Esc(day.Date.ToString("ddd d MMM", CultureInfo.InvariantCulture))}</td>{string.Concat(report.Projects.Select(project => DayCell(day, project.Project)))}<td class="text-end text-nowrap">{Esc(Shares.Hours(day.Minutes))}</td></tr>
+         """;
+
+    /// <summary>A day's cell for one project: its hours, or nothing at all when it was not worked on.</summary>
+    private static string DayCell(DayLine day, string project)
+    {
+        var minutes = day.Entries.Where(entry => entry.Project == project).Sum(entry => entry.Minutes);
+
+        return minutes == 0
+            ? "<td></td>"
+            : $"""<td class="text-end text-nowrap">{Esc(Shares.Hours(minutes))}</td>""";
+    }
+
     /// <summary>The page's last word: where the numbers come from, and what the page needs from the net.</summary>
     private const string Footer = """
         <footer class="text-body-secondary small mt-5">
@@ -607,6 +656,7 @@ public static class ReportHtml
         period switch
         {
             ExportPeriod.Day => "day",
+            ExportPeriod.Week => "week",
             ExportPeriod.Month => "month",
             ExportPeriod.Quarter => "quarter",
             _ => "year",

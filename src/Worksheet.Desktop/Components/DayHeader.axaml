@@ -69,6 +69,7 @@
       <SplitButton.Flyout>
         <MenuFlyout>
           <MenuItem x:Name="ExportDay" Header="Day" Tag="Day" />
+          <MenuItem x:Name="ExportWeek" Header="Week" Tag="Week" />
           <MenuItem x:Name="ExportMonth" Header="Month" Tag="Month" />
           <MenuItem x:Name="ExportQuarter" Header="Quarter" Tag="Quarter" />
           <MenuItem x:Name="ExportYear" Header="Year" Tag="Year" />

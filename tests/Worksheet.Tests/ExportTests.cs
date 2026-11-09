@@ -67,6 +67,31 @@ public sealed class ExportTests
     }
 
     [Fact]
+    public void A_week_runs_from_its_monday_to_its_sunday()
+    {
+        var range = ExportRange.For(ExportPeriod.Week, Tuesday);
+
+        Assert.Equal(new DateOnly(2026, 11, 2), range.From);
+        Assert.Equal(new DateOnly(2026, 11, 8), range.To);
+        Assert.Equal(7, range.Days);
+        Assert.Equal("Week of 2 Nov 2026", range.Label);
+        Assert.Equal("worksheet-2026-W45", range.FileStem);
+    }
+
+    [Fact]
+    public void A_sunday_belongs_to_the_week_that_ended_with_it() =>
+        Assert.Equal(new DateOnly(2026, 11, 2), ExportRange.For(ExportPeriod.Week, new DateOnly(2026, 11, 8)).From);
+
+    [Fact]
+    public void A_week_that_spans_the_turn_of_a_year_is_named_for_its_iso_week()
+    {
+        var range = ExportRange.For(ExportPeriod.Week, new DateOnly(2026, 1, 1));
+
+        Assert.Equal(new DateOnly(2025, 12, 29), range.From);
+        Assert.Equal("worksheet-2026-W01", range.FileStem);
+    }
+
+    [Fact]
     public void A_day_is_the_day_itself()
     {
         var range = ExportRange.For(ExportPeriod.Day, Tuesday);
@@ -372,6 +397,29 @@ public sealed class ExportTests
         Assert.DoesNotContain(">Days<", day);
         Assert.Contains(">Days<", month);
         Assert.Contains("<summary", month);
+    }
+
+    [Fact]
+    public void The_page_ends_with_what_each_project_took_on_each_day()
+    {
+        Logged("2.11. Website 09:00 2h");
+        Logged("2.11. Mobile 11:00 1h");
+        Logged("3.11. Website 10:00 3h");
+
+        var page = Html(Report(ExportPeriod.Week));
+        var summary = page[page.IndexOf("Each day, project by project", StringComparison.Ordinal)..];
+
+        Assert.Contains("<td class=\"text-nowrap\">Mon 2 Nov</td><td class=\"text-end text-nowrap\">1h</td><td class=\"text-end text-nowrap\">2h</td><td class=\"text-end text-nowrap\">3h</td>", summary);
+        Assert.Contains("<td class=\"text-nowrap\">Tue 3 Nov</td><td></td><td class=\"text-end text-nowrap\">3h</td><td class=\"text-end text-nowrap\">3h</td>", summary);
+        Assert.Contains("<td>Total</td><td class=\"text-end\">1h</td><td class=\"text-end\">5h</td><td class=\"text-end\">6h</td>", summary);
+    }
+
+    [Fact]
+    public void A_page_of_one_day_carries_no_second_reading_of_its_rows()
+    {
+        Logged("Website 09:00 1h");
+
+        Assert.DoesNotContain("Each day, project by project", Html(Report(ExportPeriod.Day)));
     }
 
     [Fact]

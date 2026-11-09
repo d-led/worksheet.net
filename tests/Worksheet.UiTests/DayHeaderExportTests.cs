@@ -9,11 +9,11 @@ using Worksheet.Desktop.Components;
 
 namespace Worksheet.UiTests;
 
-/// <summary>The export button: the month on one click, the other three ranges behind the arrow.</summary>
+/// <summary>The export button: the month on one click, the other four ranges behind the arrow.</summary>
 public sealed class DayHeaderExportTests : UiTestBase
 {
     [AvaloniaFact]
-    public void The_header_offers_the_four_ranges_with_the_month_as_the_one_click()
+    public void The_header_offers_the_five_ranges_with_the_month_as_the_one_click()
     {
         var day = NewDay();
 
@@ -25,14 +25,14 @@ public sealed class DayHeaderExportTests : UiTestBase
     }
 
     [AvaloniaFact]
-    public void The_arrow_offers_day_month_quarter_and_year()
+    public void The_arrow_offers_day_week_month_quarter_and_year()
     {
         var header = Show<DayHeader>(NewDay());
 
         var menu = (MenuFlyout)header.FindControl<SplitButton>("Export")!.Flyout!;
         var items = menu.Items.OfType<MenuItem>().Select(item => item.Header?.ToString() ?? string.Empty).ToArray();
 
-        Assert.Equal(["Day", "Month", "Quarter", "Year"], items);
+        Assert.Equal(["Day", "Week", "Month", "Quarter", "Year"], items);
     }
 
     [AvaloniaFact]

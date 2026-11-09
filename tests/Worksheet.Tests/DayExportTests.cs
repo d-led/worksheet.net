@@ -83,6 +83,22 @@ public sealed class DayExportTests : IDisposable
     }
 
     [Fact]
+    public async Task Exporting_the_week_hands_over_the_week_the_day_belongs_to()
+    {
+        var day = DayWith("Website (login) 09:00 1h");
+        ExportFile? handed = null;
+        day.SaveExport = file =>
+        {
+            handed = file;
+            return Task.FromResult<string?>(Saved("x.zip"));
+        };
+
+        await day.ExportWeekCommand.ExecuteAsync(null);
+
+        Assert.Equal("2026-11-04-0930-worksheet-2026-W45.zip", handed!.FileName);
+    }
+
+    [Fact]
     public async Task The_notice_hands_the_file_to_the_window_to_be_shown()
     {
         var day = DayWith("Website 09:00 1h");
