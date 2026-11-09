@@ -94,6 +94,28 @@ public sealed class ExportTests
     }
 
     [Fact]
+    public void A_break_counts_in_the_total_and_not_in_the_worked_time()
+    {
+        Logged("Website 09:00 2h");
+        Logged("Break 11:00 1h");
+
+        var report = Report(ExportPeriod.Day);
+
+        Assert.Equal(180, report.TotalMinutes);
+        Assert.Equal(120, report.WorkedMinutes);
+    }
+
+    [Fact]
+    public void A_range_without_a_break_is_worth_its_total_as_work()
+    {
+        Logged("Website 09:00 2h");
+
+        var report = Report(ExportPeriod.Day);
+
+        Assert.False(report.HoldsABreak);
+    }
+
+    [Fact]
     public void Hours_logged_without_a_topic_are_named_as_such()
     {
         Logged("Mobile 11:00 45m");
@@ -164,7 +186,7 @@ public sealed class ExportTests
         var root = json.RootElement;
 
         Assert.Equal(
-            ["version", "range", "generatedAt", "totalMinutes", "total", "daysLogged", "projects", "days"],
+            ["version", "range", "generatedAt", "totalMinutes", "total", "workedMinutes", "worked", "daysLogged", "projects", "days"],
             Keys(root));
         Assert.Equal(["from", "to", "period", "label", "days"], Keys(root.GetProperty("range")));
         Assert.Equal(["project", "minutes", "hours", "share", "topics"], Keys(root.GetProperty("projects")[0]));
@@ -375,6 +397,26 @@ public sealed class ExportTests
         Assert.DoesNotContain("Busiest day", day);
         Assert.Contains(">Total</span> <span class=\"fs-5 fw-semibold\">3h</span>", day);
         Assert.Contains(">Projects</span> <span class=\"fs-5 fw-semibold\">2</span>", day);
+    }
+
+    [Fact]
+    public void The_page_gives_the_time_without_breaks_beside_a_total_that_holds_one()
+    {
+        Logged("Website 09:00 2h");
+        Logged("Break 11:00 1h");
+
+        var page = Html(Report(ExportPeriod.Day));
+
+        Assert.Contains(">Total</span> <span class=\"fs-5 fw-semibold\">3h</span>", page);
+        Assert.Contains(">Without breaks</span> <span class=\"fs-5 fw-semibold\">2h</span>", page);
+    }
+
+    [Fact]
+    public void A_page_with_no_break_in_it_names_no_second_figure()
+    {
+        Logged("Website 09:00 2h");
+
+        Assert.DoesNotContain("Without breaks", Html(Report(ExportPeriod.Day)));
     }
 
     [Fact]

@@ -27,7 +27,7 @@ internal static class Reports
             return $"{header}\nNothing recorded.";
         }
 
-        return Line([header, .. layout.Entries.Select(entry => Describe(state, entry)), $"Total {Durations.Format(layout.Total)}"]);
+        return Line([header, .. layout.Entries.Select(entry => Describe(state, entry)), $"Total {TotalFigure(layout.Total, WorkedOf(state, layout.Entries))}"]);
     }
 
     public static string Totals(LedgerState state, DateOnly from, DateOnly to)
@@ -48,8 +48,21 @@ internal static class Reports
 
         var total = entries.Aggregate(TimeSpan.Zero, (sum, entry) => sum + entry.Duration);
 
-        return Line([Range(from, to), .. projects, $"Total  {Durations.Format(total)}"]);
+        return Line([Range(from, to), .. projects, $"Total  {TotalFigure(total, WorkedOf(state, entries))}"]);
     }
+
+    /// <summary>
+    /// The hours of a total, and beside them what is left once the breaks are taken out: a break is
+    /// time on the day, so a lone figure would read as time spent. A stretch without a break adds
+    /// nothing.
+    /// </summary>
+    private static string TotalFigure(TimeSpan total, TimeSpan worked) =>
+        worked == total
+            ? Durations.Format(total)
+            : $"{Durations.Format(total)} · without breaks {Durations.Format(worked)}";
+
+    private static TimeSpan WorkedOf(LedgerState state, IEnumerable<Entry> entries) =>
+        entries.Where(entry => !state.IsBreak(entry)).Aggregate(TimeSpan.Zero, (sum, entry) => sum + entry.Duration);
 
     public static string Projects(LedgerState state)
     {

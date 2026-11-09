@@ -129,6 +129,17 @@ public sealed class McpToolTests
     }
 
     [Fact]
+    public void A_day_calls_its_figure_a_total_and_says_what_the_work_was()
+    {
+        LogEntry("Client portal (login) 08:30 2h30m", Tuesday);
+        LogEntry("Break 11:00 1h", Tuesday);
+
+        Assert.Equal(
+            "Tue 3 Nov 2026 — Working day\n08:30-11:00 Client portal (login) 2h30m\n11:00-12:00 Break 1h\nTotal 3h30m · without breaks 2h30m",
+            Call("day", """{"date":"2026-11-03"}""").Text);
+    }
+
+    [Fact]
     public void An_empty_day_says_there_is_nothing_on_it()
     {
         Assert.Equal(
@@ -144,6 +155,17 @@ public sealed class McpToolTests
 
         Assert.Equal(
             "1 Nov 2026 – 30 Nov 2026\nClient portal  2h30m\nMobile  1h\nTotal  3h30m",
+            Call("totals", """{"from":"2026-11-01","to":"2026-11-30"}""").Text);
+    }
+
+    [Fact]
+    public void Totals_say_what_the_range_was_without_its_breaks()
+    {
+        LogEntry("Client portal (login) 08:30 2h30m", Tuesday);
+        LogEntry("Break 11:00 1h", Tuesday);
+
+        Assert.Equal(
+            "1 Nov 2026 – 30 Nov 2026\nClient portal  2h30m\nBreak  1h\nTotal  3h30m · without breaks 2h30m",
             Call("totals", """{"from":"2026-11-01","to":"2026-11-30"}""").Text);
     }
 

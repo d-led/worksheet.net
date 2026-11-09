@@ -39,6 +39,7 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string _dayTitle = string.Empty;
 
+    /// <summary>The time worked on the day, the way the heading writes it: a break is left out.</summary>
     [ObservableProperty]
     private string _total = string.Empty;
 
@@ -672,7 +673,7 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
 
     private void UpdateTotals()
     {
-        Total = Durations.Format(_local.Ledger.State.TotalOn(Day));
+        Total = Durations.Format(_local.Ledger.State.WorkedOn(Day));
         CanUndo = _local.Ledger.CanUndo;
         CanRedo = _local.Ledger.CanRedo;
     }

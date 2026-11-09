@@ -242,14 +242,16 @@ public sealed class WorksheetTools : IToolkit
             Annotations: ToolAnnotations.Writes),
         new(
             "day",
-            "One day as recorded: every range with its project and topic, then the total.",
+            "One day as recorded: every range with its project and topic, then the total. A break is "
+            + "time on the day, so the time without breaks is given beside the total.",
             ToolSchema.Of(
                 ("date", ToolProperty.Text("The day, 2026-11-03. Defaults to today.", required: false))),
             Title: "Read a day",
             Annotations: ToolAnnotations.Readings),
         new(
             "totals",
-            "Hours per project between two days, both included, longest first.",
+            "Hours per project between two days, both included, longest first, then the total with the "
+            + "time without breaks beside it.",
             ToolSchema.Of(
                 ("from", ToolProperty.Text("The first day, 2026-11-03.")),
                 ("to", ToolProperty.Text("The last day, 2026-11-03."))),

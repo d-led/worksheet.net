@@ -110,18 +110,26 @@ public static class ReportHtml
          """;
 
     /// <summary>
-    /// The figures a range has to show, in reading order. The busiest day is one only for a range of
-    /// more than one: a day's own page already says that day in its heading, and the figure would be
-    /// the heading read back.
+    /// The figures a range has to show, in reading order. Total is everything the journal holds,
+    /// and the time without breaks follows it whenever a break is in the range, since a break is
+    /// on the day without being work. The busiest day is one only for a range of more than one: a
+    /// day's own page already says that day in its heading, and the figure would be the heading
+    /// read back.
     /// </summary>
     private static string Figures(RangeReport report)
     {
         var figures = new List<string>
         {
             Figure("Total", Esc(Shares.Hours(report.TotalMinutes)), first: true),
-            Figure("Days logged", report.DaysLogged.ToString(CultureInfo.InvariantCulture)),
-            Figure("Projects", report.Projects.Count.ToString(CultureInfo.InvariantCulture)),
         };
+
+        if (report.HoldsABreak)
+        {
+            figures.Add(Figure("Without breaks", Esc(Shares.Hours(report.WorkedMinutes))));
+        }
+
+        figures.Add(Figure("Days logged", report.DaysLogged.ToString(CultureInfo.InvariantCulture)));
+        figures.Add(Figure("Projects", report.Projects.Count.ToString(CultureInfo.InvariantCulture)));
 
         if (report.Range.SpansMoreThanADay)
         {
@@ -407,7 +415,7 @@ public static class ReportHtml
         $"""
          <details class="card mb-1"><summary class="card-body py-2">
            <span class="fw-semibold">{Esc(day.Date.ToString("dddd d MMM yyyy", CultureInfo.InvariantCulture))}</span>
-           <span class="text-body-secondary">· {Esc(day.Kind)} · {Esc(Shares.Hours(day.Minutes))}</span>
+           <span class="text-body-secondary">· {Esc(day.Kind)} · total {Esc(Shares.Hours(day.Minutes))}</span>
          </summary>
          <div class="card-body py-2">
          {Entries(catalogue, day)}</div></details>
@@ -439,6 +447,7 @@ public static class ReportHtml
     private const string Footer = """
         <footer class="text-body-secondary small mt-5">
           <p class="mb-1">Made by Worksheet from its journal. Days that hold nothing are left out; the total is what the journal says, not a guess at a working day.</p>
+          <p class="mb-1">A break is time on the day, so it counts in the total and in a day's own figure; the time without breaks is what was worked.</p>
           <p class="mb-0">This page loads Bootstrap and mermaid from jsDelivr. Without a connection it still reads, unstyled; the gantt is then not drawn.</p>
         </footer>
 

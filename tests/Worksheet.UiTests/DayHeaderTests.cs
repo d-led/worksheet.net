@@ -57,6 +57,19 @@ public sealed class DayHeaderTests : UiTestBase
     }
 
     [AvaloniaFact]
+    public void The_heading_counts_the_work_and_leaves_the_break_out()
+    {
+        var day = NewDay();
+        var header = Show<DayHeader>(day);
+
+        Seed(day, "Website 09:00 1h");
+        Seed(day, "Break 10:00 30m");
+        Seed(day, "Mobile 10:30 1h");
+
+        Assert.Equal("2h", header.FindControl<TextBlock>("Total")!.Text);
+    }
+
+    [AvaloniaFact]
     public void The_calendar_is_a_glyph_with_no_number_of_its_own()
     {
         var header = Show<DayHeader>(NewDay());

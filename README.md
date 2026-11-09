@@ -123,12 +123,13 @@ and walking back onto today hands the window to it again.
 beside it offers the day, the quarter and the year. The file is named for when it was taken and what
 it covers — `2026-11-04-0930-worksheet-2026-11.zip` — and holds two files:
 
-- `worksheet-2026-11.json` — the range as data: minutes per project and per project and topic, and
-  every logged day with its entries. The first field, `version`, is the format version: it changes
-  only when a reader of the older file would read the newer one wrongly, so a script can check it
-  and stop.
+- `worksheet-2026-11.json` — the range as data: minutes per project and per project and topic, the
+  total with the time without breaks beside it, and every logged day with its entries. The first
+  field, `version`, is the format version: it changes only when a reader of the older file would read
+  the newer one wrongly, so a script can check it and stop.
 - `worksheet-2026-11.html` — totals with shares, a bar per project and a bar per project and topic, a
-  gantt of the range as it was worked, and a foldable list of the days. A heading sorts its table by
+  gantt of the range as it was worked, and a foldable list of the days. A break counts in the total,
+  so the time without breaks stands beside it. A heading sorts its table by
   what its cells hold — a name, a time or a share — and pressing it again turns the order round. The
   gantt draws each project's bars in the same pastel the window stripes its rows in, and it zooms:
   `+`, `−` and *Reset* on the chart, ⌘ or Ctrl with the wheel, and a drag to pan a range too long to

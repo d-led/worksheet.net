@@ -160,8 +160,21 @@ public sealed class LedgerState
     /// <summary>Whether the day can be worked on, and therefore edited.</summary>
     public bool TakesEntries(DateOnly day) => DayKinds.TakesEntries(KindOf(day));
 
-    public TimeSpan TotalOn(DateOnly day) =>
-        _entries.Values.Where(entry => entry.Date == day).Aggregate(TimeSpan.Zero, (total, entry) => total + entry.Duration);
+    /// <summary>The time the day holds: everything recorded on it, a break included.</summary>
+    public TimeSpan TotalOn(DateOnly day) => Summed(EntriesOn(day));
+
+    /// <summary>
+    /// The same day as work: a break is a pause on the day rather than time spent, so it is left
+    /// out. The window's heading gives this figure, so a break never reads as productive time.
+    /// </summary>
+    public TimeSpan WorkedOn(DateOnly day) =>
+        Summed(EntriesOn(day).Where(entry => !IsBreak(entry)));
+
+    /// <summary>Whether the entry is a pause: the one project whose time is not worked time.</summary>
+    public bool IsBreak(Entry entry) => Break.IsBreak(ProjectName(entry.ProjectId));
+
+    private static TimeSpan Summed(IEnumerable<Entry> entries) =>
+        entries.Aggregate(TimeSpan.Zero, (total, entry) => total + entry.Duration);
 
     public string ProjectName(Guid projectId) =>
         _projects.TryGetValue(projectId, out var project) ? project.Name : "?";

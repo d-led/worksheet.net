@@ -50,12 +50,14 @@
             Command="{Binding ShowTodayCommand}"
             VerticalAlignment="Center" />
 
+    <!-- What the day is worth as work: a break is on the day but is not counted here. -->
     <TextBlock x:Name="Total"
                Grid.Column="5"
                Classes="total"
                Text="{Binding Total}"
                MinWidth="96"
-               TextAlignment="Right" />
+               TextAlignment="Right"
+               ToolTip.Tip="Time worked, breaks left out" />
 
     <!-- One click exports the month the day belongs to; the arrow offers the other three ranges. -->
     <SplitButton x:Name="Export"

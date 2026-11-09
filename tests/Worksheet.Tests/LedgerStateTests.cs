@@ -15,6 +15,7 @@ public sealed class LedgerStateTests
 
     private static readonly Guid Website = Guid.NewGuid();
     private static readonly Guid Webshop = Guid.NewGuid();
+    private static readonly Guid Pause = Guid.NewGuid();
     private static readonly Guid Topic = Guid.NewGuid();
 
     private static LedgerState Ledger()
@@ -31,11 +32,11 @@ public sealed class LedgerStateTests
         return state;
     }
 
-    private static Entry EntryAt(DateOnly day, string start, int minutes) =>
+    private static Entry EntryAt(DateOnly day, string start, int minutes, Guid? project = null) =>
         new()
         {
             Id = EntryId.Create(),
-            ProjectId = Website,
+            ProjectId = project ?? Website,
             Date = day,
             Start = Clocks.At(start),
             Duration = TimeSpan.FromMinutes(minutes),
@@ -70,6 +71,25 @@ public sealed class LedgerStateTests
         state.Apply(new EntryRetracted(entry));
 
         Assert.Equal(TimeSpan.FromMinutes(30), state.TotalOn(Day));
+    }
+
+    [Fact]
+    public void A_break_is_time_on_the_day_without_being_time_worked()
+    {
+        var state = Ledger();
+        state.Apply(new ProjectOpened(Pause, Break.Project));
+        state.Apply(new EntryLogged(EntryAt(OtherDay, "09:00", 30, Pause)));
+
+        Assert.Equal(TimeSpan.FromMinutes(90), state.TotalOn(OtherDay));
+        Assert.Equal(TimeSpan.FromMinutes(60), state.WorkedOn(OtherDay));
+    }
+
+    [Fact]
+    public void A_day_with_no_break_is_worth_its_total_as_work()
+    {
+        var state = Ledger();
+
+        Assert.Equal(state.TotalOn(Day), state.WorkedOn(Day));
     }
 
     [Fact]

@@ -192,6 +192,14 @@ public sealed class DayViewModelTests : IDisposable
     }
 
     [Fact]
+    public void The_days_total_is_the_time_worked_and_not_the_break()
+    {
+        var day = DayWith("Website 09:00 3h", "Break 12:00 30m", "Mobile 12:30 4h");
+
+        Assert.Equal("7h", day.Total);
+    }
+
+    [Fact]
     public void A_day_shows_what_a_writer_outside_the_window_logged()
     {
         var day = DayWith("Website 09:00 1h");
@@ -722,6 +730,7 @@ public sealed class DayViewModelTests : IDisposable
         Assert.Equal("Break", _local.Ledger.State.ProjectName(taken.ProjectId));
         Assert.Equal(TimeSpan.FromHours(1), taken.Duration);
         Assert.Equal("break", taken.Note);
+        Assert.Equal("2h", day.Total);
     }
 
     [Fact]

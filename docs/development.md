@@ -164,7 +164,8 @@ dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/journal.png 
 dotnet run --project tools/Worksheet.Screenshot -- docs/screenshots/change.png --only change
 ```
 
-The example day is eight hours over three projects plus an hour's break (540 minutes in total),
+The example day is eight hours over three projects plus an hour's break (nine hours on the day,
+of which the heading counts the eight that were worked),
 on a fixed Monday so that the picture never depends on the day it is rendered — a weekend would
 freeze the very timetable it is meant to show. Regenerate all seven after any layout change — it is
 how the clipped start column was found. The journal and the change pictures carry the moment the

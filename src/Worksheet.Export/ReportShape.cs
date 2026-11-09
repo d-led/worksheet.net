@@ -18,6 +18,8 @@ internal sealed record ReportDocument(
     [property: JsonPropertyName("generatedAt")] string GeneratedAt,
     [property: JsonPropertyName("totalMinutes")] int TotalMinutes,
     [property: JsonPropertyName("total")] string Total,
+    [property: JsonPropertyName("workedMinutes")] int WorkedMinutes,
+    [property: JsonPropertyName("worked")] string Worked,
     [property: JsonPropertyName("daysLogged")] int DaysLogged,
     [property: JsonPropertyName("projects")] IEnumerable<ReportProjectLine> Projects,
     [property: JsonPropertyName("days")] IEnumerable<ReportDayLine> Days);

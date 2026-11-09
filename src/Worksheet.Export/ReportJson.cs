@@ -13,7 +13,8 @@ namespace Worksheet.Export;
 /// <summary>
 /// The report as data, for whoever wants to process it: minutes as integers, shares as fractions,
 /// and the hours written the way the application writes them so a reader and a script see the same
-/// number. Days are the days that hold something, in order.
+/// number. The total is everything the range holds, breaks included; the worked time is the same
+/// range without its breaks. Days are the days that hold something, in order.
 /// </summary>
 public static partial class ReportJson
 {
@@ -49,6 +50,8 @@ public static partial class ReportJson
             generatedAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture),
             total,
             Shares.Hours(total),
+            report.WorkedMinutes,
+            Shares.Hours(report.WorkedMinutes),
             report.DaysLogged,
             report.Projects.Select(project => Project(project, total)),
             report.Days.Select(DayOf));

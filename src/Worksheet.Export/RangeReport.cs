@@ -27,17 +27,22 @@ public sealed record DayLine(DateOnly Date, string Kind, int Minutes, IReadOnlyL
 
 /// <summary>
 /// The range as a materialized object: what the JSON file holds and what the page is drawn from,
-/// so both always agree and nothing has to be read twice.
+/// so both always agree and nothing has to be read twice. The time is the total the journal holds,
+/// breaks included; the worked time is what is left of it once the breaks are taken out.
 /// </summary>
 public sealed record RangeReport(
     ExportRange Range,
     int TotalMinutes,
+    int WorkedMinutes,
     IReadOnlyList<ProjectLine> Projects,
     IReadOnlyList<DayLine> Days,
     IReadOnlyCollection<string> Catalogue)
 {
     /// <summary>Days that hold something, counted for the report's headline figures.</summary>
     public int DaysLogged => Days.Count;
+
+    /// <summary>Whether a break sits in the range, so the page has a second figure to give.</summary>
+    public bool HoldsABreak => WorkedMinutes != TotalMinutes;
 
     /// <summary>Half-open minutes are kept whole: a range of the day is worth exactly what it says.</summary>
     public static RangeReport Of(LedgerState state, ExportRange range)
@@ -51,6 +56,7 @@ public sealed record RangeReport(
         return new RangeReport(
             range,
             entries.Sum(entry => entry.Minutes),
+            entries.Where(entry => !Break.IsBreak(entry.Project)).Sum(entry => entry.Minutes),
             ProjectsOf(entries),
             days,
             state.Catalogue);
