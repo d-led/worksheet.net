@@ -412,10 +412,12 @@ public sealed class ExportTests
         var summary = page.IndexOf("Each day, project by project", StringComparison.Ordinal);
 
         Assert.True(summary < page.IndexOf(">Days</h2>", StringComparison.Ordinal), "the table comes before the days");
+        Assert.Contains("<table class=\"table table-sm table-striped align-middle mb-0\">", page[summary..]);
         Assert.DoesNotContain(">Total</th>", page[summary..]);
         Assert.Contains("<td class=\"text-nowrap\">Mon 2 Nov</td><td class=\"text-end text-nowrap\">1h</td><td class=\"text-end text-nowrap\">1h</td><td class=\"text-end text-nowrap\">2h</td><td class=\"text-end text-nowrap\">3h</td>", page[summary..]);
         Assert.Contains("<td class=\"text-nowrap\">Tue 3 Nov</td><td></td><td></td><td class=\"text-end text-nowrap\">3h</td><td class=\"text-end text-nowrap\">3h</td>", page[summary..]);
         Assert.Contains("<td>All days</td><td class=\"text-end\">1h</td><td class=\"text-end\">1h</td><td class=\"text-end\">5h</td><td class=\"text-end\">6h</td>", page[summary..]);
+        Assert.Contains("<tr class=\"fw-semibold\" style=\"--bs-table-bg:", page[summary..]);
     }
 
     [Fact]

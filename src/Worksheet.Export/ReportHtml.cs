@@ -31,6 +31,12 @@ public static class ReportHtml
     private const string BreakTint = "#f3c89a";
 
     /// <summary>
+    /// The band behind a row of totals: a shade of paper darker than a stripe, so the last row of a
+    /// striped table reads as its summary rather than as another day.
+    /// </summary>
+    private const string SummaryBand = "#e9ecef";
+
+    /// <summary>
     /// The page, block by block in the order it is read; each block ends with its line end, and every
     /// line end is LF, whoever built it — the blocks are raw string literals, and those keep the line
     /// ends of the file they were checked out with, which on Windows is another kind.
@@ -469,14 +475,20 @@ public static class ReportHtml
                """
             : string.Empty;
 
+    /// <summary>
+    /// The table of days, striped so a row is followed across its projects without losing the line:
+    /// the columns are narrow and the names are at the far end, so a plain table of days is a grid to
+    /// the eye. Bootstrap's own stripe is a shade of the ink rather than a colour, so the table still
+    /// reads in a dark browser without a second stylesheet.
+    /// </summary>
     private static string DaysByProject(RangeReport report) =>
         $"""
          <div class="table-responsive">
-           <table class="table table-sm align-middle mb-0">
+           <table class="table table-sm table-striped align-middle mb-0">
              <thead><tr><th scope="col">Day</th>{string.Concat(report.Projects.Select(project => $"<th scope=\"col\" class=\"text-end\">{Esc(project.Project)}</th>"))}<th scope="col" class="text-end">Working time</th></tr></thead>
              <tbody>
          {Rows(report.Days.Select(day => DayRow(report, day)))}  </tbody>
-             <tfoot><tr class="table-light fw-semibold"><td>All days</td>{string.Concat(report.Projects.Select(project => $"<td class=\"text-end\">{Esc(Shares.Hours(project.Minutes))}</td>"))}<td class="text-end">{Esc(Shares.Hours(report.WorkedMinutes))}</td></tr></tfoot>
+             <tfoot><tr class="fw-semibold" style="--bs-table-bg:{SummaryBand}"><td>All days</td>{string.Concat(report.Projects.Select(project => $"<td class=\"text-end\">{Esc(Shares.Hours(project.Minutes))}</td>"))}<td class="text-end">{Esc(Shares.Hours(report.WorkedMinutes))}</td></tr></tfoot>
            </table>
          </div>
 
