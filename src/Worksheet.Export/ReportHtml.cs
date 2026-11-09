@@ -418,21 +418,25 @@ public static class ReportHtml
          """;
 
     /// <summary>
-    /// A day folded: its date and its figure on the summary, the ranges inside it. The figure is
-    /// what the day was worked, since a break is on the day without being work, and the day's own
-    /// total is said beside it only when a break makes the two differ — a fold whose rows add up
-    /// to more than its figure would be the confusing thing.
+    /// A day folded: its date, its figure and when it started on the summary, the ranges inside it.
+    /// The figure is what the day was worked, since a break is on the day without being work, and
+    /// the day's own total is said beside it only when a break makes the two differ — a fold whose
+    /// rows add up to more than its figure would be the confusing thing. The start is on the
+    /// summary rather than in the rows so a range of days can be scanned without opening any.
     /// </summary>
     private static string Fold(IReadOnlyCollection<string> catalogue, DayLine day) =>
         $"""
          <details class="card mb-1"><summary class="card-body py-2">
            <span class="fw-semibold">{Esc(day.Date.ToString("dddd d MMM yyyy", CultureInfo.InvariantCulture))}</span>
-           <span class="text-body-secondary">· {Esc(day.Kind)} · {Esc(Shares.Hours(day.WorkedMinutes))}{(day.WorkedMinutes == day.Minutes ? string.Empty : $" worked · {Esc(Shares.Hours(day.Minutes))} on the day")}</span>
+           <span class="text-body-secondary">· {Esc(day.Kind)} · {Esc(Shares.Hours(day.WorkedMinutes))}{(day.WorkedMinutes == day.Minutes ? string.Empty : $" worked · {Esc(Shares.Hours(day.Minutes))} on the day")} · Started at {Esc(ClockText.Format(Start(day)))}</span>
          </summary>
          <div class="card-body py-2">
          {Entries(catalogue, day)}</div></details>
 
          """;
+
+    /// <summary>When the day began: the clock the first of its ranges starts on.</summary>
+    private static TimeOnly Start(DayLine day) => day.Entries.Min(entry => entry.Start);
 
     /// <summary>
     /// The ranges of a day, the longest first — the order the cards above use — with the clock

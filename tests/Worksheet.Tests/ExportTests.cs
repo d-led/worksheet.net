@@ -483,7 +483,20 @@ public sealed class ExportTests
         var month = Html(Report(ExportPeriod.Week));
 
         Assert.Contains("· Working day · 2h worked · 3h on the day", month);
-        Assert.Contains("· Working day · 1h</span>", month);
+        Assert.Contains("· Working day · 1h · Started at 09:00</span>", month);
+    }
+
+    [Fact]
+    public void A_folded_day_says_when_it_started()
+    {
+        Logged("2.11. Mobile 08:15 1h");
+        Logged("2.11. Website 10:00 1h");
+        Logged("3.11. Website 09:00 1h");
+
+        var month = Html(Report(ExportPeriod.Week));
+
+        Assert.Contains("· Started at 08:15</span>", month);
+        Assert.Contains("· Started at 09:00</span>", month);
     }
 
     [Fact]

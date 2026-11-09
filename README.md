@@ -129,7 +129,8 @@ files:
   field, `version`, is the format version: it changes only when a reader of the older file would read
   the newer one wrongly, so a script can check it and stop.
 - `worksheet-2026-11.html` — totals with shares, a bar per project and a bar per project and topic, a
-  gantt of the range as it was worked, and a foldable list of the days. A break counts in the total,
+  gantt of the range as it was worked, and a foldable list of the days — each with what it was worked
+  and when it started. A break counts in the total,
   so the working time stands beside it. Before the days, a table of every day against every project
   says what a project took on a given day and what the day was worked. A heading sorts its table by
   what its cells hold — a name, a time or a share — and pressing it again turns the order round. The
