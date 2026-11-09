@@ -400,18 +400,19 @@ public sealed class ExportTests
     }
 
     [Fact]
-    public void The_page_ends_with_what_each_project_took_on_each_day()
+    public void The_summary_of_each_day_is_read_before_the_days_themselves()
     {
         Logged("2.11. Website 09:00 2h");
         Logged("2.11. Mobile 11:00 1h");
         Logged("3.11. Website 10:00 3h");
 
         var page = Html(Report(ExportPeriod.Week));
-        var summary = page[page.IndexOf("Each day, project by project", StringComparison.Ordinal)..];
+        var summary = page.IndexOf("Each day, project by project", StringComparison.Ordinal);
 
-        Assert.Contains("<td class=\"text-nowrap\">Mon 2 Nov</td><td class=\"text-end text-nowrap\">1h</td><td class=\"text-end text-nowrap\">2h</td><td class=\"text-end text-nowrap\">3h</td>", summary);
-        Assert.Contains("<td class=\"text-nowrap\">Tue 3 Nov</td><td></td><td class=\"text-end text-nowrap\">3h</td><td class=\"text-end text-nowrap\">3h</td>", summary);
-        Assert.Contains("<td>Total</td><td class=\"text-end\">1h</td><td class=\"text-end\">5h</td><td class=\"text-end\">6h</td>", summary);
+        Assert.True(summary < page.IndexOf(">Days</h2>", StringComparison.Ordinal), "the table comes before the days");
+        Assert.Contains("<td class=\"text-nowrap\">Mon 2 Nov</td><td class=\"text-end text-nowrap\">1h</td><td class=\"text-end text-nowrap\">2h</td><td class=\"text-end text-nowrap\">3h</td>", page[summary..]);
+        Assert.Contains("<td class=\"text-nowrap\">Tue 3 Nov</td><td></td><td class=\"text-end text-nowrap\">3h</td><td class=\"text-end text-nowrap\">3h</td>", page[summary..]);
+        Assert.Contains("<td>Total</td><td class=\"text-end\">1h</td><td class=\"text-end\">5h</td><td class=\"text-end\">6h</td>", page[summary..]);
     }
 
     [Fact]

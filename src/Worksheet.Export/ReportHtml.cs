@@ -52,8 +52,8 @@ public static class ReportHtml
         ProjectCard(report),
         TopicCard(report),
         TimelineCard(report),
-        Detail(report),
         DayByProjectCard(report),
+        Detail(report),
         Footer,
         "</main>\n",
         Scripts(),
@@ -445,10 +445,10 @@ public static class ReportHtml
          """;
 
     /// <summary>
-    /// The range the other way round, as the page's last table: a row per day and a column per
-    /// project, so what each project took on each day can be read off at a glance. The days card
-    /// answers the same question one day at a time; this one answers it a project at a time. A range
-    /// of one day is its own detail, so it carries no second reading of the same rows.
+    /// The range the other way round, ahead of the days themselves: a row per day and a column per
+    /// project, so what each project took on each day can be read off at a glance, before the page
+    /// goes on to the ranges of every day. A range of one day is its own detail, so it carries no
+    /// second reading of the same rows.
     /// </summary>
     private static string DayByProjectCard(RangeReport report) =>
         report.Range.SpansMoreThanADay
