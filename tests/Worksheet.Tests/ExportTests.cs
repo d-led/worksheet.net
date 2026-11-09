@@ -128,6 +128,7 @@ public sealed class ExportTests
 
         Assert.Equal(180, report.TotalMinutes);
         Assert.Equal(120, report.WorkedMinutes);
+        Assert.Equal(120, Assert.Single(report.Days).WorkedMinutes);
     }
 
     [Fact]
@@ -216,7 +217,7 @@ public sealed class ExportTests
         Assert.Equal(["from", "to", "period", "label", "days"], Keys(root.GetProperty("range")));
         Assert.Equal(["project", "minutes", "hours", "share", "topics"], Keys(root.GetProperty("projects")[0]));
         Assert.Equal(["topic", "minutes", "hours", "share"], Keys(root.GetProperty("projects")[0].GetProperty("topics")[0]));
-        Assert.Equal(["date", "kind", "minutes", "hours", "entries"], Keys(root.GetProperty("days")[0]));
+        Assert.Equal(["date", "kind", "minutes", "hours", "workedMinutes", "worked", "entries"], Keys(root.GetProperty("days")[0]));
         Assert.Equal(
             ["start", "end", "minutes", "hours", "project", "topic", "note"],
             Keys(root.GetProperty("days")[0].GetProperty("entries")[0]));
@@ -403,16 +404,18 @@ public sealed class ExportTests
     public void The_summary_of_each_day_is_read_before_the_days_themselves()
     {
         Logged("2.11. Website 09:00 2h");
-        Logged("2.11. Mobile 11:00 1h");
+        Logged("2.11. Break 11:00 1h");
+        Logged("2.11. Mobile 12:00 1h");
         Logged("3.11. Website 10:00 3h");
 
         var page = Html(Report(ExportPeriod.Week));
         var summary = page.IndexOf("Each day, project by project", StringComparison.Ordinal);
 
         Assert.True(summary < page.IndexOf(">Days</h2>", StringComparison.Ordinal), "the table comes before the days");
-        Assert.Contains("<td class=\"text-nowrap\">Mon 2 Nov</td><td class=\"text-end text-nowrap\">1h</td><td class=\"text-end text-nowrap\">2h</td><td class=\"text-end text-nowrap\">3h</td>", page[summary..]);
-        Assert.Contains("<td class=\"text-nowrap\">Tue 3 Nov</td><td></td><td class=\"text-end text-nowrap\">3h</td><td class=\"text-end text-nowrap\">3h</td>", page[summary..]);
-        Assert.Contains("<td>Total</td><td class=\"text-end\">1h</td><td class=\"text-end\">5h</td><td class=\"text-end\">6h</td>", page[summary..]);
+        Assert.DoesNotContain(">Total</th>", page[summary..]);
+        Assert.Contains("<td class=\"text-nowrap\">Mon 2 Nov</td><td class=\"text-end text-nowrap\">1h</td><td class=\"text-end text-nowrap\">1h</td><td class=\"text-end text-nowrap\">2h</td><td class=\"text-end text-nowrap\">3h</td>", page[summary..]);
+        Assert.Contains("<td class=\"text-nowrap\">Tue 3 Nov</td><td></td><td></td><td class=\"text-end text-nowrap\">3h</td><td class=\"text-end text-nowrap\">3h</td>", page[summary..]);
+        Assert.Contains("<td>All days</td><td class=\"text-end\">1h</td><td class=\"text-end\">1h</td><td class=\"text-end\">5h</td><td class=\"text-end\">6h</td>", page[summary..]);
     }
 
     [Fact]
@@ -449,7 +452,7 @@ public sealed class ExportTests
     }
 
     [Fact]
-    public void The_page_gives_the_time_without_breaks_beside_a_total_that_holds_one()
+    public void The_page_gives_the_working_time_beside_a_total_that_holds_a_break()
     {
         Logged("Website 09:00 2h");
         Logged("Break 11:00 1h");
@@ -457,7 +460,7 @@ public sealed class ExportTests
         var page = Html(Report(ExportPeriod.Day));
 
         Assert.Contains(">Total</span> <span class=\"fs-5 fw-semibold\">3h</span>", page);
-        Assert.Contains(">Without breaks</span> <span class=\"fs-5 fw-semibold\">2h</span>", page);
+        Assert.Contains(">Working time</span> <span class=\"fs-5 fw-semibold\">2h</span>", page);
     }
 
     [Fact]
@@ -465,7 +468,20 @@ public sealed class ExportTests
     {
         Logged("Website 09:00 2h");
 
-        Assert.DoesNotContain("Without breaks", Html(Report(ExportPeriod.Day)));
+        Assert.DoesNotContain(">Working time</span>", Html(Report(ExportPeriod.Day)));
+    }
+
+    [Fact]
+    public void A_folded_day_with_a_break_says_both_the_work_and_the_day()
+    {
+        Logged("2.11. Website 09:00 2h");
+        Logged("2.11. Break 11:00 1h");
+        Logged("3.11. Website 09:00 1h");
+
+        var month = Html(Report(ExportPeriod.Week));
+
+        Assert.Contains("· Working day · 2h worked · 3h on the day", month);
+        Assert.Contains("· Working day · 1h</span>", month);
     }
 
     [Fact]

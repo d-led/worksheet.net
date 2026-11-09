@@ -23,7 +23,8 @@ public sealed record TopicLine(string? Topic, int Minutes)
 public sealed record EntryLine(TimeOnly Start, TimeOnly End, int Minutes, string Project, string? Topic, string? Note);
 
 /// <summary>One day that holds something, with what it holds.</summary>
-public sealed record DayLine(DateOnly Date, string Kind, int Minutes, IReadOnlyList<EntryLine> Entries);
+/// <remarks>The time is the whole day, a break included; the worked time leaves the breaks out.</remarks>
+public sealed record DayLine(DateOnly Date, string Kind, int Minutes, int WorkedMinutes, IReadOnlyList<EntryLine> Entries);
 
 /// <summary>
 /// The range as a materialized object: what the JSON file holds and what the page is drawn from,
@@ -73,6 +74,7 @@ public sealed record RangeReport(
                 day.Key,
                 DayKinds.LabelOf(state.KindOf(day.Key)),
                 day.Sum(entry => Minutes(entry.Duration)),
+                day.Where(entry => !Break.IsBreak(state.ProjectName(entry.ProjectId))).Sum(entry => Minutes(entry.Duration)),
                 [.. day.OrderBy(entry => entry.Start)
                     .ThenBy(entry => entry.Id.Value)
                     .Select(entry => LineOf(state, entry))]));

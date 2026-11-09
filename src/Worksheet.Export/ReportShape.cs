@@ -49,6 +49,8 @@ internal sealed record ReportDayLine(
     [property: JsonPropertyName("kind")] string Kind,
     [property: JsonPropertyName("minutes")] int Minutes,
     [property: JsonPropertyName("hours")] string Hours,
+    [property: JsonPropertyName("workedMinutes")] int WorkedMinutes,
+    [property: JsonPropertyName("worked")] string Worked,
     [property: JsonPropertyName("entries")] IEnumerable<ReportEntryLine> Entries);
 
 internal sealed record ReportEntryLine(

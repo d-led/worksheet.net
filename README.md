@@ -130,8 +130,8 @@ files:
   the newer one wrongly, so a script can check it and stop.
 - `worksheet-2026-11.html` — totals with shares, a bar per project and a bar per project and topic, a
   gantt of the range as it was worked, and a foldable list of the days. A break counts in the total,
-  so the time without breaks stands beside it. Before the days, a table of every day against every
-  project says what a project took on a given day. A heading sorts its table by
+  so the working time stands beside it. Before the days, a table of every day against every project
+  says what a project took on a given day and what the day was worked. A heading sorts its table by
   what its cells hold — a name, a time or a share — and pressing it again turns the order round. The
   gantt draws each project's bars in the same pastel the window stripes its rows in, and it zooms:
   `+`, `−` and *Reset* on the chart, ⌘ or Ctrl with the wheel, and a drag to pan a range too long to

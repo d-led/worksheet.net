@@ -80,6 +80,8 @@ public static partial class ReportJson
             day.Kind,
             day.Minutes,
             Shares.Hours(day.Minutes),
+            day.WorkedMinutes,
+            Shares.Hours(day.WorkedMinutes),
             day.Entries.Select(Entry));
 
     private static ReportEntryLine Entry(EntryLine entry) =>

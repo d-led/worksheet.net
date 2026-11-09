@@ -112,10 +112,10 @@ public static class ReportHtml
 
     /// <summary>
     /// The figures a range has to show, in reading order. Total is everything the journal holds,
-    /// and the time without breaks follows it whenever a break is in the range, since a break is
-    /// on the day without being work. The busiest day is one only for a range of more than one: a
-    /// day's own page already says that day in its heading, and the figure would be the heading
-    /// read back.
+    /// and Working time follows it whenever a break is in the range, since a break is on the day
+    /// without being work. The busiest day is the day the most was worked on, and is a figure only
+    /// for a range of more than one: a day's own page already says that day in its heading, and the
+    /// figure would be the heading read back.
     /// </summary>
     private static string Figures(RangeReport report)
     {
@@ -126,7 +126,7 @@ public static class ReportHtml
 
         if (report.HoldsABreak)
         {
-            figures.Add(Figure("Without breaks", Esc(Shares.Hours(report.WorkedMinutes))));
+            figures.Add(Figure("Working time", Esc(Shares.Hours(report.WorkedMinutes))));
         }
 
         figures.Add(Figure("Days logged", report.DaysLogged.ToString(CultureInfo.InvariantCulture)));
@@ -411,12 +411,17 @@ public static class ReportHtml
 
          """;
 
-    /// <summary>A day folded: its date and its total on the summary, the ranges inside it.</summary>
+    /// <summary>
+    /// A day folded: its date and its figure on the summary, the ranges inside it. The figure is
+    /// what the day was worked, since a break is on the day without being work, and the day's own
+    /// total is said beside it only when a break makes the two differ — a fold whose rows add up
+    /// to more than its figure would be the confusing thing.
+    /// </summary>
     private static string Fold(IReadOnlyCollection<string> catalogue, DayLine day) =>
         $"""
          <details class="card mb-1"><summary class="card-body py-2">
            <span class="fw-semibold">{Esc(day.Date.ToString("dddd d MMM yyyy", CultureInfo.InvariantCulture))}</span>
-           <span class="text-body-secondary">· {Esc(day.Kind)} · total {Esc(Shares.Hours(day.Minutes))}</span>
+           <span class="text-body-secondary">· {Esc(day.Kind)} · {Esc(Shares.Hours(day.WorkedMinutes))}{(day.WorkedMinutes == day.Minutes ? string.Empty : $" worked · {Esc(Shares.Hours(day.Minutes))} on the day")}</span>
          </summary>
          <div class="card-body py-2">
          {Entries(catalogue, day)}</div></details>
@@ -447,8 +452,9 @@ public static class ReportHtml
     /// <summary>
     /// The range the other way round, ahead of the days themselves: a row per day and a column per
     /// project, so what each project took on each day can be read off at a glance, before the page
-    /// goes on to the ranges of every day. A range of one day is its own detail, so it carries no
-    /// second reading of the same rows.
+    /// goes on to the ranges of every day. The row ends in the day's working time rather than in a
+    /// total: the projects already add up to that, and a break is a pause, not hours to be scared
+    /// of. A range of one day is its own detail, so it carries no second reading of the same rows.
     /// </summary>
     private static string DayByProjectCard(RangeReport report) =>
         report.Range.SpansMoreThanADay
@@ -467,19 +473,19 @@ public static class ReportHtml
         $"""
          <div class="table-responsive">
            <table class="table table-sm align-middle mb-0">
-             <thead><tr><th scope="col">Day</th>{string.Concat(report.Projects.Select(project => $"<th scope=\"col\" class=\"text-end\">{Esc(project.Project)}</th>"))}<th scope="col" class="text-end">Total</th></tr></thead>
+             <thead><tr><th scope="col">Day</th>{string.Concat(report.Projects.Select(project => $"<th scope=\"col\" class=\"text-end\">{Esc(project.Project)}</th>"))}<th scope="col" class="text-end">Working time</th></tr></thead>
              <tbody>
          {Rows(report.Days.Select(day => DayRow(report, day)))}  </tbody>
-             <tfoot><tr class="table-light fw-semibold"><td>Total</td>{string.Concat(report.Projects.Select(project => $"<td class=\"text-end\">{Esc(Shares.Hours(project.Minutes))}</td>"))}<td class="text-end">{Esc(Shares.Hours(report.TotalMinutes))}</td></tr></tfoot>
+             <tfoot><tr class="table-light fw-semibold"><td>All days</td>{string.Concat(report.Projects.Select(project => $"<td class=\"text-end\">{Esc(Shares.Hours(project.Minutes))}</td>"))}<td class="text-end">{Esc(Shares.Hours(report.WorkedMinutes))}</td></tr></tfoot>
            </table>
          </div>
 
          """;
 
-    /// <summary>One day of that table: what each project took, and what the day was worth in all.</summary>
+    /// <summary>One day of that table: what each project took, and how much of the day was worked.</summary>
     private static string DayRow(RangeReport report, DayLine day) =>
         $"""
-         <tr><td class="text-nowrap">{Esc(day.Date.ToString("ddd d MMM", CultureInfo.InvariantCulture))}</td>{string.Concat(report.Projects.Select(project => DayCell(day, project.Project)))}<td class="text-end text-nowrap">{Esc(Shares.Hours(day.Minutes))}</td></tr>
+         <tr><td class="text-nowrap">{Esc(day.Date.ToString("ddd d MMM", CultureInfo.InvariantCulture))}</td>{string.Concat(report.Projects.Select(project => DayCell(day, project.Project)))}<td class="text-end text-nowrap">{Esc(Shares.Hours(day.WorkedMinutes))}</td></tr>
          """;
 
     /// <summary>A day's cell for one project: its hours, or nothing at all when it was not worked on.</summary>
@@ -496,7 +502,7 @@ public static class ReportHtml
     private const string Footer = """
         <footer class="text-body-secondary small mt-5">
           <p class="mb-1">Made by Worksheet from its journal. Days that hold nothing are left out; the total is what the journal says, not a guess at a working day.</p>
-          <p class="mb-1">A break is time on the day, so it counts in the total and in a day's own figure; the time without breaks is what was worked.</p>
+          <p class="mb-1">A break is time on the day, so the projects and the day folds count it; Working time is the day without its breaks, and that is what the window's heading shows.</p>
           <p class="mb-0">This page loads Bootstrap and mermaid from jsDelivr. Without a connection it still reads, unstyled; the gantt is then not drawn.</p>
         </footer>
 
@@ -639,9 +645,10 @@ public static class ReportHtml
 
         """;
 
+    /// <summary>The day the most was worked on: a break there is time on the day, not time worked.</summary>
     private static string Busiest(RangeReport report) =>
-        report.Days.MaxBy(day => day.Minutes) is { } busiest
-            ? $"{busiest.Date.ToString("ddd d MMM", CultureInfo.InvariantCulture)} · {Shares.Hours(busiest.Minutes)}"
+        report.Days.MaxBy(day => day.WorkedMinutes) is { } busiest
+            ? $"{busiest.Date.ToString("ddd d MMM", CultureInfo.InvariantCulture)} · {Shares.Hours(busiest.WorkedMinutes)}"
             : "—";
 
     private static string Reports(DateOnly day) => day.ToString("d MMM", CultureInfo.InvariantCulture);

@@ -16,7 +16,7 @@ and records decisions; it is not a description of any other program's source.
 1. Shows one day at a time: the entries of that day in start order, and the time
    worked on it — a break is on the day without being work, so the heading leaves
    it out, while the exported page and the agent's answers give the total the
-   journal holds with the time without breaks beside it. The left and right arrows
+   journal holds with the working time beside it. The left and right arrows
    move to the day before and after,
    unless the caret is in a text field, which then keeps them for itself. A field
    takes what was typed when it is left, and Enter takes it the same way — a cell
@@ -95,8 +95,8 @@ and records decisions; it is not a description of any other program's source.
   topic, so a line may not give `Break` one, a correction may not add one later,
   and the topic picker of a break row is closed.
 - A break is time on the day but not time worked: the heading of the day leaves
-  it out, the content of the day keeps it, and a total is given with the time
-  without breaks beside it rather than on its own.
+  it out, the content of the day keeps it, and wherever a total is given the
+  working time is given beside it.
 - Only a working day takes entries. A day nobody has declared follows the
   calendar: Saturday and Sunday are weekends, the rest work. Declaring any other
   kind freezes the day — its entries stay, and nothing about them can be changed
