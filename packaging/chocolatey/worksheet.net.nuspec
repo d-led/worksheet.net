@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  One release as a Chocolatey package. scripts/generate-chocolatey-package.sh fills in
+  __VERSION__, __URL__ and __SHA256__ from the release and derives __RELEASE_URL__ and
+  __ICON_URL__ from them; nothing here is edited by hand.
+
+  The icon is served by jsDelivr pinned to the tag rather than by raw.githubusercontent.com,
+  which community.chocolatey.org rejects: the same file, at a revision that cannot change under
+  it.
+-->
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>worksheet.net</id>
+    <version>__VERSION__</version>
+    <title>Worksheet.net</title>
+    <authors>Dmitry Ledentsov</authors>
+    <owners>Dmitry Ledentsov</owners>
+    <copyright>Copyright © 2026 Dmitry Ledentsov</copyright>
+    <projectUrl>https://github.com/d-led/worksheet.net</projectUrl>
+    <projectSourceUrl>https://github.com/d-led/worksheet.net</projectSourceUrl>
+    <packageSourceUrl>https://github.com/d-led/worksheet.net/tree/main/packaging/chocolatey</packageSourceUrl>
+    <iconUrl>__ICON_URL__</iconUrl>
+    <docsUrl>https://github.com/d-led/worksheet.net#readme</docsUrl>
+    <bugTrackerUrl>https://github.com/d-led/worksheet.net/issues</bugTrackerUrl>
+    <licenseUrl>https://github.com/d-led/worksheet.net/blob/main/LICENSE</licenseUrl>
+    <tags>worksheet time-tracking timesheet productivity tray menubar</tags>
+    <summary>The working day in one line: a tray time tracker with a page export and an MCP server</summary>
+    <description>Log the working day in one line, on projects and on the topics inside them.
+
+A range is typed the way a sentence reads — `Client portal (login) 08:30 2h30m`, `Break 12:30 45m` — and the window shows the day as it fills: the hours on each project, breaks counted apart from the time worked, and a running total. The application lives in the menu bar or the tray, so closing the window does not stop the day.
+
+Everything is kept in one file under `%APPDATA%\Worksheet`: no account, no network, and the last change can always be taken back. A day, a week, a month, a quarter or a year exports as a page; the same day is readable by an agent over MCP, on a port of your choosing.</description>
+    <releaseNotes>__RELEASE_URL__</releaseNotes>
+  </metadata>
+</package>

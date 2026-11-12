@@ -142,6 +142,31 @@ newest build of `main` is always downloadable without tagging anything. `install
 `install.ps1` fetch from there too. Two consequences: artefacts are kept for 90 days, and renaming
 `build.yml` breaks every published link.
 
+## Publishing to package managers
+
+A tag is what makes a version. `build.yml` builds every platform, the `release` job attaches the
+five binaries to the tag, and two more jobs turn those immutable assets into packages — a URL that
+never changes, beside the sha256 of exactly the file behind it, is all a package manager asks for.
+
+- **Homebrew**: `scripts/generate-homebrew-formula.sh` writes `worksheet.rb` from the release's
+  checksums, and the job commits it to the `d-led/homebrew-d-led` tap, where
+  `brew install d-led/d-led/worksheet` finds it. It needs `PUBLISHER_TOKEN`: a token allowed to
+  push to that repository. The formula installs the bare executable under the name `worksheet`,
+  which is also why its `test` only checks that the file arrived and is executable — starting the
+  application would open a window and never return.
+- **Chocolatey**: `scripts/generate-chocolatey-package.sh` fills in `packaging/chocolatey/` and
+  packs `worksheet.net.<version>.nupkg`; the job pushes it to community.chocolatey.org with
+  `CHOCOLATEY_API_KEY`. Without the key the job is skipped, so a fork, or a checkout with no
+  secret, still releases. `choco` exists only on Windows, which is why that job runs on
+  `windows-latest`. The install script downloads the single executable into the package's tools
+  folder and lets Chocolatey shim it; the `worksheet.exe.gui` file beside it says the shim must not
+  wait for a window. The iconURL comes from jsDelivr rather than raw.githubusercontent.com, which
+  the community repository rejects. A new package is moderated before anyone can install it.
+
+Re-submitting the same version with a packaging fix — moderation asking for a different icon, say
+— is `.github/workflows/publish-choco.yml`, run by hand with the released version: it takes the
+already-released executable, so the tag and its checksums stay untouched.
+
 ## Packaging into a screenshot
 
 `tools/Worksheet.Screenshot` renders the real window offscreen with headless Skia and writes a PNG:

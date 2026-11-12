@@ -1,0 +1,49 @@
+name: publish-choco
+
+# Resubmits an already-released version to community.chocolatey.org, without cutting a new release.
+# Needed when moderation asks for a packaging change (a different icon URL, say) and the same
+# version has to go in again: the released executable, its URL and its checksum stay untouched,
+# and only the templates in packaging/chocolatey/ are re-applied from the current branch.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Released version to resubmit, without the v prefix (e.g. 0.1.0)
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish-choco:
+    name: Resubmit the Chocolatey package
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Take the released executable
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ inputs.version }}"
+          url="https://github.com/d-led/worksheet.net/releases/download/v${version}/worksheet-win-x64.exe"
+          mkdir -p artifacts
+          curl -fsSL -o artifacts/worksheet-win-x64.exe "$url"
+          echo "url=${url}" >> "$GITHUB_ENV"
+          echo "sha256=$(sha256sum artifacts/worksheet-win-x64.exe | awk '{print $1}')" >> "$GITHUB_ENV"
+
+      - name: Pack and push
+        env:
+          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${CHOCOLATEY_API_KEY}" ]]; then
+            echo "::error::CHOCOLATEY_API_KEY is not configured for this repository"
+            exit 1
+          fi
+          version="${{ inputs.version }}"
+          VERSION="${version}" URL="${url}" SHA256="${sha256}" \
+            bash scripts/generate-chocolatey-package.sh
+          choco push "dist/choco/worksheet.net.${version}.nupkg" \
+            --source https://push.chocolatey.org/ --api-key "${CHOCOLATEY_API_KEY}"

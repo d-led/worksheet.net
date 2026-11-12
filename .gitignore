@@ -8,5 +8,8 @@ coverage/
 .idea/
 artifacts/
 
+# Package-manager packages built locally (scripts/generate-*.sh)
+dist/
+
 # Mutation reports, local only (scripts/mutate.sh)
 StrykerOutput/

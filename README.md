@@ -18,6 +18,9 @@ Windows:
 irm https://raw.githubusercontent.com/d-led/worksheet.net/main/install.ps1 | iex
 ```
 
+Or through a package manager — `brew install d-led/d-led/worksheet` on macOS and Linux, or
+`choco install worksheet.net -y` on Windows.
+
 Each installs one self-contained binary. They fetch the newest build of `main`, so there is no
 release to wait for. On macOS and Linux it lands in `~/.local/bin` (`WORKSHEET_BIN_DIR` moves it, and
 the installer says so if that folder is not on your `PATH`); on Windows it goes to

@@ -165,5 +165,102 @@ jobs:
           ls -lh artifacts
           gh release create "$GITHUB_REF_NAME" artifacts/* \
             --repo "$GITHUB_REPOSITORY" \
-            --title "Worksheet $GITHUB_REF_NAME" \
+            --title "Worksheet.net $GITHUB_REF_NAME" \
             --generate-notes
+
+  # The package managers need what only a tag gives: a URL that never changes and the sha256 of
+  # exactly the file behind it. Both jobs below work from the assets the release job attached, so
+  # main is never published — there would be no version to publish it under.
+
+  publish-tap:
+    name: Publish the Homebrew formula
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Take the release's files
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Generate the formula
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          mkdir -p dist
+          VERSION="$version" \
+          SHA_MACOS_ARM64="$(sha256sum artifacts/worksheet-osx-arm64 | awk '{print $1}')" \
+          SHA_MACOS_X64="$(sha256sum artifacts/worksheet-osx-x64 | awk '{print $1}')" \
+          SHA_LINUX_ARM64="$(sha256sum artifacts/worksheet-linux-arm64 | awk '{print $1}')" \
+          SHA_LINUX_X64="$(sha256sum artifacts/worksheet-linux-x64 | awk '{print $1}')" \
+            bash scripts/generate-homebrew-formula.sh > dist/worksheet.rb
+
+      # A formula is a file in a tap and nothing more; the tap is a repository like any other, so
+      # the push is a clone, a copy and a commit — and nothing is committed when the version is
+      # already there, which is what a re-run of this job looks like.
+      - name: Update the tap
+        env:
+          PUBLISHER_TOKEN: ${{ secrets.PUBLISHER_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${PUBLISHER_TOKEN}" ]]; then
+            echo "::error::PUBLISHER_TOKEN is not configured for this repository"
+            exit 1
+          fi
+          version="${GITHUB_REF_NAME#v}"
+          git clone --depth 1 "https://x-access-token:${PUBLISHER_TOKEN}@github.com/d-led/homebrew-d-led.git" dist/tap
+          cp dist/worksheet.rb dist/tap/worksheet.rb
+          git -C dist/tap config user.name "Dmitry Ledentsov"
+          git -C dist/tap config user.email "dmlled@yahoo.com"
+          git -C dist/tap add worksheet.rb
+          if git -C dist/tap diff --cached --quiet; then
+            echo "The formula is up to date; nothing to push"
+          else
+            git -C dist/tap commit -m "worksheet ${version}"
+            git -C dist/tap push
+          fi
+
+  # A job-level `if` cannot read secrets, so the key is published as an output here. Naming it in
+  # the condition instead makes GitHub reject the whole workflow file.
+  choco-key:
+    name: Check for the Chocolatey API key
+    runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.check.outputs.configured }}
+    steps:
+      - id: check
+        env:
+          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+        run: echo "configured=${{ env.CHOCOLATEY_API_KEY != '' }}" >> "$GITHUB_OUTPUT"
+
+  publish-choco:
+    name: Publish the Chocolatey package
+    needs: [release, choco-key]
+    if: needs.choco-key.outputs.configured == 'true'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Take the Windows executable
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: worksheet-win-x64
+          path: artifacts
+
+      - name: Pack and push
+        env:
+          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          VERSION="$version" \
+          URL="https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/worksheet-win-x64.exe" \
+          SHA256="$(sha256sum artifacts/worksheet-win-x64.exe | awk '{print $1}')" \
+            bash scripts/generate-chocolatey-package.sh
+          choco push "dist/choco/worksheet.net.${version}.nupkg" \
+            --source https://push.chocolatey.org/ --api-key "${CHOCOLATEY_API_KEY}"
