@@ -90,9 +90,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-latest
+          # Both macOS legs run on the Intel image. A RID publish needs the runtime pack of the
+          # target, not a machine of that architecture — as with win-arm64 below — and the arm64
+          # macOS image is the one GitHub drops out of the queue when it runs short: on
+          # 2026-11-12 a release went red over a job that never started.
+          - os: macos-15-intel
             rid: osx-arm64
-          - os: macos-latest
+          - os: macos-15-intel
             rid: osx-x64
           - os: windows-latest
             rid: win-x64
