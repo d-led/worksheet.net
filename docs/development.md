@@ -147,6 +147,8 @@ newest build of `main` is always downloadable without tagging anything. `install
 A tag is what makes a version. `build.yml` builds every platform, the `release` job attaches the
 five binaries to the tag, and two more jobs turn those immutable assets into packages — a URL that
 never changes, beside the sha256 of exactly the file behind it, is all a package manager asks for.
+The tag is also the version the binaries carry: the package job passes it as `-p:Version`, so what
+Chocolatey installs and what the application reports over MCP cannot disagree.
 
 - **Homebrew**: `scripts/generate-homebrew-formula.sh` writes `worksheet.rb` from the release's
   checksums, and the job commits it to the `d-led/homebrew-d-led` tap, where

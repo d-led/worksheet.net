@@ -107,6 +107,20 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      # A tag names a version, so the executable says that version: it is what the MCP handshake
+      # reports and what every package manager would otherwise disagree with. A branch build has
+      # no version of its own and keeps the one in Directory.Build.props.
+      - name: Which version this is
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=$(dotnet msbuild src/Worksheet.Desktop/Worksheet.Desktop.csproj -getProperty:Version -nologo | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish
         run: >
           dotnet publish src/Worksheet.Desktop
@@ -114,6 +128,7 @@ jobs:
           --runtime ${{ matrix.rid }}
           --self-contained true
           --output out
+          -p:Version=${{ steps.version.outputs.value }}
           -p:PublishSingleFile=true
           -p:IncludeNativeLibrariesForSelfExtract=true
           -p:DebugType=none
@@ -156,6 +171,9 @@ jobs:
         with:
           path: artifacts
           merge-multiple: true
+          # The frames the UI tests drew are artefacts of this run too, and a release cannot take
+          # a directory. Only the platform binaries belong to the tag.
+          pattern: worksheet-*
 
       - name: Attach every platform to the tag
         env:
@@ -163,10 +181,15 @@ jobs:
         run: |
           set -euo pipefail
           ls -lh artifacts
-          gh release create "$GITHUB_REF_NAME" artifacts/* \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "Worksheet.net $GITHUB_REF_NAME" \
-            --generate-notes
+          # A re-run of a tag must not fail on a release that is already there.
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" artifacts/* --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" artifacts/* \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Worksheet.net $GITHUB_REF_NAME" \
+              --generate-notes
+          fi
 
   # The package managers need what only a tag gives: a URL that never changes and the sha256 of
   # exactly the file behind it. Both jobs below work from the assets the release job attached, so
@@ -186,6 +209,7 @@ jobs:
         with:
           path: artifacts
           merge-multiple: true
+          pattern: worksheet-*
 
       - name: Generate the formula
         run: |
