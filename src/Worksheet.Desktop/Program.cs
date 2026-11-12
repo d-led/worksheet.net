@@ -33,7 +33,7 @@ internal static class Program
             // macOS times frames with a display link, and refuses to make one while the screen is
             // asleep. That happens before any window exists, so a stack trace says nothing useful.
             Console.Error.WriteLine(
-                "Worksheet could not open a window: the display is asleep or unavailable."
+                "Worksheet.net could not open a window: the display is asleep or unavailable."
                 + Environment.NewLine
                 + "Wake the screen and start it again.");
 

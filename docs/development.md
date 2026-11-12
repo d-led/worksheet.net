@@ -110,7 +110,7 @@ its own folder, so the platform is said once instead of in every file name:
 
 | folder | what is in it |
 |---|---|
-| `artifacts/osx-arm64/` (and `osx-x64`) | `worksheet` (the bare binary, as the installer downloads it), `Worksheet.app` to drag into `/Applications`, `Worksheet.zip`, `Worksheet.dmg` (the app beside a link to `/Applications`) |
+| `artifacts/osx-arm64/` (and `osx-x64`) | `worksheet` (the bare binary, as the installer downloads it), `Worksheet.net.app` to drag into `/Applications`, `Worksheet.net.zip`, `Worksheet.net.dmg` (the app beside a link to `/Applications`) |
 | `artifacts/linux-x64/` (and `linux-arm64`) | `worksheet`, and `worksheet.tar.gz` with the binary, its icon and a desktop entry that expects `/opt/worksheet` |
 | `artifacts/win-x64/` | `worksheet.exe` — copying it somewhere is the installation |
 

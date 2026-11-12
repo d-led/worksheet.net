@@ -70,7 +70,7 @@ public sealed class McpServerTests
     {
         var instructions = Asked(Handshake).GetProperty("result").GetProperty("instructions").GetString();
 
-        Assert.Contains("check that Worksheet is running", instructions, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("check that Worksheet.net is running", instructions, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("same port", instructions, StringComparison.OrdinalIgnoreCase);
     }
 

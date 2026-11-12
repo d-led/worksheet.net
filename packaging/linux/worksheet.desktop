@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=Worksheet
+Name=Worksheet.net
 GenericName=Time tracker
 Comment=A day of work in one line, on a clock
 # The tarball unpacks to /opt/worksheet; anywhere else, fix these two paths.

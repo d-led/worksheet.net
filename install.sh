@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installs Worksheet: one self-contained binary, no runtime to install.
+# Installs Worksheet.net: one self-contained binary, no runtime to install.
 #
 #   curl -fsSL https://raw.githubusercontent.com/d-led/worksheet.net/main/install.sh | bash
 #
@@ -22,7 +22,7 @@ case "$(uname -s)" in
     Darwin) os=osx ;;
     Linux) os=linux ;;
     *)
-        echo "Worksheet does not support $(uname -s) yet." >&2
+        echo "Worksheet.net does not support $(uname -s) yet." >&2
         exit 1
         ;;
 esac
@@ -31,7 +31,7 @@ case "$(uname -m)" in
     arm64 | aarch64) arch=arm64 ;;
     x86_64 | amd64) arch=x64 ;;
     *)
-        echo "Worksheet does not support the $(uname -m) architecture yet." >&2
+        echo "Worksheet.net does not support the $(uname -m) architecture yet." >&2
         exit 1
         ;;
 esac

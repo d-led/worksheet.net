@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Builds what a person can actually install, for one platform at a time:
 #
-#   macOS    Worksheet.app, a disk image holding it, and the .app as a zip
+#   macOS    Worksheet.net.app, a disk image holding it, and the .app as a zip
 #   Linux    a tarball with the binary, its icon and a desktop entry
 #   Windows  the single executable (copy it anywhere; that is the installation)
 #
@@ -120,7 +120,7 @@ app_icon() {
 
 # A bundle that can be dragged into /Applications, and a disk image that shows where to drag it.
 macos_app() {
-  local rid=$1 app="$artifacts/$rid/Worksheet.app"
+  local rid=$1 app="$artifacts/$rid/Worksheet.net.app"
 
   rm -rf "$app"
   mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
@@ -139,12 +139,12 @@ macos_app() {
     plutil -lint "$app/Contents/Info.plist" >/dev/null
   fi
 
-  rm -f "$artifacts/$rid/Worksheet.zip"
-  (cd "$artifacts/$rid" && zip -qry "Worksheet.zip" "Worksheet.app" -x '*/.DS_Store')
+  rm -f "$artifacts/$rid/Worksheet.net.zip"
+  (cd "$artifacts/$rid" && zip -qry "Worksheet.net.zip" "Worksheet.net.app" -x '*/.DS_Store')
 
   register "$app"
   echo "  $app"
-  echo "  $artifacts/$rid/Worksheet.zip"
+  echo "  $artifacts/$rid/Worksheet.net.zip"
 
   [ "$make_dmg" = true ] || return 0
 
@@ -155,14 +155,14 @@ macos_app() {
 
   local stage="$staging/dmg-$rid"
 
-  rm -rf "$stage" "$artifacts/$rid/Worksheet.dmg"
+  rm -rf "$stage" "$artifacts/$rid/Worksheet.net.dmg"
   mkdir -p "$stage"
   cp -R "$app" "$stage/"
   ln -s /Applications "$stage/Applications"
 
-  hdiutil create -quiet -volname "Worksheet $version" -srcfolder "$stage" \
-    -format UDZO -ov "$artifacts/$rid/Worksheet.dmg"
-  echo "  $artifacts/$rid/Worksheet.dmg"
+  hdiutil create -quiet -volname "Worksheet.net $version" -srcfolder "$stage" \
+    -format UDZO -ov "$artifacts/$rid/Worksheet.net.dmg"
+  echo "  $artifacts/$rid/Worksheet.net.dmg"
 }
 
 # Finder draws a bundle's icon from the LaunchServices record, and a bundle assembled by a script

@@ -1,4 +1,4 @@
-# Worksheet
+# Worksheet.net
 
 Log your working day in one line, on projects and on the topics inside them.
 

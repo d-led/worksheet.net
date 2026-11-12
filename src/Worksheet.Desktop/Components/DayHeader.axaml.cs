@@ -175,6 +175,6 @@ public partial class DayHeader : UserControl
             Title = "Export",
             SuggestedFileName = file.FileName,
             DefaultExtension = "zip",
-            FileTypeChoices = [new FilePickerFileType("Worksheet export") { Patterns = ["*.zip"] }],
+            FileTypeChoices = [new FilePickerFileType("Worksheet.net export") { Patterns = ["*.zip"] }],
         };
 }

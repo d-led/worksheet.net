@@ -14,9 +14,9 @@
 <plist version="1.0">
 <dict>
   <key>CFBundleName</key>
-  <string>Worksheet</string>
+  <string>Worksheet.net</string>
   <key>CFBundleDisplayName</key>
-  <string>Worksheet</string>
+  <string>Worksheet.net</string>
   <key>CFBundleIdentifier</key>
   <string>com.d-led.worksheet</string>
   <key>CFBundleExecutable</key>

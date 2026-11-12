@@ -5,7 +5,7 @@
                  xmlns:vm="using:Worksheet.Desktop.ViewModels"
                  x:Class="Worksheet.Desktop.Views.MainWindow"
                  x:DataType="vm:DayViewModel"
-                 Title="Worksheet"
+                 Title="Worksheet.net"
 Width="1000"
                  Height="620"
                  MinWidth="760"

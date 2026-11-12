@@ -41,7 +41,7 @@ internal static class TrayHost
         var tray = new TrayIcon
         {
             Icon = new WindowIcon(AssetLoader.Open(new Uri(TrayIconUri))),
-            ToolTipText = "Worksheet",
+            ToolTipText = "Worksheet.net",
             IsVisible = true,
         };
 

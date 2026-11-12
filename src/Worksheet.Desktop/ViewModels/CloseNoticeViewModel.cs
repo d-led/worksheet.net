@@ -17,11 +17,11 @@ public sealed partial class CloseNoticeViewModel : ObservableObject
     [ObservableProperty]
     private bool _doNotTellAgain = true;
 
-    public string Title { get; } = "Worksheet keeps running";
+    public string Title { get; } = "Worksheet.net keeps running";
 
     public string Body { get; } =
         "The window closes and the day keeps counting. The icon in the tray brings it back — its menu "
-        + "holds the rest, Quit among them — and so does starting Worksheet again.";
+        + "holds the rest, Quit among them — and so does starting Worksheet.net again.";
 
     public string Quiet { get; } = "Don't tell me again.";
 }

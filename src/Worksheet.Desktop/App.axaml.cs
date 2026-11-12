@@ -22,6 +22,15 @@ public sealed class App : Application
 {
     private const string InstanceName = "Worksheet.SingleInstance";
 
+    /// <summary>
+    /// The name macOS knows this program by. Avalonia passes <see cref="Application.Name"/> to
+    /// <c>NSProcessInfo.processName</c> and to the name LaunchServices shows, and starts from
+    /// "Avalonia Application" — the toolkit's name, not the program's, which is what Activity
+    /// Monitor and the application menu would otherwise say. The bundle says the same in
+    /// <c>packaging/macos/Info.plist.in</c>.
+    /// </summary>
+    public App() => Name = "Worksheet.net";
+
     private LocalLedger? _local;
     private MainWindow? _window;
     private AuditWindow? _audit;

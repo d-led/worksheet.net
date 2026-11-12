@@ -46,7 +46,7 @@ public sealed class McpServer(IToolkit toolkit)
         + "A range that cannot be recorded is refused with a sentence saying why, and nothing is written. "
         + "Read back with 'day' and 'totals'; see the catalogue with 'list_projects' and 'list_topics'; "
         + "take back the last change, whoever made it, with 'undo'. "
-        + "If this server does not answer, check that Worksheet is running — the server is inside the "
+        + "If this server does not answer, check that Worksheet.net is running — the server is inside the "
         + "application, so there is nothing to connect to while it is closed. If it is running, compare "
         + "the MCP settings in the agent with those in the application (Settings…, the port): both must "
         + "name the same port.";
@@ -112,7 +112,7 @@ public sealed class McpServer(IToolkit toolkit)
             ["serverInfo"] = new JsonObject
             {
                 ["name"] = ServerName,
-                ["title"] = "Worksheet",
+                ["title"] = "Worksheet.net",
                 ["version"] = typeof(McpServer).Assembly.GetName().Version?.ToString(3) ?? "0.1.0",
             },
             ["instructions"] = Manual,

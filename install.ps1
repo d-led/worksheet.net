@@ -1,4 +1,4 @@
-# Installs Worksheet: one self-contained binary, no runtime to install.
+# Installs Worksheet.net: one self-contained binary, no runtime to install.
 #
 #   irm https://raw.githubusercontent.com/d-led/worksheet.net/main/install.ps1 | iex
 #

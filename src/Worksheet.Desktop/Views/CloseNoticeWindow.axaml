@@ -4,7 +4,7 @@
                        xmlns:vm="using:Worksheet.Desktop.ViewModels"
                        x:Class="Worksheet.Desktop.Views.CloseNoticeWindow"
                        x:DataType="vm:CloseNoticeViewModel"
-                       Title="Worksheet keeps running"
+                       Title="Worksheet.net keeps running"
                        Width="480"
                        SizeToContent="Height"
                        CanResize="False"

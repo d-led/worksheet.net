@@ -1,6 +1,6 @@
 # Behaviour
 
-This document describes what Worksheet does. It is written for this application
+This document describes what Worksheet.net does. It is written for this application
 and records decisions; it is not a description of any other program's source.
 
 ## Vocabulary
