@@ -96,6 +96,10 @@ jobs:
             rid: osx-x64
           - os: windows-latest
             rid: win-x64
+          # Published from the x64 runner: a RID-specific build needs the runtime pack, not a
+          # Windows machine of that architecture, and nothing here is native-AOT compiled.
+          - os: windows-latest
+            rid: win-arm64
           - os: ubuntu-latest
             rid: linux-x64
           - os: ubuntu-latest

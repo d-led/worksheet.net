@@ -36,6 +36,7 @@ Or take the file yourself. These links always give the newest build:
 | Linux x64 | [worksheet-linux-x64](https://nightly.link/d-led/worksheet.net/workflows/build/main/worksheet-linux-x64.zip) |
 | Linux arm64 | [worksheet-linux-arm64](https://nightly.link/d-led/worksheet.net/workflows/build/main/worksheet-linux-arm64.zip) |
 | Windows x64 | [worksheet-win-x64](https://nightly.link/d-led/worksheet.net/workflows/build/main/worksheet-win-x64.zip) |
+| Windows arm64 | [worksheet-win-arm64](https://nightly.link/d-led/worksheet.net/workflows/build/main/worksheet-win-arm64.zip) |
 
 Unzip and run it: `chmod +x worksheet-*` on macOS and Linux, a double-click on Windows. macOS refuses
 a downloaded binary until the quarantine flag is off; the installer clears it, and

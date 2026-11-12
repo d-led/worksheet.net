@@ -131,7 +131,14 @@ Two macOS details look like bugs the first time and are not:
   bundle afterwards leaves the old record behind, so a copy in `/Applications` can still look
   iconless until it is launched once or registered with `lsregister -f`.
 
-RIDs: `osx-arm64`, `osx-x64`, `win-x64`, `linux-x64`, `linux-arm64`. Binaries are 96–113 MB.
+RIDs: `osx-arm64`, `osx-x64`, `win-x64`, `win-arm64`, `linux-x64`, `linux-arm64`. Binaries are
+101–113 MB. The Windows ARM64 build is published from the x64 runner — a RID-specific build needs
+the matching runtime pack, not a machine of that architecture, and nothing here is AOT compiled.
+
+The macOS pair stays two files rather than one universal one: a self-contained single file carries
+the runtime and the native libraries *of its architecture* (Skia, HarfBuzz, the CLR itself), and
+those cannot be lipo-ed into one bundle. Both files are on the release, and the Homebrew formula
+picks the one the machine needs.
 
 ### The newest build, without a release
 
@@ -145,10 +152,15 @@ newest build of `main` is always downloadable without tagging anything. `install
 ## Publishing to package managers
 
 A tag is what makes a version. `build.yml` builds every platform, the `release` job attaches the
-five binaries to the tag, and two more jobs turn those immutable assets into packages — a URL that
+six binaries to the tag, and two more jobs turn those immutable assets into packages — a URL that
 never changes, beside the sha256 of exactly the file behind it, is all a package manager asks for.
 The tag is also the version the binaries carry: the package job passes it as `-p:Version`, so what
 Chocolatey installs and what the application reports over MCP cannot disagree.
+
+The whole of it starts with one command — `scripts/release.sh patch` (or `minor`, `major`,
+`set 1.2.3`), which refuses a dirty tree, runs the tests, writes the version into
+`Directory.Build.props`, commits it, tags `v<version>` and pushes both. `--dry-run` says what it
+would do; `--yes` skips the confirmation. Pushing the tag is the release.
 
 - **Homebrew**: `scripts/generate-homebrew-formula.sh` writes `worksheet.rb` from the release's
   checksums, and the job commits it to the `d-led/homebrew-d-led` tap, where
