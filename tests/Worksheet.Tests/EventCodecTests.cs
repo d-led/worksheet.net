@@ -156,6 +156,22 @@ public sealed class EventCodecTests
         Assert.DoesNotContain("\"before\"", json);
     }
 
+    /// <summary>
+    /// The window calls the resting kind a day off; the journal still writes the name it always
+    /// wrote, so a journal from before the word changed reads as the same kind of day.
+    /// </summary>
+    [Fact]
+    public void A_day_off_keeps_the_journal_name_it_was_written_under()
+    {
+        var change = new DayKindChanged(Day, DayKind.Working, DayKind.Weekend);
+        var json = EventCodec.Encode(change);
+        var read = Assert.IsType<DayKindChanged>(EventCodec.Decode(EventCodec.KindOf(change), json));
+
+        Assert.Contains("\"after\":\"Weekend\"", json);
+        Assert.Equal<DayKind?>(DayKind.Weekend, read.After);
+        Assert.Equal("Day off", DayKinds.LabelOf(read.After!.Value));
+    }
+
     [Fact]
     public void A_clock_is_stored_the_way_the_day_shows_it()
     {

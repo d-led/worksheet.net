@@ -7,7 +7,7 @@ namespace Worksheet.Core;
 
 /// <summary>
 /// What kind of day each day of the ledger is. A day nobody has declared follows the calendar:
-/// Saturdays and Sundays are weekends, the rest work. Declaring the kind the day already has by
+/// Saturdays and Sundays are days off, the rest work. Declaring the kind the day already has by
 /// default clears the declaration instead of storing one, so the journal keeps saying only what
 /// was actually decided.
 /// </summary>

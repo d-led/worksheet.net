@@ -103,7 +103,7 @@ inverses.
 (`TakesEntries`, and `DayViewModel.IsFrozen` with it).
 
 **Reachable and intended:** declaring a non-working kind on a day that already holds entries
-freezes those entries. `EntryComposer` then refuses every correction with "…is marked Weekend; set
+freezes those entries. `EntryComposer` then refuses every correction with "…is marked Day off; set
 the day to Working day first", undo still works, and the rows stay read-only until the day is a
 working day again (`behaviour.md`, "Only a working day takes entries").
 

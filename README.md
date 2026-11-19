@@ -152,8 +152,8 @@ bottom.
 
 ## Days that do not work
 
-Above the table sits the day's status: `Working day`, `Flex day`, `Sick day`, `Holiday`, `Weekend`.
-Saturday and Sunday start as weekend; any of the five can be chosen.
+Above the table sits the day's status: `Working day`, `Flex day`, `Sick day`, `Holiday`, `Day off`.
+Saturday and Sunday start as a day off; any of the five can be chosen.
 
 ![A sick day: the status row, and one row of the timetable dimmed and frozen](docs/screenshots/frozen-day.png)
 

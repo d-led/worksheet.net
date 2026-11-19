@@ -9,6 +9,10 @@ namespace Worksheet.Core;
 /// What a day is. Only a working day takes entries; every other kind freezes the timetable
 /// without touching what was already recorded.
 /// </summary>
+/// <remarks>
+/// <see cref="DayKind.Weekend"/> keeps its name although the window calls it a day off: a journal
+/// writes the member's name down, so renaming it would make every journal written so far unreadable.
+/// </remarks>
 public enum DayKind
 {
     Working,
@@ -27,7 +31,7 @@ public static class DayKinds
         "Flex day",
         "Sick day",
         "Holiday",
-        "Weekend",
+        "Day off",
     ];
 
     public static string LabelOf(DayKind kind) => Labels[(int)kind];
@@ -35,7 +39,7 @@ public static class DayKinds
     /// <summary>Whether a day of this kind can be worked on, and therefore edited.</summary>
     public static bool TakesEntries(DayKind kind) => kind == DayKind.Working;
 
-    /// <summary>What a day is when nobody has said otherwise: weekends rest, the rest work.</summary>
+    /// <summary>What a day is when nobody has said otherwise: Saturday and Sunday rest, the rest work.</summary>
     public static DayKind DefaultOf(DateOnly day) =>
         day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday ? DayKind.Weekend : DayKind.Working;
 }

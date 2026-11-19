@@ -38,7 +38,7 @@ public sealed class DayStatusTests : UiTestBase
     }
 
     [AvaloniaFact]
-    public void A_saturday_offers_five_statuses_with_the_weekend_already_chosen()
+    public void A_saturday_offers_five_statuses_with_the_day_off_already_chosen()
     {
         MoveTo(Saturday);
         var day = NewDay();
@@ -46,9 +46,9 @@ public sealed class DayStatusTests : UiTestBase
         var panel = Show(day, StatusOverTable());
 
         Assert.Equal(
-            new[] { "Working day", "Flex day", "Sick day", "Holiday", "Weekend" },
+            new[] { "Working day", "Flex day", "Sick day", "Holiday", "Day off" },
             Kinds(panel).Select(radio => radio.Content as string));
-        Assert.True(Kind(panel, "Weekend").IsChecked);
+        Assert.True(Kind(panel, "Day off").IsChecked);
     }
 
     [AvaloniaFact]

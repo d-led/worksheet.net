@@ -190,7 +190,7 @@ public sealed class ExportTests
 
         var daysOff = Report(ExportPeriod.Week).DaysOff;
 
-        Assert.Equal("Weekend", daysOff[^1].Kind);
+        Assert.Equal("Day off", daysOff[^1].Kind);
         Assert.Equal(0, daysOff[^1].WorkedMinutes);
     }
 

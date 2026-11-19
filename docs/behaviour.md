@@ -40,7 +40,7 @@ and records decisions; it is not a description of any other program's source.
    be a span typed wrong. A note may be a line of its own — `# the paper` — which
    lands on the entry the day ended with, so work logged in a hurry is commented
    from the same line a moment later.
-3. Says what kind of day it is — working, flex, sick, holiday or weekend — as a row of
+3. Says what kind of day it is — working, flex, sick, holiday or day off — as a row of
    radios above the table, and freezes the timetable on every day that is not a
    working day.
 4. Undoes the most recent change by appending its inverse, and redoes it by appending it
@@ -101,7 +101,7 @@ and records decisions; it is not a description of any other program's source.
   it out, the content of the day keeps it, and wherever a total is given the
   working time is given beside it.
 - Only a working day takes entries. A day nobody has declared follows the
-  calendar: Saturday and Sunday are weekends, the rest work. Declaring any other
+  calendar: Saturday and Sunday are days off, the rest work. Declaring any other
   kind freezes the day — its entries stay, and nothing about them can be changed
   until the day is a working day again. Declaring the kind the calendar already
   gives is not stored at all.

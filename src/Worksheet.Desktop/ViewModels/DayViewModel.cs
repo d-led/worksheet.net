@@ -100,7 +100,7 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     /// <summary>Entries and the holes between them, in start order.</summary>
     public ObservableCollection<IDayRow> Rows { get; } = [];
 
-    /// <summary>The five kinds of day, one of them chosen, pre-filled for a weekend.</summary>
+    /// <summary>The five kinds of day, one of them chosen, pre-filled for a day off.</summary>
     public ObservableCollection<DayKindOptionViewModel> Kinds { get; } = [];
 
     /// <summary>The screens the heading can open; the shell sets them, since it owns the windows.</summary>
@@ -399,8 +399,8 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// The five kinds of day with the day's own chosen. A Saturday or a Sunday starts as a
-    /// weekend, and any of the five can be picked over it.
+    /// The five kinds of day with the day's own chosen. A Saturday or a Sunday starts as a day
+    /// off, and any of the five can be picked over it.
     /// </summary>
     private void RefreshKinds()
     {

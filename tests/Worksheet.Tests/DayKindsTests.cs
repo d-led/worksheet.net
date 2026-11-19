@@ -21,7 +21,7 @@ public sealed class DayKindsTests
     [InlineData(DayKind.Flex, "Flex day")]
     [InlineData(DayKind.Sick, "Sick day")]
     [InlineData(DayKind.Holiday, "Holiday")]
-    [InlineData(DayKind.Weekend, "Weekend")]
+    [InlineData(DayKind.Weekend, "Day off")]
     public void Every_kind_of_day_has_its_own_word(DayKind kind, string label) =>
         Assert.Equal(label, DayKinds.LabelOf(kind));
 
