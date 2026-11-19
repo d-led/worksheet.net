@@ -152,7 +152,7 @@ public sealed class ExportTests
     }
 
     [Fact]
-    public void Days_with_nothing_on_them_are_left_out_and_the_others_are_in_order()
+    public void The_data_files_days_are_the_days_that_hold_something_in_order()
     {
         Logged("4.11. Website 09:00 1h");
         Logged("2.11. Website 09:00 1h");
@@ -163,6 +163,35 @@ public sealed class ExportTests
         Assert.Equal([new DateOnly(2026, 11, 2), new DateOnly(2026, 11, 4)], report.Days.Select(day => day.Date));
         Assert.Equal(2, report.DaysLogged);
         Assert.Equal(120, report.TotalMinutes);
+    }
+
+    [Fact]
+    public void Every_day_of_the_range_is_in_the_report_and_the_ones_that_hold_nothing_are_days_off()
+    {
+        Logged("2.11. Website 09:00 1h");
+        Logged("4.11. Website 09:00 1h");
+
+        var report = Report(ExportPeriod.Week);
+
+        Assert.Equal(7, report.EveryDay.Count);
+        Assert.Equal(new DateOnly(2026, 11, 2), report.EveryDay[0].Date);
+        Assert.Equal(new DateOnly(2026, 11, 8), report.EveryDay[^1].Date);
+        Assert.Equal([new DateOnly(2026, 11, 2), new DateOnly(2026, 11, 4)], report.Days.Select(day => day.Date));
+        Assert.Equal(
+            [new DateOnly(2026, 11, 3), new DateOnly(2026, 11, 5), new DateOnly(2026, 11, 6), new DateOnly(2026, 11, 7), new DateOnly(2026, 11, 8)],
+            report.DaysOff.Select(day => day.Date));
+        Assert.Equal(2, report.DaysLogged);
+    }
+
+    [Fact]
+    public void A_day_off_keeps_the_kind_the_journal_keeps_for_it()
+    {
+        Logged("3.11. Website 09:00 1h");
+
+        var daysOff = Report(ExportPeriod.Week).DaysOff;
+
+        Assert.Equal("Weekend", daysOff[^1].Kind);
+        Assert.Equal(0, daysOff[^1].WorkedMinutes);
     }
 
     [Fact]
@@ -421,6 +450,56 @@ public sealed class ExportTests
     }
 
     [Fact]
+    public void The_day_table_keeps_the_days_off_so_no_date_is_skipped()
+    {
+        Logged("2.11. Website 09:00 1h");
+        Logged("4.11. Website 09:00 1h");
+
+        var table = Card(Html(Report(ExportPeriod.Week)), "Each day, project by project");
+
+        Assert.Equal(
+            ["Mon 2 Nov", "Tue 3 Nov · day off", "Wed 4 Nov", "Thu 5 Nov · day off", "Fri 6 Nov · day off", "Sat 7 Nov · day off", "Sun 8 Nov · day off"],
+            Regex.Matches(table, "<td class=\"text-nowrap\">([^<]*)</td>").Select(match => match.Groups[1].Value));
+    }
+
+    [Fact]
+    public void A_day_off_reads_as_a_muted_row_with_a_dash_where_the_hours_would_be()
+    {
+        Logged("2.11. Website 09:00 1h");
+        Logged("4.11. Website 09:00 1h");
+
+        var table = Card(Html(Report(ExportPeriod.Week)), "Each day, project by project");
+
+        Assert.Contains("<tr class=\"text-body-secondary\"><td class=\"text-nowrap\">Tue 3 Nov · day off</td><td></td><td class=\"text-end text-nowrap\">—</td></tr>", table);
+    }
+
+    [Fact]
+    public void The_days_list_says_a_day_off_in_its_place_and_opens_no_fold_for_it()
+    {
+        Logged("2.11. Website 09:00 1h");
+        Logged("4.11. Website 09:00 1h");
+
+        var page = Html(Report(ExportPeriod.Week));
+
+        Assert.Contains("<span class=\"fw-semibold\">Tuesday 3 Nov 2026</span> <span>· day off</span>", page);
+        Assert.Equal(2, Regex.Count(page, "<details"));
+    }
+
+    [Fact]
+    public void The_days_list_follows_the_calendar_and_not_only_the_days_that_hold_something()
+    {
+        Logged("2.11. Website 09:00 1h");
+        Logged("4.11. Website 09:00 1h");
+
+        var page = Html(Report(ExportPeriod.Week));
+        var days = page[page.IndexOf(">Days</h2>", StringComparison.Ordinal)..];
+
+        Assert.Equal(
+            ["Monday 2 Nov 2026", "Tuesday 3 Nov 2026", "Wednesday 4 Nov 2026", "Thursday 5 Nov 2026", "Friday 6 Nov 2026", "Saturday 7 Nov 2026", "Sunday 8 Nov 2026"],
+            Regex.Matches(days, "(?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day \\d+ Nov 2026").Select(match => match.Value));
+    }
+
+    [Fact]
     public void A_page_of_one_day_carries_no_second_reading_of_its_rows()
     {
         Logged("Website 09:00 1h");
@@ -594,6 +673,7 @@ public sealed class ExportTests
 
         Assert.Contains("Nothing was logged in this range.", page);
         Assert.Contains("Nothing to draw.", page);
+        Assert.DoesNotContain("· day off", page);
         Assert.DoesNotContain("pie showData", page);
     }
 

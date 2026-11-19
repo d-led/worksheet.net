@@ -146,7 +146,9 @@ files:
 Once the file is written, a banner under the heading names it and the folder it went to, and *Show in
 folder* selects it in Finder, Explorer or the file manager the platform has.
 
-Days that hold nothing are left out; the page says so at the bottom.
+Days that hold nothing are kept as days off, in their place in the days list and in the table of
+every day against every project, so the dates of a range never skip one; the page says so at the
+bottom.
 
 ## Days that do not work
 

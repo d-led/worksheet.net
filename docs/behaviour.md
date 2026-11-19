@@ -73,7 +73,10 @@ and records decisions; it is not a description of any other program's source.
 9. Exports a range as one zip — the data and a page — through the platform's save
    dialog. The range is the day on screen, its week from Monday to Sunday, or its
    month, quarter or year; a range of more than one day puts a table of every day
-   against every project ahead of the days themselves. What was written is announced under the
+   of the range against every project ahead of the days themselves. Every date of
+   the range is on the page: a day with nothing on it is a day off, said in its
+   place, so reading the report line by line cannot mistake one day for another.
+   What was written is announced under the
    heading: the file, the folder it went to, and one action that selects it in the
    platform's file manager. A dismissed dialog writes nothing and says so; the
    notice is put away without touching the file, and the next export replaces it.

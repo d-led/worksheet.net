@@ -22,23 +22,34 @@ public sealed record TopicLine(string? Topic, int Minutes)
 /// <summary>One time range as the report shows it.</summary>
 public sealed record EntryLine(TimeOnly Start, TimeOnly End, int Minutes, string Project, string? Topic, string? Note);
 
-/// <summary>One day that holds something, with what it holds.</summary>
+/// <summary>One day of the range, with what it holds; a day off holds nothing.</summary>
 /// <remarks>The time is the whole day, a break included; the worked time leaves the breaks out.</remarks>
-public sealed record DayLine(DateOnly Date, string Kind, int Minutes, int WorkedMinutes, IReadOnlyList<EntryLine> Entries);
+public sealed record DayLine(DateOnly Date, string Kind, int Minutes, int WorkedMinutes, IReadOnlyList<EntryLine> Entries)
+{
+    /// <summary>Whether the day holds a range at all; a day of the range that does not is a day off.</summary>
+    public bool HoldsSomething => Entries.Count > 0;
+}
 
 /// <summary>
 /// The range as a materialized object: what the JSON file holds and what the page is drawn from,
 /// so both always agree and nothing has to be read twice. The time is the total the journal holds,
-/// breaks included; the worked time is what is left of it once the breaks are taken out.
+/// breaks included; the worked time is what is left of it once the breaks are taken out. Every day
+/// of the range is here, the days it holds nothing for included, so a report never skips a date.
 /// </summary>
 public sealed record RangeReport(
     ExportRange Range,
     int TotalMinutes,
     int WorkedMinutes,
     IReadOnlyList<ProjectLine> Projects,
-    IReadOnlyList<DayLine> Days,
+    IReadOnlyList<DayLine> EveryDay,
     IReadOnlyCollection<string> Catalogue)
 {
+    /// <summary>The days that hold something, in order: what the data file calls the days.</summary>
+    public IReadOnlyList<DayLine> Days => [.. EveryDay.Where(day => day.HoldsSomething)];
+
+    /// <summary>The days of the range with nothing on them, in order, so the page can say them.</summary>
+    public IReadOnlyList<DayLine> DaysOff => [.. EveryDay.Where(day => !day.HoldsSomething)];
+
     /// <summary>Days that hold something, counted for the report's headline figures.</summary>
     public int DaysLogged => Days.Count;
 
@@ -59,11 +70,26 @@ public sealed record RangeReport(
             entries.Sum(entry => entry.Minutes),
             entries.Where(entry => !Break.IsBreak(entry.Project)).Sum(entry => entry.Minutes),
             ProjectsOf(entries),
-            days,
+            EveryDayOf(state, range, days),
             state.Catalogue);
     }
 
-    /// <summary>Only the days that hold something: an empty day is not detail, it is an absence of it.</summary>
+    /// <summary>
+    /// Every day of the range in its place: the days that hold something, and a day off wherever the
+    /// dates would otherwise jump, since a list of logged days read line by line hides the jump.
+    /// </summary>
+    private static DayLine[] EveryDayOf(LedgerState state, ExportRange range, DayLine[] logged)
+    {
+        var byDate = logged.ToDictionary(day => day.Date);
+
+        return [.. range.EachDay.Select(day => byDate.GetValueOrDefault(day) ?? DayOff(state, day))];
+    }
+
+    /// <summary>A day of the range with nothing on it, under the kind the journal keeps for it.</summary>
+    private static DayLine DayOff(LedgerState state, DateOnly day) =>
+        new(day, DayKinds.LabelOf(state.KindOf(day)), 0, 0, []);
+
+    /// <summary>The days that hold something: an empty day is not detail, it is an absence of it.</summary>
     private static IEnumerable<DayLine> DaysOf(LedgerState state, ExportRange range) =>
         state.Entries
             .Values

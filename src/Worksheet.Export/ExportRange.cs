@@ -22,6 +22,9 @@ public sealed record ExportRange(DateOnly From, DateOnly To, string Label, Expor
 {
     public int Days => To.DayNumber - From.DayNumber + 1;
 
+    /// <summary>Every day of the range, the first one first, so a report can keep the days it holds nothing for.</summary>
+    public IEnumerable<DateOnly> EachDay => Enumerable.Range(0, Days).Select(index => From.AddDays(index));
+
     /// <summary>Whether the daily detail is worth printing: one day is its own detail.</summary>
     public bool SpansMoreThanADay => Days > 1;
 

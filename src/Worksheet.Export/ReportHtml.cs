@@ -413,9 +413,22 @@ public static class ReportHtml
         $"""
          <section class="mb-4">
            <h2 class="h5">Days</h2>
-         {string.Concat(report.Days.Select(day => Fold(report.Catalogue, day)))}</section>
+         {string.Concat(report.EveryDay.Select(day => day.HoldsSomething ? Fold(report.Catalogue, day) : DayOff(day)))}</section>
 
          """;
+
+    /// <summary>
+    /// A day of the range with nothing on it, said in its place: a list of logged days read line by
+    /// line would let the reader mistake the day before a gap for the day after it.
+    /// </summary>
+    private static string DayOff(DayLine day) =>
+        $"""
+         <div class="card mb-1 text-body-secondary"><div class="card-body py-2"><span class="fw-semibold">{Esc(DayNamed(day))}</span> <span>· day off</span></div></div>
+
+         """;
+
+    /// <summary>A day named in full, the way a fold names it.</summary>
+    private static string DayNamed(DayLine day) => day.Date.ToString("dddd d MMM yyyy", CultureInfo.InvariantCulture);
 
     /// <summary>
     /// A day folded: its date, its figure and when it started on the summary, the ranges inside it.
@@ -427,7 +440,7 @@ public static class ReportHtml
     private static string Fold(IReadOnlyCollection<string> catalogue, DayLine day) =>
         $"""
          <details class="card mb-1"><summary class="card-body py-2">
-           <span class="fw-semibold">{Esc(day.Date.ToString("dddd d MMM yyyy", CultureInfo.InvariantCulture))}</span>
+           <span class="fw-semibold">{Esc(DayNamed(day))}</span>
            <span class="text-body-secondary">· {Esc(day.Kind)} · {Esc(Shares.Hours(day.WorkedMinutes))}{(day.WorkedMinutes == day.Minutes ? string.Empty : $" worked · {Esc(Shares.Hours(day.Minutes))} on the day")} · Started at {Esc(ClockText.Format(Start(day)))}</span>
          </summary>
          <div class="card-body py-2">
@@ -483,26 +496,43 @@ public static class ReportHtml
     /// The table of days, striped so a row is followed across its projects without losing the line:
     /// the columns are narrow and the names are at the far end, so a plain table of days is a grid to
     /// the eye. Bootstrap's own stripe is a shade of the ink rather than a colour, so the table still
-    /// reads in a dark browser without a second stylesheet.
+    /// reads in a dark browser without a second stylesheet. A range that holds nothing says so rather
+    /// than listing every day of it as a day off.
     /// </summary>
     private static string DaysByProject(RangeReport report) =>
-        $"""
-         <div class="table-responsive">
-           <table class="table table-sm table-striped align-middle mb-0">
-             <thead><tr><th scope="col">Day</th>{string.Concat(report.Projects.Select(project => $"<th scope=\"col\" class=\"text-end\">{Esc(project.Project)}</th>"))}<th scope="col" class="text-end">Working time</th></tr></thead>
-             <tbody>
-         {Rows(report.Days.Select(day => DayRow(report, day)))}  </tbody>
-             <tfoot><tr class="fw-semibold" style="--bs-table-bg:{SummaryBand}"><td>All days</td>{string.Concat(report.Projects.Select(project => $"<td class=\"text-end\">{Esc(Shares.Hours(project.Minutes))}</td>"))}<td class="text-end">{Esc(Shares.Hours(report.WorkedMinutes))}</td></tr></tfoot>
-           </table>
-         </div>
+        report.Days.Count == 0
+            ? NothingLogged
+            : $"""
+               <div class="table-responsive">
+                 <table class="table table-sm table-striped align-middle mb-0">
+                   <thead><tr><th scope="col">Day</th>{string.Concat(report.Projects.Select(project => $"<th scope=\"col\" class=\"text-end\">{Esc(project.Project)}</th>"))}<th scope="col" class="text-end">Working time</th></tr></thead>
+                   <tbody>
+               {Rows(report.EveryDay.Select(day => DayRow(report, day)))}  </tbody>
+                   <tfoot><tr class="fw-semibold" style="--bs-table-bg:{SummaryBand}"><td>All days</td>{string.Concat(report.Projects.Select(project => $"<td class=\"text-end\">{Esc(Shares.Hours(project.Minutes))}</td>"))}<td class="text-end">{Esc(Shares.Hours(report.WorkedMinutes))}</td></tr></tfoot>
+                 </table>
+               </div>
 
-         """;
+               """;
 
-    /// <summary>One day of that table: what each project took, and how much of the day was worked.</summary>
+    /// <summary>
+    /// One day of that table: what each project took, and how much of the day was worked — or, for a
+    /// day off, a muted row with its cells empty and a dash where the hours of a day would be, so the
+    /// dates of the range are read as the calendar has them and never skip one.
+    /// </summary>
     private static string DayRow(RangeReport report, DayLine day) =>
-        $"""
-         <tr><td class="text-nowrap">{Esc(day.Date.ToString("ddd d MMM", CultureInfo.InvariantCulture))}</td>{string.Concat(report.Projects.Select(project => DayCell(day, project.Project)))}<td class="text-end text-nowrap">{Esc(Shares.Hours(day.WorkedMinutes))}</td></tr>
-         """;
+        day.HoldsSomething
+            ? $"""
+               <tr><td class="text-nowrap">{Esc(DayShown(day))}</td>{ProjectCells(report, day)}<td class="text-end text-nowrap">{Esc(Shares.Hours(day.WorkedMinutes))}</td></tr>
+               """
+            : $"""
+               <tr class="text-body-secondary"><td class="text-nowrap">{Esc(DayShown(day))} · day off</td>{ProjectCells(report, day)}<td class="text-end text-nowrap">—</td></tr>
+               """;
+
+    /// <summary>A day as the table names it: short, since its column is narrow.</summary>
+    private static string DayShown(DayLine day) => day.Date.ToString("ddd d MMM", CultureInfo.InvariantCulture);
+
+    private static string ProjectCells(RangeReport report, DayLine day) =>
+        string.Concat(report.Projects.Select(project => DayCell(day, project.Project)));
 
     /// <summary>A day's cell for one project: its hours, or nothing at all when it was not worked on.</summary>
     private static string DayCell(DayLine day, string project)
@@ -517,7 +547,7 @@ public static class ReportHtml
     /// <summary>The page's last word: where the numbers come from, and what the page needs from the net.</summary>
     private const string Footer = """
         <footer class="text-body-secondary small mt-5">
-          <p class="mb-1">Made by Worksheet from its journal. Days that hold nothing are left out; the total is what the journal says, not a guess at a working day.</p>
+          <p class="mb-1">Made by Worksheet from its journal. A day off is a day of the range with nothing on it; it is listed so the dates never skip one, and the total is what the journal says, not a guess at a working day.</p>
           <p class="mb-1">A break is time on the day, so the projects and the day folds count it; Working time is the day without its breaks, and that is what the window's heading shows.</p>
           <p class="mb-0">This page loads Bootstrap and mermaid from jsDelivr. Without a connection it still reads, unstyled; the gantt is then not drawn.</p>
         </footer>
