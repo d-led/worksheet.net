@@ -4,11 +4,14 @@ Everything that is about building this rather than using it.
 
 ## Toolchain
 
-- .NET SDK 10, pinned in `global.json`. The pin rolls forward within the 10.0 feature band and
-  will not jump to .NET 11 on its own. That is deliberate: the .NET 11 SDK requires Xcode 26.0 for
-  Apple-workload projects that still target .NET 10, and downgrading Xcode breaks SkiaSharp's
-  native copying. This application has no Apple workload and needs no Xcode — Avalonia's macOS
-  backend is its own dylib — but the pin keeps that distinction from being discovered the hard way.
+- .NET SDK 10 or newer. `global.json` names 10.0.100 as the floor and rolls forward to
+  `latestMajor`, which means the newest SDK installed on the machine, a newer major included — a
+  `brew upgrade dotnet` that takes 10 away cannot stop `scripts/package.sh` any more. The
+  application still targets `net10.0`, so the runtime it ships is .NET 10 whatever SDK builds it;
+  only CI pins one, `10.0.x` through `setup-dotnet`, so a release is built by a known SDK while a
+  working copy follows the machine. A newer SDK also brings newer analysers, and with
+  `AnalysisLevel=latest-recommended` and warnings as errors that shows up as a build that stops
+  rather than as a change nobody noticed.
 - No other prerequisites; Avalonia, SukiUI and LiteDB come from NuGet.
 - Node is needed for one optional check (`scripts/dupes.sh`); nothing else does.
 - `dotnet tool restore` installs Stryker for `scripts/mutate.sh` from
