@@ -36,6 +36,12 @@ public static class DayKinds
 
     public static string LabelOf(DayKind kind) => Labels[(int)kind];
 
+    /// <summary>
+    /// The label as a sentence writes it: the word follows a middot rather than opening a line, so
+    /// it keeps its small letters — "Tue 3 Nov · sick day".
+    /// </summary>
+    public static string WordOf(DayKind kind) => LabelOf(kind).ToLowerInvariant();
+
     /// <summary>Whether a day of this kind can be worked on, and therefore edited.</summary>
     public static bool TakesEntries(DayKind kind) => kind == DayKind.Working;
 

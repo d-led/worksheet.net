@@ -22,12 +22,18 @@ public sealed record TopicLine(string? Topic, int Minutes)
 /// <summary>One time range as the report shows it.</summary>
 public sealed record EntryLine(TimeOnly Start, TimeOnly End, int Minutes, string Project, string? Topic, string? Note);
 
-/// <summary>One day of the range, with what it holds; a day off holds nothing.</summary>
+/// <summary>One day of the range, with what it holds and what kind of day it is.</summary>
 /// <remarks>The time is the whole day, a break included; the worked time leaves the breaks out.</remarks>
-public sealed record DayLine(DateOnly Date, string Kind, int Minutes, int WorkedMinutes, IReadOnlyList<EntryLine> Entries)
+public sealed record DayLine(DateOnly Date, DayKind Kind, int Minutes, int WorkedMinutes, IReadOnlyList<EntryLine> Entries)
 {
-    /// <summary>Whether the day holds a range at all; a day of the range that does not is a day off.</summary>
+    /// <summary>Whether the day holds a range at all; a day of the range that does not is quiet.</summary>
     public bool HoldsSomething => Entries.Count > 0;
+
+    /// <summary>
+    /// Whether the day rests: it holds nothing, and the journal does not call it a working day. A
+    /// working day nobody logged on is an absence of entries rather than a day off.
+    /// </summary>
+    public bool IsDayOff => !HoldsSomething && Kind != DayKind.Working;
 }
 
 /// <summary>
@@ -47,8 +53,11 @@ public sealed record RangeReport(
     /// <summary>The days that hold something, in order: what the data file calls the days.</summary>
     public IReadOnlyList<DayLine> Days => [.. EveryDay.Where(day => day.HoldsSomething)];
 
-    /// <summary>The days of the range with nothing on them, in order, so the page can say them.</summary>
-    public IReadOnlyList<DayLine> DaysOff => [.. EveryDay.Where(day => !day.HoldsSomething)];
+    /// <summary>
+    /// The days of the range that rest, in order: nothing is on them, and the journal calls them a
+    /// day off, a flex day, a sick day or a holiday rather than a working day.
+    /// </summary>
+    public IReadOnlyList<DayLine> DaysOff => [.. EveryDay.Where(day => day.IsDayOff)];
 
     /// <summary>Days that hold something, counted for the report's headline figures.</summary>
     public int DaysLogged => Days.Count;
@@ -87,7 +96,7 @@ public sealed record RangeReport(
 
     /// <summary>A day of the range with nothing on it, under the kind the journal keeps for it.</summary>
     private static DayLine DayOff(LedgerState state, DateOnly day) =>
-        new(day, DayKinds.LabelOf(state.KindOf(day)), 0, 0, []);
+        new(day, state.KindOf(day), 0, 0, []);
 
     /// <summary>The days that hold something: an empty day is not detail, it is an absence of it.</summary>
     private static IEnumerable<DayLine> DaysOf(LedgerState state, ExportRange range) =>
@@ -98,7 +107,7 @@ public sealed record RangeReport(
             .OrderBy(day => day.Key)
             .Select(day => new DayLine(
                 day.Key,
-                DayKinds.LabelOf(state.KindOf(day.Key)),
+                state.KindOf(day.Key),
                 day.Sum(entry => Minutes(entry.Duration)),
                 day.Where(entry => !Break.IsBreak(state.ProjectName(entry.ProjectId))).Sum(entry => Minutes(entry.Duration)),
                 [.. day.OrderBy(entry => entry.Start)

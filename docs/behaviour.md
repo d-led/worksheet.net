@@ -74,8 +74,10 @@ and records decisions; it is not a description of any other program's source.
    dialog. The range is the day on screen, its week from Monday to Sunday, or its
    month, quarter or year; a range of more than one day puts a table of every day
    of the range against every project ahead of the days themselves. Every date of
-   the range is on the page: a day with nothing on it is a day off, said in its
-   place, so reading the report line by line cannot mistake one day for another.
+   the range is on the page and in the data, so reading the report line by line
+   cannot mistake one day for another: a day with nothing on it says what kind of
+   day it is — a day off, a flex day, a sick day or a holiday, as the journal keeps
+   it — and a working day nobody logged on says nothing was logged.
    What was written is announced under the
    heading: the file, the folder it went to, and one action that selects it in the
    platform's file manager. A dismissed dialog writes nothing and says so; the

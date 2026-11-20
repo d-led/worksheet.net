@@ -22,7 +22,8 @@ internal sealed record ReportDocument(
     [property: JsonPropertyName("worked")] string Worked,
     [property: JsonPropertyName("daysLogged")] int DaysLogged,
     [property: JsonPropertyName("projects")] IEnumerable<ReportProjectLine> Projects,
-    [property: JsonPropertyName("days")] IEnumerable<ReportDayLine> Days);
+    [property: JsonPropertyName("days")] IEnumerable<ReportDayLine> Days,
+    [property: JsonPropertyName("daysOff")] IEnumerable<ReportDayOff> DaysOff);
 
 internal sealed record ReportCoverage(
     [property: JsonPropertyName("from")] string From,
@@ -52,6 +53,14 @@ internal sealed record ReportDayLine(
     [property: JsonPropertyName("workedMinutes")] int WorkedMinutes,
     [property: JsonPropertyName("worked")] string Worked,
     [property: JsonPropertyName("entries")] IEnumerable<ReportEntryLine> Entries);
+
+/// <summary>
+/// A day of the range that rests: its date, and the journal's name for what the day is, since it
+/// holds no entries to say so.
+/// </summary>
+internal sealed record ReportDayOff(
+    [property: JsonPropertyName("date")] string Date,
+    [property: JsonPropertyName("kind")] string Kind);
 
 internal sealed record ReportEntryLine(
     [property: JsonPropertyName("start")] string Start,

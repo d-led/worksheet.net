@@ -166,32 +166,40 @@ public sealed class ExportTests
     }
 
     [Fact]
-    public void Every_day_of_the_range_is_in_the_report_and_the_ones_that_hold_nothing_are_days_off()
+    public void Every_day_of_the_range_is_in_the_report_so_no_date_is_missing()
     {
         Logged("2.11. Website 09:00 1h");
         Logged("4.11. Website 09:00 1h");
 
         var report = Report(ExportPeriod.Week);
 
-        Assert.Equal(7, report.EveryDay.Count);
-        Assert.Equal(new DateOnly(2026, 11, 2), report.EveryDay[0].Date);
-        Assert.Equal(new DateOnly(2026, 11, 8), report.EveryDay[^1].Date);
-        Assert.Equal([new DateOnly(2026, 11, 2), new DateOnly(2026, 11, 4)], report.Days.Select(day => day.Date));
         Assert.Equal(
-            [new DateOnly(2026, 11, 3), new DateOnly(2026, 11, 5), new DateOnly(2026, 11, 6), new DateOnly(2026, 11, 7), new DateOnly(2026, 11, 8)],
-            report.DaysOff.Select(day => day.Date));
+            [2, 3, 4, 5, 6, 7, 8],
+            report.EveryDay.Select(day => day.Date.Day));
+        Assert.Equal([new DateOnly(2026, 11, 2), new DateOnly(2026, 11, 4)], report.Days.Select(day => day.Date));
         Assert.Equal(2, report.DaysLogged);
     }
 
     [Fact]
-    public void A_day_off_keeps_the_kind_the_journal_keeps_for_it()
+    public void A_working_day_nobody_logged_on_is_not_a_day_off()
     {
-        Logged("3.11. Website 09:00 1h");
+        Logged("2.11. Website 09:00 1h");
+
+        var report = Report(ExportPeriod.Week);
+
+        Assert.Equal([new DateOnly(2026, 11, 7), new DateOnly(2026, 11, 8)], report.DaysOff.Select(day => day.Date));
+    }
+
+    [Fact]
+    public void A_day_that_rests_keeps_the_kind_the_journal_keeps_for_it()
+    {
+        new DayCalendar(_ledger).Declare(new DateOnly(2026, 11, 5), DayKind.Sick);
 
         var daysOff = Report(ExportPeriod.Week).DaysOff;
 
-        Assert.Equal("Day off", daysOff[^1].Kind);
-        Assert.Equal(0, daysOff[^1].WorkedMinutes);
+        Assert.Equal([DayKind.Sick, DayKind.Weekend, DayKind.Weekend], daysOff.Select(day => day.Kind));
+        Assert.Equal([new DateOnly(2026, 11, 5), new DateOnly(2026, 11, 7), new DateOnly(2026, 11, 8)], daysOff.Select(day => day.Date));
+        Assert.All(daysOff, day => Assert.Equal(0, day.WorkedMinutes));
     }
 
     [Fact]
@@ -214,6 +222,7 @@ public sealed class ExportTests
 
         var day = root.GetProperty("days")[0];
         Assert.Equal("2026-11-03", day.GetProperty("date").GetString());
+        Assert.Equal("Working", day.GetProperty("kind").GetString());
         Assert.Equal("09:00", day.GetProperty("entries")[0].GetProperty("start").GetString());
         Assert.Equal("login", day.GetProperty("entries")[0].GetProperty("topic").GetString());
     }
@@ -228,28 +237,73 @@ public sealed class ExportTests
     }
 
     /// <summary>
-    /// Version 1 of the data file, written down: every member, in the order it appears, at every
-    /// depth. A change here is a change to a file other people read, so it fails the build rather
-    /// than surprising a script — and the version only moves when the change is a break.
+    /// The data file of the version it is written in, in full: every member, in the order it
+    /// appears, at every depth. A change here is a change to a file other people read, so it fails
+    /// the build rather than surprising a script — and the version only moves when the change is a
+    /// break, which is what version 2 was: `kind` wrote a label in version 1 and the journal's name
+    /// for the kind since.
     /// </summary>
     [Fact]
-    public void The_data_file_keeps_the_shape_the_first_version_promised()
+    public void The_data_file_keeps_the_shape_its_version_promises()
     {
         Logged("Website (login) 09:00 1h");
 
         using var json = JsonDocument.Parse(Json(Report(ExportPeriod.Month)));
         var root = json.RootElement;
 
+        Assert.Equal(2, root.GetProperty("version").GetInt32());
         Assert.Equal(
-            ["version", "range", "generatedAt", "totalMinutes", "total", "workedMinutes", "worked", "daysLogged", "projects", "days"],
+            ["version", "range", "generatedAt", "totalMinutes", "total", "workedMinutes", "worked", "daysLogged", "projects", "days", "daysOff"],
             Keys(root));
         Assert.Equal(["from", "to", "period", "label", "days"], Keys(root.GetProperty("range")));
         Assert.Equal(["project", "minutes", "hours", "share", "topics"], Keys(root.GetProperty("projects")[0]));
         Assert.Equal(["topic", "minutes", "hours", "share"], Keys(root.GetProperty("projects")[0].GetProperty("topics")[0]));
         Assert.Equal(["date", "kind", "minutes", "hours", "workedMinutes", "worked", "entries"], Keys(root.GetProperty("days")[0]));
+        Assert.Equal(["date", "kind"], Keys(root.GetProperty("daysOff")[0]));
         Assert.Equal(
             ["start", "end", "minutes", "hours", "project", "topic", "note"],
             Keys(root.GetProperty("days")[0].GetProperty("entries")[0]));
+    }
+
+    [Fact]
+    public void The_data_file_lists_every_day_that_rests_under_the_name_the_journal_stores()
+    {
+        Logged("2.11. Website 09:00 1h");
+        var calendar = new DayCalendar(_ledger);
+        calendar.Declare(new DateOnly(2026, 11, 5), DayKind.Sick);
+        calendar.Declare(new DateOnly(2026, 11, 6), DayKind.Flex);
+        calendar.Declare(new DateOnly(2026, 11, 7), DayKind.Holiday);
+
+        using var json = JsonDocument.Parse(Json(Report(ExportPeriod.Week)));
+
+        Assert.Equal(
+            [
+                "2026-11-05 · Sick",
+                "2026-11-06 · Flex",
+                "2026-11-07 · Holiday",
+                "2026-11-08 · Weekend",
+            ],
+            json.RootElement.GetProperty("daysOff").EnumerateArray()
+                .Select(day => $"{day.GetProperty("date").GetString()} · {day.GetProperty("kind").GetString()}"));
+    }
+
+    /// <summary>
+    /// The file's word for a kind of day is the journal's, so a label the window rewords — a
+    /// weekend became a day off — cannot move what a script matches on.
+    /// </summary>
+    [Fact]
+    public void The_data_file_names_a_kind_of_day_as_the_journal_does_and_not_as_the_page_words_it()
+    {
+        Logged("2.11. Website 09:00 1h");
+
+        var report = Report(ExportPeriod.Week);
+
+        using var json = JsonDocument.Parse(Json(report));
+        var sunday = json.RootElement.GetProperty("daysOff").EnumerateArray()
+            .Single(day => day.GetProperty("date").GetString() == "2026-11-08");
+
+        Assert.Equal("Weekend", sunday.GetProperty("kind").GetString());
+        Assert.Contains("<span>· day off</span>", Html(report));
     }
 
     private static string[] Keys(JsonElement element) =>
@@ -450,7 +504,7 @@ public sealed class ExportTests
     }
 
     [Fact]
-    public void The_day_table_keeps_the_days_off_so_no_date_is_skipped()
+    public void The_day_table_keeps_the_days_with_nothing_on_them_so_no_date_is_skipped()
     {
         Logged("2.11. Website 09:00 1h");
         Logged("4.11. Website 09:00 1h");
@@ -458,7 +512,15 @@ public sealed class ExportTests
         var table = Card(Html(Report(ExportPeriod.Week)), "Each day, project by project");
 
         Assert.Equal(
-            ["Mon 2 Nov", "Tue 3 Nov · day off", "Wed 4 Nov", "Thu 5 Nov · day off", "Fri 6 Nov · day off", "Sat 7 Nov · day off", "Sun 8 Nov · day off"],
+            [
+                "Mon 2 Nov",
+                "Tue 3 Nov · nothing logged",
+                "Wed 4 Nov",
+                "Thu 5 Nov · nothing logged",
+                "Fri 6 Nov · nothing logged",
+                "Sat 7 Nov · day off",
+                "Sun 8 Nov · day off",
+            ],
             Regex.Matches(table, "<td class=\"text-nowrap\">([^<]*)</td>").Select(match => match.Groups[1].Value));
     }
 
@@ -470,18 +532,32 @@ public sealed class ExportTests
 
         var table = Card(Html(Report(ExportPeriod.Week)), "Each day, project by project");
 
-        Assert.Contains("<tr class=\"text-body-secondary\"><td class=\"text-nowrap\">Tue 3 Nov · day off</td><td></td><td class=\"text-end text-nowrap\">—</td></tr>", table);
+        Assert.Contains("<tr class=\"text-body-secondary\"><td class=\"text-nowrap\">Sat 7 Nov · day off</td><td></td><td class=\"text-end text-nowrap\">—</td></tr>", table);
     }
 
     [Fact]
-    public void The_days_list_says_a_day_off_in_its_place_and_opens_no_fold_for_it()
+    public void The_page_names_a_day_that_rests_by_the_kind_the_journal_keeps_for_it()
+    {
+        Logged("2.11. Website 09:00 1h");
+        new DayCalendar(_ledger).Declare(new DateOnly(2026, 11, 5), DayKind.Sick);
+
+        var page = Html(Report(ExportPeriod.Week));
+
+        Assert.Contains("<td class=\"text-nowrap\">Thu 5 Nov · sick day</td>", page);
+        Assert.Contains("<span class=\"fw-semibold\">Thursday 5 Nov 2026</span> <span>· sick day</span>", page);
+        Assert.Contains("<td class=\"text-nowrap\">Sat 7 Nov · day off</td>", page);
+    }
+
+    [Fact]
+    public void The_days_list_says_a_day_with_nothing_on_it_in_its_place_and_opens_no_fold_for_it()
     {
         Logged("2.11. Website 09:00 1h");
         Logged("4.11. Website 09:00 1h");
 
         var page = Html(Report(ExportPeriod.Week));
 
-        Assert.Contains("<span class=\"fw-semibold\">Tuesday 3 Nov 2026</span> <span>· day off</span>", page);
+        Assert.Contains("<span class=\"fw-semibold\">Tuesday 3 Nov 2026</span> <span>· nothing logged</span>", page);
+        Assert.Contains("<span class=\"fw-semibold\">Saturday 7 Nov 2026</span> <span>· day off</span>", page);
         Assert.Equal(2, Regex.Count(page, "<details"));
     }
 

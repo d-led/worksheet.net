@@ -129,9 +129,11 @@ for when it was taken and what it covers — `2026-11-04-0930-worksheet-2026-11.
 files:
 
 - `worksheet-2026-11.json` — the range as data: minutes per project and per project and topic, the
-  total with the time without breaks beside it, and every logged day with its entries. The first
-  field, `version`, is the format version: it changes only when a reader of the older file would read
-  the newer one wrongly, so a script can check it and stop.
+  total with the time without breaks beside it, every logged day with its entries, and the days that
+  rest — a day off, a flex day, a sick day, a holiday — under the name the journal stores for the
+  kind (`Working`, `Flex`, `Sick`, `Holiday`, `Weekend`), which a reworded label does not move. The
+  first field, `version`, is the format version: it changes only when a reader of the older file would
+  read the newer one wrongly, so a script can check it and stop.
 - `worksheet-2026-11.html` — totals with shares, a bar per project and a bar per project and topic, a
   gantt of the range as it was worked, and a foldable list of the days — each with what it was worked
   and when it started. A break counts in the total,
@@ -146,9 +148,10 @@ files:
 Once the file is written, a banner under the heading names it and the folder it went to, and *Show in
 folder* selects it in Finder, Explorer or the file manager the platform has.
 
-Days that hold nothing are kept as days off, in their place in the days list and in the table of
-every day against every project, so the dates of a range never skip one; the page says so at the
-bottom.
+Days that hold nothing are kept in their place in the days list and in the table of every day against
+every project, so the dates of a range never skip one, and each is named by what the journal says it
+is: `day off`, `flex day`, `sick day` or `holiday`, while a working day nobody logged on says
+`nothing logged`. The page says so at the bottom.
 
 ## Days that do not work
 

@@ -14,16 +14,19 @@ namespace Worksheet.Export;
 /// The report as data, for whoever wants to process it: minutes as integers, shares as fractions,
 /// and the hours written the way the application writes them so a reader and a script see the same
 /// number. The total is everything the range holds, breaks included; the worked time is the same
-/// range without its breaks. Days are the days that hold something, in order.
+/// range without its breaks. Days are the days that hold something, in order, each under the name
+/// the journal stores for its kind; the days off are the days that rest with nothing on them — a
+/// day off, a flex day, a sick day or a holiday — so no kind of day of the range is left out.
 /// </summary>
 public static partial class ReportJson
 {
     /// <summary>
     /// The version of the shape the data file is written in. It counts up only when a reader built
     /// for the previous version would read the new file wrongly: a field renamed or dropped, a unit
-    /// changed, a value moved into another. A field merely added leaves it where it is.
+    /// changed, a value moved into another. A field merely added leaves it where it is. Version 2
+    /// gave <c>kind</c> the journal's name for a kind of day where version 1 wrote a label.
     /// </summary>
-    public const int FormatVersion = 1;
+    public const int FormatVersion = 2;
 
     /// <summary>
     /// The one place the file's shape is read from: generated at compile time, so the single-file
@@ -54,7 +57,8 @@ public static partial class ReportJson
             Shares.Hours(report.WorkedMinutes),
             report.DaysLogged,
             report.Projects.Select(project => Project(project, total)),
-            report.Days.Select(DayOf));
+            report.Days.Select(DayOf),
+            report.DaysOff.Select(DayOff));
 
         return JsonSerializer.Serialize(document, Context.Default.ReportDocument);
     }
@@ -77,12 +81,22 @@ public static partial class ReportJson
     private static ReportDayLine DayOf(DayLine day) =>
         new(
             Day(day.Date),
-            day.Kind,
+            Kind(day.Kind),
             day.Minutes,
             Shares.Hours(day.Minutes),
             day.WorkedMinutes,
             Shares.Hours(day.WorkedMinutes),
             day.Entries.Select(Entry));
+
+    private static ReportDayOff DayOff(DayLine day) => new(Day(day.Date), Kind(day.Kind));
+
+    /// <summary>
+    /// The file's word for a kind of day: the name the journal stores, which is the name a script
+    /// can match on. A label is a surface's business and may be reworded — a weekend was renamed a
+    /// day off — while a stored name may not, since the journals written before it would then be
+    /// unreadable; a reader of this file is in the same position as a journal.
+    /// </summary>
+    private static string Kind(DayKind kind) => kind.ToString();
 
     private static ReportEntryLine Entry(EntryLine entry) =>
         new(

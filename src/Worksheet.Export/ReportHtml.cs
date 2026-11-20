@@ -413,19 +413,27 @@ public static class ReportHtml
         $"""
          <section class="mb-4">
            <h2 class="h5">Days</h2>
-         {string.Concat(report.EveryDay.Select(day => day.HoldsSomething ? Fold(report.Catalogue, day) : DayOff(day)))}</section>
+         {string.Concat(report.EveryDay.Select(day => day.HoldsSomething ? Fold(report.Catalogue, day) : QuietDay(day)))}</section>
 
          """;
 
     /// <summary>
     /// A day of the range with nothing on it, said in its place: a list of logged days read line by
-    /// line would let the reader mistake the day before a gap for the day after it.
+    /// line would let the reader mistake the day before a gap for the day after it. The line names
+    /// the day as the journal keeps it, so a sick day reads as a sick day and not as a day off.
     /// </summary>
-    private static string DayOff(DayLine day) =>
+    private static string QuietDay(DayLine day) =>
         $"""
-         <div class="card mb-1 text-body-secondary"><div class="card-body py-2"><span class="fw-semibold">{Esc(DayNamed(day))}</span> <span>· day off</span></div></div>
+         <div class="card mb-1 text-body-secondary"><div class="card-body py-2"><span class="fw-semibold">{Esc(DayNamed(day))}</span> <span>· {Esc(Quiet(day))}</span></div></div>
 
          """;
+
+    /// <summary>
+    /// What a day with nothing on it is called: the kind the journal keeps for it — day off, flex
+    /// day, sick day, holiday — or, for a working day nobody logged on, that nothing was logged.
+    /// </summary>
+    private static string Quiet(DayLine day) =>
+        day.Kind == DayKind.Working ? "nothing logged" : DayKinds.WordOf(day.Kind);
 
     /// <summary>A day named in full, the way a fold names it.</summary>
     private static string DayNamed(DayLine day) => day.Date.ToString("dddd d MMM yyyy", CultureInfo.InvariantCulture);
@@ -441,7 +449,7 @@ public static class ReportHtml
         $"""
          <details class="card mb-1"><summary class="card-body py-2">
            <span class="fw-semibold">{Esc(DayNamed(day))}</span>
-           <span class="text-body-secondary">· {Esc(day.Kind)} · {Esc(Shares.Hours(day.WorkedMinutes))}{(day.WorkedMinutes == day.Minutes ? string.Empty : $" worked · {Esc(Shares.Hours(day.Minutes))} on the day")} · Started at {Esc(ClockText.Format(Start(day)))}</span>
+           <span class="text-body-secondary">· {Esc(DayKinds.LabelOf(day.Kind))} · {Esc(Shares.Hours(day.WorkedMinutes))}{(day.WorkedMinutes == day.Minutes ? string.Empty : $" worked · {Esc(Shares.Hours(day.Minutes))} on the day")} · Started at {Esc(ClockText.Format(Start(day)))}</span>
          </summary>
          <div class="card-body py-2">
          {Entries(catalogue, day)}</div></details>
@@ -516,8 +524,9 @@ public static class ReportHtml
 
     /// <summary>
     /// One day of that table: what each project took, and how much of the day was worked — or, for a
-    /// day off, a muted row with its cells empty and a dash where the hours of a day would be, so the
-    /// dates of the range are read as the calendar has them and never skip one.
+    /// day with nothing on it, a muted row with its cells empty, the day named by its kind and a
+    /// dash where the hours of a day would be, so the dates of the range are read as the calendar
+    /// has them and never skip one.
     /// </summary>
     private static string DayRow(RangeReport report, DayLine day) =>
         day.HoldsSomething
@@ -525,7 +534,7 @@ public static class ReportHtml
                <tr><td class="text-nowrap">{Esc(DayShown(day))}</td>{ProjectCells(report, day)}<td class="text-end text-nowrap">{Esc(Shares.Hours(day.WorkedMinutes))}</td></tr>
                """
             : $"""
-               <tr class="text-body-secondary"><td class="text-nowrap">{Esc(DayShown(day))} · day off</td>{ProjectCells(report, day)}<td class="text-end text-nowrap">—</td></tr>
+               <tr class="text-body-secondary"><td class="text-nowrap">{Esc(DayShown(day))} · {Esc(Quiet(day))}</td>{ProjectCells(report, day)}<td class="text-end text-nowrap">—</td></tr>
                """;
 
     /// <summary>A day as the table names it: short, since its column is narrow.</summary>
@@ -547,7 +556,7 @@ public static class ReportHtml
     /// <summary>The page's last word: where the numbers come from, and what the page needs from the net.</summary>
     private const string Footer = """
         <footer class="text-body-secondary small mt-5">
-          <p class="mb-1">Made by Worksheet from its journal. A day off is a day of the range with nothing on it; it is listed so the dates never skip one, and the total is what the journal says, not a guess at a working day.</p>
+          <p class="mb-1">Made by Worksheet from its journal. Every day of the range is listed so the dates never skip one, each named by what the journal says it is — a day off, a flex day, a sick day or a holiday; a working day with nothing on it says nothing was logged. The total is what the journal says, not a guess at a working day.</p>
           <p class="mb-1">A break is time on the day, so the projects and the day folds count it; Working time is the day without its breaks, and that is what the window's heading shows.</p>
           <p class="mb-0">This page loads Bootstrap and mermaid from jsDelivr. Without a connection it still reads, unstyled; the gantt is then not drawn.</p>
         </footer>
