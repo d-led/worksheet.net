@@ -288,8 +288,8 @@ public sealed class ExportTests
     }
 
     /// <summary>
-    /// The file's word for a kind of day is the journal's, so a label the window rewords — a
-    /// weekend became a day off — cannot move what a script matches on.
+    /// The file's word for a kind of day is the journal's, so a label the window words — a weekend
+    /// is a weekend, a day declared off is a day off — cannot move what a script matches on.
     /// </summary>
     [Fact]
     public void The_data_file_names_a_kind_of_day_as_the_journal_does_and_not_as_the_page_words_it()
@@ -303,7 +303,30 @@ public sealed class ExportTests
             .Single(day => day.GetProperty("date").GetString() == "2026-11-08");
 
         Assert.Equal("Weekend", sunday.GetProperty("kind").GetString());
-        Assert.Contains("<span>· day off</span>", Html(report));
+        Assert.Contains("<span>· weekend</span>", Html(report));
+    }
+
+    [Fact]
+    public void A_day_declared_off_is_its_own_entry_apart_from_the_weekend()
+    {
+        Logged("2.11. Website 09:00 1h");
+        new DayCalendar(_ledger).Declare(new DateOnly(2026, 11, 4), DayKind.DayOff);
+
+        var report = Report(ExportPeriod.Week);
+
+        using var json = JsonDocument.Parse(Json(report));
+        Assert.Equal(
+            [
+                "2026-11-04 · DayOff",
+                "2026-11-07 · Weekend",
+                "2026-11-08 · Weekend",
+            ],
+            json.RootElement.GetProperty("daysOff").EnumerateArray()
+                .Select(day => $"{day.GetProperty("date").GetString()} · {day.GetProperty("kind").GetString()}"));
+
+        var page = Html(report);
+        Assert.Contains("<td class=\"text-nowrap\">Wed 4 Nov · day off</td>", page);
+        Assert.Contains("<td class=\"text-nowrap\">Sat 7 Nov · weekend</td>", page);
     }
 
     private static string[] Keys(JsonElement element) =>
@@ -518,8 +541,8 @@ public sealed class ExportTests
                 "Wed 4 Nov",
                 "Thu 5 Nov · nothing logged",
                 "Fri 6 Nov · nothing logged",
-                "Sat 7 Nov · day off",
-                "Sun 8 Nov · day off",
+                "Sat 7 Nov · weekend",
+                "Sun 8 Nov · weekend",
             ],
             Regex.Matches(table, "<td class=\"text-nowrap\">([^<]*)</td>").Select(match => match.Groups[1].Value));
     }
@@ -532,7 +555,7 @@ public sealed class ExportTests
 
         var table = Card(Html(Report(ExportPeriod.Week)), "Each day, project by project");
 
-        Assert.Contains("<tr class=\"text-body-secondary\"><td class=\"text-nowrap\">Sat 7 Nov · day off</td><td></td><td class=\"text-end text-nowrap\">—</td></tr>", table);
+        Assert.Contains("<tr class=\"text-body-secondary\"><td class=\"text-nowrap\">Sat 7 Nov · weekend</td><td></td><td class=\"text-end text-nowrap\">—</td></tr>", table);
     }
 
     [Fact]
@@ -545,7 +568,7 @@ public sealed class ExportTests
 
         Assert.Contains("<td class=\"text-nowrap\">Thu 5 Nov · sick day</td>", page);
         Assert.Contains("<span class=\"fw-semibold\">Thursday 5 Nov 2026</span> <span>· sick day</span>", page);
-        Assert.Contains("<td class=\"text-nowrap\">Sat 7 Nov · day off</td>", page);
+        Assert.Contains("<td class=\"text-nowrap\">Sat 7 Nov · weekend</td>", page);
     }
 
     [Fact]
@@ -557,7 +580,7 @@ public sealed class ExportTests
         var page = Html(Report(ExportPeriod.Week));
 
         Assert.Contains("<span class=\"fw-semibold\">Tuesday 3 Nov 2026</span> <span>· nothing logged</span>", page);
-        Assert.Contains("<span class=\"fw-semibold\">Saturday 7 Nov 2026</span> <span>· day off</span>", page);
+        Assert.Contains("<span class=\"fw-semibold\">Saturday 7 Nov 2026</span> <span>· weekend</span>", page);
         Assert.Equal(2, Regex.Count(page, "<details"));
     }
 

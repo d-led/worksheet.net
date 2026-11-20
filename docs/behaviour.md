@@ -40,7 +40,7 @@ and records decisions; it is not a description of any other program's source.
    be a span typed wrong. A note may be a line of its own — `# the paper` — which
    lands on the entry the day ended with, so work logged in a hurry is commented
    from the same line a moment later.
-3. Says what kind of day it is — working, flex, sick, holiday or day off — as a row of
+3. Says what kind of day it is — working, flex, sick, holiday, weekend or day off — as a row of
    radios above the table, and freezes the timetable on every day that is not a
    working day.
 4. Undoes the most recent change by appending its inverse, and redoes it by appending it
@@ -76,8 +76,8 @@ and records decisions; it is not a description of any other program's source.
    of the range against every project ahead of the days themselves. Every date of
    the range is on the page and in the data, so reading the report line by line
    cannot mistake one day for another: a day with nothing on it says what kind of
-   day it is — a day off, a flex day, a sick day or a holiday, as the journal keeps
-   it — and a working day nobody logged on says nothing was logged.
+   day it is — a weekend, a day off, a flex day, a sick day or a holiday, as the
+   journal keeps it — and a working day nobody logged on says nothing was logged.
    What was written is announced under the
    heading: the file, the folder it went to, and one action that selects it in the
    platform's file manager. A dismissed dialog writes nothing and says so; the

@@ -157,8 +157,8 @@ public sealed class EventCodecTests
     }
 
     /// <summary>
-    /// The window calls the resting kind a day off; the journal still writes the name it always
-    /// wrote, so a journal from before the word changed reads as the same kind of day.
+    /// The journal writes the member's name, so a journal from before the words changed reads as
+    /// the same kind of day.
     /// </summary>
     [Fact]
     public void A_day_off_keeps_the_journal_name_it_was_written_under()
@@ -169,7 +169,7 @@ public sealed class EventCodecTests
 
         Assert.Contains("\"after\":\"Weekend\"", json);
         Assert.Equal<DayKind?>(DayKind.Weekend, read.After);
-        Assert.Equal("Day off", DayKinds.LabelOf(read.After!.Value));
+        Assert.Equal("Weekend", DayKinds.LabelOf(read.After!.Value));
     }
 
     [Fact]

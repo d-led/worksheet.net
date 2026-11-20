@@ -5,9 +5,10 @@
              x:DataType="vm:DayViewModel">
 
   <!--
-    What kind of day this is: five radios, one of them already chosen — a day off for a Saturday
-    or a Sunday. Anything but a working day freezes the timetable; the rows stay on screen so the
-    recorded time is still visible, and nothing on them can be changed until the day works again.
+    What kind of day this is: a radio per kind, one of them already chosen — the weekend for a
+    Saturday or a Sunday. Anything but a working day freezes the timetable; the rows stay on screen
+    so the recorded time is still visible, and nothing on them can be changed until the day works
+    again.
   -->
   <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
 

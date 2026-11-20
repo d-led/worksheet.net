@@ -13,7 +13,7 @@ using Worksheet.Desktop.ViewModels;
 namespace Worksheet.UiTests;
 
 /// <summary>
-/// The five words a day can be, as radios. Choosing one is a change to the ledger, and any answer
+/// The kinds a day can be, as radios. Choosing one is a change to the ledger, and any answer
 /// but "working day" freezes the timetable beside it.
 /// </summary>
 public sealed class DayStatusTests : UiTestBase
@@ -38,7 +38,7 @@ public sealed class DayStatusTests : UiTestBase
     }
 
     [AvaloniaFact]
-    public void A_saturday_offers_five_statuses_with_the_day_off_already_chosen()
+    public void A_saturday_offers_the_weekend_already_chosen()
     {
         MoveTo(Saturday);
         var day = NewDay();
@@ -46,9 +46,9 @@ public sealed class DayStatusTests : UiTestBase
         var panel = Show(day, StatusOverTable());
 
         Assert.Equal(
-            new[] { "Working day", "Flex day", "Sick day", "Holiday", "Day off" },
+            new[] { "Working day", "Flex day", "Sick day", "Holiday", "Weekend", "Day off" },
             Kinds(panel).Select(radio => radio.Content as string));
-        Assert.True(Kind(panel, "Day off").IsChecked);
+        Assert.True(Kind(panel, "Weekend").IsChecked);
     }
 
     [AvaloniaFact]

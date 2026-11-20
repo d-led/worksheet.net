@@ -16,7 +16,8 @@ namespace Worksheet.Export;
 /// number. The total is everything the range holds, breaks included; the worked time is the same
 /// range without its breaks. Days are the days that hold something, in order, each under the name
 /// the journal stores for its kind; the days off are the days that rest with nothing on them — a
-/// day off, a flex day, a sick day or a holiday — so no kind of day of the range is left out.
+/// weekend, a day off, a flex day, a sick day or a holiday — so no kind of day of the range is left
+/// out.
 /// </summary>
 public static partial class ReportJson
 {

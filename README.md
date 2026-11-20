@@ -130,8 +130,9 @@ files:
 
 - `worksheet-2026-11.json` — the range as data: minutes per project and per project and topic, the
   total with the time without breaks beside it, every logged day with its entries, and the days that
-  rest — a day off, a flex day, a sick day, a holiday — under the name the journal stores for the
-  kind (`Working`, `Flex`, `Sick`, `Holiday`, `Weekend`), which a reworded label does not move. The
+  rest — a weekend, a day off, a flex day, a sick day, a holiday — under the name the journal stores
+  for the kind (`Working`, `Flex`, `Sick`, `Holiday`, `Weekend`, `DayOff`), which a reworded label
+  does not move. The
   first field, `version`, is the format version: it changes only when a reader of the older file would
   read the newer one wrongly, so a script can check it and stop.
 - `worksheet-2026-11.html` — totals with shares, a bar per project and a bar per project and topic, a
@@ -150,13 +151,14 @@ folder* selects it in Finder, Explorer or the file manager the platform has.
 
 Days that hold nothing are kept in their place in the days list and in the table of every day against
 every project, so the dates of a range never skip one, and each is named by what the journal says it
-is: `day off`, `flex day`, `sick day` or `holiday`, while a working day nobody logged on says
-`nothing logged`. The page says so at the bottom.
+is: `weekend`, `day off`, `flex day`, `sick day` or `holiday`, while a working day nobody logged on
+says `nothing logged`. The page says so at the bottom.
 
 ## Days that do not work
 
-Above the table sits the day's status: `Working day`, `Flex day`, `Sick day`, `Holiday`, `Day off`.
-Saturday and Sunday start as a day off; any of the five can be chosen.
+Above the table sits the day's status: `Working day`, `Flex day`, `Sick day`, `Holiday`, `Weekend`,
+`Day off`. Saturday and Sunday start as the weekend; any of the six can be chosen, so a weekend worked
+and a day taken in its place are two different days, and the export reports them as two kinds.
 
 ![A sick day: the status row, and one row of the timetable dimmed and frozen](docs/screenshots/frozen-day.png)
 

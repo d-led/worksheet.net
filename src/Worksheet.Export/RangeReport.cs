@@ -55,7 +55,7 @@ public sealed record RangeReport(
 
     /// <summary>
     /// The days of the range that rest, in order: nothing is on them, and the journal calls them a
-    /// day off, a flex day, a sick day or a holiday rather than a working day.
+    /// weekend, a day off, a flex day, a sick day or a holiday rather than a working day.
     /// </summary>
     public IReadOnlyList<DayLine> DaysOff => [.. EveryDay.Where(day => day.IsDayOff)];
 

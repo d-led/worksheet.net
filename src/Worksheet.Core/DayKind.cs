@@ -10,8 +10,9 @@ namespace Worksheet.Core;
 /// without touching what was already recorded.
 /// </summary>
 /// <remarks>
-/// <see cref="DayKind.Weekend"/> keeps its name although the window calls it a day off: a journal
-/// writes the member's name down, so renaming it would make every journal written so far unreadable.
+/// <see cref="DayKind.Weekend"/> is the calendar's rest and <see cref="DayKind.DayOff"/> is a day
+/// somebody declared off, so a weekend is never reported as leave taken. Both keep the names a
+/// journal writes down, member for member.
 /// </remarks>
 public enum DayKind
 {
@@ -20,6 +21,7 @@ public enum DayKind
     Sick,
     Holiday,
     Weekend,
+    DayOff,
 }
 
 /// <summary>The words and the rules that go with each kind of day.</summary>
@@ -31,6 +33,7 @@ public static class DayKinds
         "Flex day",
         "Sick day",
         "Holiday",
+        "Weekend",
         "Day off",
     ];
 

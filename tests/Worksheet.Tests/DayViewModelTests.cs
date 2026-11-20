@@ -667,12 +667,12 @@ public sealed class DayViewModelTests : IDisposable
     }
 
     [Fact]
-    public void A_saturday_starts_as_a_day_off_and_is_frozen()
+    public void A_saturday_starts_as_the_weekend_and_is_frozen()
     {
         var day = new DayViewModel(_local, Noon(() => Saturday));
 
         Assert.True(day.IsFrozen);
-        Assert.Equal("Day off", day.Kinds.Single(option => option.IsSelected).Label);
+        Assert.Equal("Weekend", day.Kinds.Single(option => option.IsSelected).Label);
         Assert.Contains("frozen", day.FrozenNote);
     }
 

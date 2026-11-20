@@ -9,7 +9,7 @@ using Worksheet.Core;
 namespace Worksheet.Desktop.ViewModels;
 
 /// <summary>
-/// One of the five things a day can be, as a radio button. Checking it declares the day;
+/// One of the kinds a day can be, as a radio button. Checking it declares the day;
 /// unchecking it — which a radio group does on its own — declares nothing. The kind's name travels
 /// as the tag so that each kind can be given its own colour by the styles.
 /// </summary>

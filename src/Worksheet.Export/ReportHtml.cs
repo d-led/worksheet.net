@@ -429,8 +429,9 @@ public static class ReportHtml
          """;
 
     /// <summary>
-    /// What a day with nothing on it is called: the kind the journal keeps for it — day off, flex
-    /// day, sick day, holiday — or, for a working day nobody logged on, that nothing was logged.
+    /// What a day with nothing on it is called: the kind the journal keeps for it — weekend, day
+    /// off, flex day, sick day, holiday — or, for a working day nobody logged on, that nothing was
+    /// logged.
     /// </summary>
     private static string Quiet(DayLine day) =>
         day.Kind == DayKind.Working ? "nothing logged" : DayKinds.WordOf(day.Kind);
@@ -556,7 +557,7 @@ public static class ReportHtml
     /// <summary>The page's last word: where the numbers come from, and what the page needs from the net.</summary>
     private const string Footer = """
         <footer class="text-body-secondary small mt-5">
-          <p class="mb-1">Made by Worksheet from its journal. Every day of the range is listed so the dates never skip one, each named by what the journal says it is — a day off, a flex day, a sick day or a holiday; a working day with nothing on it says nothing was logged. The total is what the journal says, not a guess at a working day.</p>
+          <p class="mb-1">Made by Worksheet from its journal. Every day of the range is listed so the dates never skip one, each named by what the journal says it is — a weekend, a day off, a flex day, a sick day or a holiday; a working day with nothing on it says nothing was logged. The total is what the journal says, not a guess at a working day.</p>
           <p class="mb-1">A break is time on the day, so the projects and the day folds count it; Working time is the day without its breaks, and that is what the window's heading shows.</p>
           <p class="mb-0">This page loads Bootstrap and mermaid from jsDelivr. Without a connection it still reads, unstyled; the gantt is then not drawn.</p>
         </footer>

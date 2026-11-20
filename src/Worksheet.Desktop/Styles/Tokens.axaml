@@ -284,10 +284,10 @@
   </Style>
 
   <!--
-    The day's status: five small radios, each with its own colour once chosen. They are drawn as
-    pills rather than as the skin's radio button — the bullet is there to say "one of these", and
-    the row already says that — so the shape is this application's, and the colour means something:
-    green for a day that works, red for one that does not.
+    The day's status: a small radio per kind of day, each with its own colour once chosen. They are
+    drawn as pills rather than as the skin's radio button — the bullet is there to say "one of
+    these", and the row already says that — so the shape is this application's, and the colour
+    means something: green for a day that works, red for one that does not.
   -->
   <Style Selector="RadioButton.kind">
     <Setter Property="Padding" Value="12,5" />
@@ -350,6 +350,11 @@
   <Style Selector="RadioButton.kind[Tag=Weekend]:checked">
     <Setter Property="Background" Value="#6B7280" />
     <Setter Property="BorderBrush" Value="#6B7280" />
+  </Style>
+
+  <Style Selector="RadioButton.kind[Tag=DayOff]:checked">
+    <Setter Property="Background" Value="#7A5AF8" />
+    <Setter Property="BorderBrush" Value="#7A5AF8" />
   </Style>
 
 </Styles>
