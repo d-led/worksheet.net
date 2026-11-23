@@ -155,8 +155,9 @@ newest build of `main` is always downloadable without tagging anything. `install
 ## Publishing to package managers
 
 A tag is what makes a version. `build.yml` builds every platform, the `release` job attaches the
-six binaries to the tag, and two more jobs turn those immutable assets into packages — a URL that
-never changes, beside the sha256 of exactly the file behind it, is all a package manager asks for.
+six binaries to the tag (and the Windows folder build beside them), and two more jobs turn those
+immutable assets into packages — a URL that never changes, beside the sha256 of exactly the file
+behind it, is all a package manager asks for.
 The tag is also the version the binaries carry: the package job passes it as `-p:Version`, so what
 Chocolatey installs and what the application reports over MCP cannot disagree. The package's own
 version may add a fourth part for a packaging fix, which the application never sees.
@@ -187,9 +188,9 @@ run by hand with the released version: it takes the release's folder build, so t
 checksums stay untouched. The package cannot go in under the same version — community.chocolatey.org
 refuses a version it already holds — so it carries Chocolatey's
 [package fix notation](https://guides.inedo.com/chocolatey-enterprise/versioning/): the version it
-installs, then the day it was fixed, `0.2.3.20261123`. The fourth part is never normalized away
-only because it is not zero, which a date cannot be. The package's description says the same thing
-in words, so nobody has to work out what the fourth part means.
+installs, then the day it was fixed, as in `0.2.3.20261123`. NuGet drops a fourth part that is zero,
+so the day has to be a real one — which a date is. The package's description says the same thing in
+words, so nobody has to work out what the fourth part means.
 
 ## Packaging into a screenshot
 
@@ -230,7 +231,7 @@ layout moved.
 - **test** — `ubuntu-latest`, `windows-latest`, `macos-latest`, `dotnet test Worksheet.slnx`,
   and the frames the UI tests drew, kept as an artefact per platform
 - **package** — one job per RID, each published on its own operating system, then asserted to
-  contain exactly one file, renamed to `worksheet-<rid>[.exe]` so all five can share a release;
+  contain exactly one file, renamed to `worksheet-<rid>[.exe]` so all six can share a release;
   Windows x64 also builds the same application as a folder of files, zipped as
   `worksheet-win-x64.zip`, because a folder is the shape Chocolatey installs and a bundle with the
   runtime appended is the shape a scanner flags
