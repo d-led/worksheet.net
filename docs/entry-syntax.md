@@ -7,14 +7,15 @@ command   = [ date ] name span [ note ]
           | "#" note
 name      = project [ "-" ] [ "(" topic ")" ] [ "-" ]
 date      = d "." m "." [ yyyy ] "."
-span      = clock "-" clock            (a range)
-          | clock clock                (the same, without the dash)
-          | clock duration             (a start and a length)
-          | clock                      (a start; length is zero)
-          | [ clock ] "till" clock     (the end, from the clock written or the last end)
-          | [ clock ] "for" duration   (the length, from the same start)
-clock     = H ":" M [ "am" | "pm" ]   (H and M are one or two digits: 9:05, 09:05, 9:5, 12:0)
-duration  = { digits ( "h" | "m" ) }   (the Go duration shape: 3h30m, 90m, 2h, 2h 30m)
+span      = start "-" clock              (a range)
+          | start clock                  (the same, without the dash)
+          | start duration               (a start and a length)
+          | clock                        (a start; length is zero)
+          | [ clock ] "till" clock       (the end, from the clock written or the last end)
+          | [ clock ] "for" duration     (the length, from the same start)
+start     = clock | "--"                 ("--" is where the last entry of the day ended)
+clock     = H ":" M [ "am" | "pm" ]     (H and M are one or two digits: 9:05, 09:05, 9:5, 12:0)
+duration  = { digits ( "h" | "m" ) }     (the Go duration shape: 3h30m, 90m, 2h, 2h 30m)
 note      = [ "#" ] words
 ```
 
@@ -34,6 +35,11 @@ Once the day holds an entry, the start can be left out: `till 13:30` and `for
 `till`. A day with nothing on it has no end to continue from, so the shorthand
 is refused there rather than guessed at. A start written in front of the word
 is used as the start, so `09:00 till 13:30` is the range `09:00-13:30` in words.
+A `--` written where the start belongs keeps that place open and says the same
+thing: `Website -- 1h30m` is `Website for 1h30m`, and `Website -- 13:30` is the
+range from the last end to 13:30. It is the shape of a line with its start left
+out, and the hint under the entry box offers it once there is an end to continue
+from — so a start is either written or asked for, never guessed at.
 
 A `-` right after the name says where the name ends — before or after the topic's
 bracket — and is trimmed away: `Website- 09:00 1h`, `Work for- 09:00 1h`,
@@ -64,6 +70,8 @@ to one. Without `am` or `pm` a time is in 24-hour form: `4:30` is 04:30, not 16:
 | `# the LiteDB paper` | — (the block the day ended with) | — | its note |
 | `Website (login) till 13:30` | Website | login | last end – 13:30 |
 | `Website for 1h30m` | Website | — | last end + 1h30m |
+| `Website (login) -- 1h30m` | Website | login | last end + 1h30m |
+| `Water the garden -- 13:30` | Water the garden | — | last end – 13:30 |
 | `Website 09:00 till 13:30` | Website | — | 09:00–13:30 |
 | `Work for- 09:00 1h` | Work for | — | 09:00 + 1h |
 | `Standup 09:00- 10:00 1h` | Standup 09:00 | — | 10:00 + 1h |
@@ -75,9 +83,10 @@ to one. Without `am` or `pm` a time is in 24-hour form: `4:30` is 04:30, not 16:
    rather than guessed at. Splitting work at midnight is the user's decision.
 3. **Zero length is allowed** for the `clock` and `clock duration` forms only
    when written as a bare `clock`; a written duration of `0m` is an error.
-4. **`till` and `for` continue the day.** The start is the clock written in front
-   of the word, or failing that the end of the last entry on the day the line
-   names; that end must come before the one written, or the span is empty.
+4. **`till`, `for` and `--` continue the day.** `--` keeps the place of the start;
+   otherwise the start is the clock written in front of the word, or failing that
+   the end of the last entry on the day the line names; that end must come before
+   the one written, or the span is empty.
 5. **A name ends where a `-` says it does**, and a name that still ends in a time
    or in `till`/`for` is refused instead of swallowing it.
 6. **Dates are optional** and default to the day being edited. A missing year is

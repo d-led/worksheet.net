@@ -321,7 +321,24 @@ public sealed class DayViewModelTests : IDisposable
 
         day.EntryText = "Mobile (app) ";
 
-        Assert.Equal("next: start 09:00, or from 10:00 \"till 11:30\" / \"for 1h30m\"", day.NextStep);
+        Assert.Equal("next: start 09:00, or from 10:00 \"-- 1h30m\" / \"-- 11:30\"", day.NextStep);
+    }
+
+    [Fact]
+    public void A_line_that_keeps_the_start_place_is_logged_from_where_the_last_entry_ended()
+    {
+        var day = DayWith("Website 09:00 1h");
+
+        day.EntryText = "Mobile (app) -- 1h30m";
+        Assert.Equal("press Enter, or \"#\" and a note", day.NextStep);
+
+        day.LogCommand.Execute(null);
+
+        var row = (EntryRowViewModel)day.Rows[1];
+        Assert.Equal("10:00", row.StartText);
+        Assert.Equal("11:30", row.EndText);
+        Assert.Equal("Mobile", row.ProjectText);
+        Assert.Equal("app", row.TopicText);
     }
 
     [Fact]
@@ -584,7 +601,7 @@ public sealed class DayViewModelTests : IDisposable
 
         Assert.Equal("Website (login) ", day.EntryText);
         Assert.False(day.HasSuggestions);
-        Assert.Equal("next: start 09:00, or from 10:00 \"till 11:30\" / \"for 1h30m\"", day.NextStep);
+        Assert.Equal("next: start 09:00, or from 10:00 \"-- 1h30m\" / \"-- 11:30\"", day.NextStep);
     }
 
     [Fact]

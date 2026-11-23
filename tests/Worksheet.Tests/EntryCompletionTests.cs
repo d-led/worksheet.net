@@ -120,6 +120,14 @@ public sealed class EntryCompletionTests
         Assert.Equal(new[] { "Website" }, Names("web-"));
 
     [Fact]
+    public void The_dash_that_keeps_the_start_place_is_not_part_of_the_name() =>
+        Assert.Equal(new[] { "Website" }, Names("web --"));
+
+    [Fact]
+    public void Taking_a_project_keeps_the_dash_and_the_time_after_it() =>
+        Assert.Equal("Website -- 1h30m", EntryCompletion.Take(Ledger(), "web -- 1h30m", "Website"));
+
+    [Fact]
     public void Taking_a_project_over_a_closed_name_opens_its_bracket() =>
         Assert.Equal("Website (", EntryCompletion.Take(Ledger(), "web-", "Website"));
 

@@ -85,18 +85,27 @@ public static partial class EntryCompletion
 
     /// <summary>
     /// The line cut where its time begins. The "till" or "for" that lets the line leave out its
-    /// start belongs with that time, not with the name in front of it.
+    /// start belongs with that time, not with the name in front of it, and so does the "--" that
+    /// keeps the start's place.
     /// </summary>
     private static (string Head, string After) Cut(string line)
     {
-        var clock = Clock().Match(line);
-        var head = clock.Success ? line[..clock.Index] : line;
-        var after = clock.Success ? line[clock.Index..] : string.Empty;
+        var at = TimeBeginsAt(line);
+        var head = at < 0 ? line : line[..at];
+        var after = at < 0 ? string.Empty : line[at..];
 
         return EntryCommandParser.SpanWordAtEnd(head) is { } word
             ? (head[..word.Index], $"{head[word.Index..].Trim()} {after}".Trim())
             : (head, after);
     }
+
+    /// <summary>Where the time begins: at its first clock, or at the "--" that keeps the start's place.</summary>
+    private static int TimeBeginsAt(string line) =>
+        new[] { Clock().Match(line), StartPlaceholder().Match(line) }
+            .Where(match => match.Success)
+            .Select(match => match.Index)
+            .DefaultIfEmpty(-1)
+            .Min();
 
     /// <summary>A line with no bracket yet: the project is being named, after an optional date.</summary>
     private static Draft BeforeBrackets(string head, string after)
@@ -159,4 +168,8 @@ public static partial class EntryCompletion
 
     [GeneratedRegex(@"\d{1,2}:\d{1,2}", RegexOptions.CultureInvariant)]
     private static partial Regex Clock();
+
+    // The "--" that keeps the start's place, which begins a time as a clock does.
+    [GeneratedRegex(@"(?<!\S)--(?=\s)", RegexOptions.CultureInvariant)]
+    private static partial Regex StartPlaceholder();
 }

@@ -99,7 +99,7 @@ public static partial class EntryGuide
 
     /// <summary>
     /// What to write at this step, for the hint line. Once the day has an end to continue from,
-    /// the start step offers the shorthands as well as a clock; the span step needs the word the
+    /// the start step offers "--" in its place as well as a clock; the span step needs the word the
     /// line ends with to know which half of the span is missing.
     /// </summary>
     public static string Label(EntryStep step, string? text = null, TimeOnly? continuesFrom = null) =>
@@ -118,11 +118,11 @@ public static partial class EntryGuide
     /// <summary>What a note of its own still needs: the words after the mark.</summary>
     private const string NoteLabel = "the note after \"#\"";
 
-    /// <summary>A clock, and the two shorthands — the one that names an end only while an end fits.</summary>
+    /// <summary>A clock, or "--" for the last end, then a length or an end written after it.</summary>
     private static string StartLabel(TimeOnly from) =>
         Example(from) is { } endsAt
-            ? $"start 09:00, or from {ClockText.Format(from)} \"till {endsAt}\" / \"for 1h30m\""
-            : $"start 09:00, or from {ClockText.Format(from)} \"for 1h30m\"";
+            ? $"start 09:00, or from {ClockText.Format(from)} \"-- 1h30m\" / \"-- {endsAt}\""
+            : $"start 09:00, or from {ClockText.Format(from)} \"-- 1h30m\"";
 
     /// <summary>The half of a span that a trailing shorthand is still missing.</summary>
     private static string SpanLabel(string? tail, TimeOnly? continuesFrom) =>
@@ -130,6 +130,7 @@ public static partial class EntryGuide
         {
             "for" => "a length, e.g. 1h30m",
             "till" => $"an end, e.g. {Example(continuesFrom) ?? PlainClock}",
+            EntryCommandParser.StartPlaceholder => $"a length, e.g. 1h30m, or an end, e.g. {Example(continuesFrom) ?? PlainClock}",
             _ => Labels[(int)EntryStep.Span],
         };
 

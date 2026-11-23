@@ -91,10 +91,10 @@ public sealed class EntryGuideTests
     }
 
     [Fact]
-    public void The_start_step_offers_the_shorthands_beside_the_clock()
+    public void The_start_step_offers_the_dash_that_keeps_the_start_place_beside_the_clock()
     {
         Assert.Equal(
-            "start 09:00, or from 10:00 \"till 11:30\" / \"for 1h30m\"",
+            "start 09:00, or from 10:00 \"-- 1h30m\" / \"-- 11:30\"",
             EntryGuide.Label(EntryStep.Start, "web (login) ", Stopped));
     }
 
@@ -102,16 +102,34 @@ public sealed class EntryGuideTests
     [InlineData("web till", "an end, e.g. 11:30")]
     [InlineData("web until", "an end, e.g. 11:30")]
     [InlineData("web for", "a length, e.g. 1h30m")]
+    [InlineData("web --", "a length, e.g. 1h30m, or an end, e.g. 11:30")]
     public void The_span_step_says_which_half_of_it_the_shorthand_still_needs(string typed, string expected)
     {
         Assert.Equal(expected, EntryGuide.Label(EntryStep.Span, typed, Stopped));
+    }
+
+    [Theory]
+    [InlineData("web -- 1h")]
+    [InlineData("web -- 11:30")]
+    public void A_dash_dash_is_a_span_the_day_fills_in(string typed) =>
+        Assert.Equal(EntryStep.Complete, EntryGuide.Next(typed, Stopped));
+
+    [Fact]
+    public void A_dash_dash_alone_asks_for_the_other_half_of_the_span() =>
+        Assert.Equal(EntryStep.Span, EntryGuide.Next("web --", Stopped));
+
+    [Fact]
+    public void A_dash_dash_needs_the_end_a_shorthand_needs()
+    {
+        Assert.Equal(EntryStep.Start, EntryGuide.Next("web -- 1h"));
+        Assert.Equal("start, e.g. 09:00", EntryGuide.Label(EntryStep.Start, "web -- 1h"));
     }
 
     [Fact]
     public void The_example_end_reads_later_than_the_start_it_continues()
     {
         Assert.Equal(
-            "start 09:00, or from 17:30 \"till 19:00\" / \"for 1h30m\"",
+            "start 09:00, or from 17:30 \"-- 1h30m\" / \"-- 19:00\"",
             EntryGuide.Label(EntryStep.Start, "web (login) ", new TimeOnly(17, 30)));
     }
 
@@ -119,11 +137,14 @@ public sealed class EntryGuideTests
     public void A_day_with_no_room_left_for_an_example_offers_only_the_length()
     {
         Assert.Equal(
-            "start 09:00, or from 22:30 \"for 1h30m\"",
+            "start 09:00, or from 22:30 \"-- 1h30m\"",
             EntryGuide.Label(EntryStep.Start, "web (login) ", new TimeOnly(22, 30)));
     }
 
-    [Fact]
-    public void An_end_example_with_no_day_to_build_one_from_is_a_plain_clock() =>
-        Assert.Equal("an end, e.g. 13:30", EntryGuide.Label(EntryStep.Span, "web till"));
+    [Theory]
+    [InlineData("web till", "an end, e.g. 13:30")]
+    [InlineData("web --", "a length, e.g. 1h30m, or an end, e.g. 13:30")]
+    public void An_end_example_with_no_day_to_build_one_from_is_a_plain_clock(string typed, string expected) =>
+        Assert.Equal(expected, EntryGuide.Label(EntryStep.Span, typed));
 }
+

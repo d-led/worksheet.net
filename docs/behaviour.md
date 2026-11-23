@@ -33,8 +33,9 @@ and records decisions; it is not a description of any other program's source.
    it is made of: the known projects while a project is being typed, then the topics
    of that project once its bracket is open. The keyboard walks the offers and takes
    one, and the bracket that comes next is written in already. Once the day holds an
-   entry, the line may leave its start out — `till 16:00`, `for 1h30m` — and then
-   begins where the last entry of that day ended. What a line carries after its span
+   entry, the line may leave its start out — `till 16:00`, `for 1h30m`, or `--` in
+   the place of the start, as in `-- 1h30m` — and then begins where the last entry
+   of that day ended. What a line carries after its span
    is its note, with or without a `#` — nothing else may follow a span — while the
    mark is still needed when the note holds a number or a time, since such words may
    be a span typed wrong. A note may be a line of its own — `# the paper` — which

@@ -58,6 +58,7 @@ One line records one time range. Type it, press Enter.
 | `3.11. Reading 14:00 45m` | another day than the one on screen |
 | `Reading till 16:00` | an end only: it begins where the last block ended |
 | `Reading for 1h30m` | a length only, from the same start |
+| `Reading -- 1h30m` | the same length, with `--` keeping the place of the start |
 
 A project name may contain spaces. Names you have used before are offered as you type: the projects
 first, then the topics of that project once its bracket is open. A name that would otherwise end in

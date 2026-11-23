@@ -13,10 +13,13 @@ namespace Worksheet.Core;
 /// from the right, so a project name may contain spaces, digits and dots. The parser is total:
 /// every input yields either a command or one sentence saying what is missing. A line may name
 /// only its end or only its length — <c>till 13:30</c>, <c>for 1h30m</c> — and then starts where
-/// the last entry on that day ended.
+/// the last entry on that day ended; writing <c>--</c> in the place of the start says the same.
 /// </summary>
 public static partial class EntryCommandParser
 {
+    /// <summary>The start's place kept open: filled with where the last entry of the day ended.</summary>
+    public const string StartPlaceholder = "--";
+
     public const string EmptyInputMessage = "Type an entry, for example \"Website (login) 09:00 1h30m\".";
 
     public const string MissingTimeMessage = "No time found. Finish the line with \"09:00 1h30m\" or \"09:00-13:30\".";
@@ -24,7 +27,7 @@ public static partial class EntryCommandParser
     public const string MissingProjectMessage = "A project name is needed before the time.";
 
     public const string NothingToContinueMessage =
-        "\"till\" and \"for\" start where the last entry ended, and this day has none; write the start, e.g. 09:00 1h30m.";
+        "\"--\", \"till\" and \"for\" start where the last entry ended, and this day has none; write the start, e.g. 09:00 1h30m.";
 
     /// <param name="continueFrom">
     /// When work stopped on a day: the end of its last entry, which a line that names no start
@@ -214,8 +217,8 @@ public static partial class EntryCommandParser
 
     private static SpanParse MatchSpan(string text, TimeOnly? continuesFrom)
     {
-        var attempt = MatchRange(text)
-            ?? MatchLength(text)
+        var attempt = MatchRange(text, continuesFrom)
+            ?? MatchLength(text, continuesFrom)
             ?? MatchTill(text, continuesFrom)
             ?? MatchFor(text, continuesFrom)
             ?? MatchOpenStart(text);
@@ -223,7 +226,7 @@ public static partial class EntryCommandParser
         return attempt ?? SpanParse.NoMatch;
     }
 
-    private static SpanParse? MatchRange(string text)
+    private static SpanParse? MatchRange(string text, TimeOnly? continuesFrom)
     {
         var match = Range().Match(text);
 
@@ -232,9 +235,11 @@ public static partial class EntryCommandParser
             return null;
         }
 
-        if (!TryReadClock(match.Groups["from"], out var from))
+        var (from, startError) = StartWritten(match.Groups["from"].Value, continuesFrom);
+
+        if (startError is not null)
         {
-            return SpanParse.Fail(NotATime(match.Groups["from"].Value));
+            return SpanParse.Fail(startError);
         }
 
         if (!TryReadClock(match.Groups["to"], out var to))
@@ -247,7 +252,7 @@ public static partial class EntryCommandParser
             : SpanParse.Match(match.Index, from, to.ToTimeSpan() - from.ToTimeSpan());
     }
 
-    private static SpanParse? MatchLength(string text)
+    private static SpanParse? MatchLength(string text, TimeOnly? continuesFrom)
     {
         var match = Length().Match(text);
 
@@ -256,9 +261,9 @@ public static partial class EntryCommandParser
             return null;
         }
 
-        return TryReadClock(match.Groups["from"], out var from)
-            ? SpanOf(match.Index, from, match.Groups["dur"])
-            : SpanParse.Fail(NotATime(match.Groups["from"].Value));
+        var (from, startError) = StartWritten(match.Groups["from"].Value, continuesFrom);
+
+        return startError is not null ? SpanParse.Fail(startError) : SpanOf(match.Index, from, match.Groups["dur"]);
     }
 
     /// <summary>A span of the duration the line wrote, from the start it has.</summary>
@@ -271,15 +276,23 @@ public static partial class EntryCommandParser
     /// The start of a line that says "till" or "for": the clock written in front of the keyword, else
     /// where the last entry of the day ended. Neither is assumed when neither is there.
     /// </summary>
-    private static (TimeOnly Start, string? Error) StartOf(Match match, TimeOnly? continuesFrom)
-    {
-        if (match.Groups["from"] is { Success: true } written)
-        {
-            return TryReadClock(written, out var start) ? (start, null) : (default, NotATime(written.Value));
-        }
+    private static (TimeOnly Start, string? Error) StartOf(Match match, TimeOnly? continuesFrom) =>
+        match.Groups["from"] is { Success: true } written
+            ? StartWritten(written.Value, continuesFrom)
+            : Continued(continuesFrom);
 
-        return continuesFrom is { } last ? (last, null) : (default, NothingToContinueMessage);
-    }
+    /// <summary>
+    /// The start a span writes: a clock, or "--", the place it keeps open, filled with where the
+    /// last entry of that day ended.
+    /// </summary>
+    private static (TimeOnly Start, string? Error) StartWritten(string written, TimeOnly? continuesFrom) =>
+        written == StartPlaceholder
+            ? Continued(continuesFrom)
+            : ClockText.TryParse(written, out var start) ? (start, null) : (default, NotATime(written));
+
+    /// <summary>Where the last entry of the day ended: the start a line may leave out.</summary>
+    private static (TimeOnly Start, string? Error) Continued(TimeOnly? continuesFrom) =>
+        continuesFrom is { } last ? (last, null) : (default, NothingToContinueMessage);
 
     /// <summary>"till 13:30": the end is written, the start is in front of it or where the last entry ended.</summary>
     private static SpanParse? MatchTill(string text, TimeOnly? continuesFrom)
@@ -341,14 +354,20 @@ public static partial class EntryCommandParser
     private static bool TryReadClock(Group group, out TimeOnly time) => ClockText.TryParse(group.Value, out time);
 
     /// <summary>
-    /// Where the span word at the end of a line begins — "till", "until" or "for" — and which it is,
-    /// spelled as the language spells it: "until" reads as "till". Nothing when the line does not
-    /// end with one.
+    /// Where the span word at the end of a line begins — "till", "until", "for", or the "--" that
+    /// keeps the start's place — and which it is, spelled as the language spells it: "until" reads
+    /// as "till". Nothing when the line does not end with one.
     /// </summary>
     internal static (int Index, string Word)? SpanWordAtEnd(string text) =>
         SpanWord().Match(text) is { Success: true } match
-            ? (match.Index, match.Groups["word"].Value.Equals("for", StringComparison.OrdinalIgnoreCase) ? "for" : "till")
+            ? (match.Index, Spelled(match.Groups["word"].Value))
             : null;
+
+    /// <summary>The word as the language spells it: "until" reads as "till", and "--" is its own.</summary>
+    private static string Spelled(string word) =>
+        word.Equals("for", StringComparison.OrdinalIgnoreCase) ? "for"
+        : word == StartPlaceholder ? StartPlaceholder
+        : "till";
 
     private static (string Project, string? Topic) SplitTopic(string text)
     {
@@ -390,12 +409,13 @@ public static partial class EntryCommandParser
     [GeneratedRegex(@"^(?<project>.*?)\s*\(\s*(?<topic>[^()]{0,64})\s*\)$", RegexOptions.CultureInvariant)]
     private static partial Regex Topic();
 
-    // "09:00-13:30", "9:00am-1:30pm" — and "09:00 13:30", because a dash is a keystroke.
-    [GeneratedRegex(@"(?<from>\d{1,2}:\d{1,2}(?:[apAP][mM])?)(?:\s*-\s*|\s+)(?<to>\d{1,2}:\d{1,2}(?:[apAP][mM])?)$", RegexOptions.CultureInvariant)]
+    // "09:00-13:30", "9:00am-1:30pm" — and "09:00 13:30", because a dash is a keystroke. A "--" in
+    // the place of the first clock keeps that place open for the end of the last entry of the day.
+    [GeneratedRegex(@"(?<from>--|\d{1,2}:\d{1,2}(?:[apAP][mM])?)(?:\s*-\s*|\s+)(?<to>\d{1,2}:\d{1,2}(?:[apAP][mM])?)$", RegexOptions.CultureInvariant)]
     private static partial Regex Range();
 
-    // "09:00 3h30m" and "09:00 3h 30m".
-    [GeneratedRegex(@"(?<from>\d{1,2}:\d{1,2}(?:[apAP][mM])?)\s+(?<dur>(?:\d+\s*[hHmM]\s*)+)$", RegexOptions.CultureInvariant)]
+    // "09:00 3h30m" and "09:00 3h 30m", or the same from a start kept open with "--".
+    [GeneratedRegex(@"(?<from>--|\d{1,2}:\d{1,2}(?:[apAP][mM])?)\s+(?<dur>(?:\d+\s*[hHmM]\s*)+)$", RegexOptions.CultureInvariant)]
     private static partial Regex Length();
 
     // "till 13:30" and "until 13:30", from where the last entry ended — or from the clock written in
@@ -408,8 +428,9 @@ public static partial class EntryCommandParser
     [GeneratedRegex(@"(?:(?<from>\d{1,2}:\d{1,2}(?:[apAP][mM])?)\s+)?(?<!\w)for\s+(?<dur>(?:\d+\s*[hHmM]\s*)+)\s*$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
     private static partial Regex For();
 
-    // The word that asks for the other half of a span, at the end of what has been typed.
-    [GeneratedRegex(@"(?:\s|^)(?<word>till|until|for)\s*$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
+    // The word that asks for the other half of a span, at the end of what has been typed: "till",
+    // "for", or the "--" that keeps the start's place.
+    [GeneratedRegex(@"(?:\s|^)(?<word>till|until|for|--)\s*$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
     private static partial Regex SpanWord();
 
     // A bare "09:00": a start with no length yet.

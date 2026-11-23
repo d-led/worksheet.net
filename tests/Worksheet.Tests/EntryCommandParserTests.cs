@@ -57,6 +57,10 @@ public sealed class EntryCommandParserTests
     [InlineData("Website until 12:00", "Website", null, 120)]
     [InlineData("Website (login) for 1h30m", "Website", "login", 90)]
     [InlineData("Water the garden for 20m", "Water the garden", null, 20)]
+    [InlineData("Website (login) -- 1h30m", "Website", "login", 90)]
+    [InlineData("Water the garden -- 13:30", "Water the garden", null, 210)]
+    [InlineData("Work for- -- 20m", "Work for", null, 20)]
+    [InlineData("Frontend--Backend -- 1h", "Frontend--Backend", null, 60)]
     public void A_line_without_a_start_continues_from_the_last_end(
         string line,
         string project,
@@ -88,14 +92,17 @@ public sealed class EntryCommandParserTests
         Assert.Equal(TimeSpan.FromMinutes(90), parse.Command.Duration);
     }
 
-    [Fact]
-    public void A_line_without_a_start_is_refused_on_a_day_with_nothing_to_continue()
+    [Theory]
+    [InlineData("Website till 13:30")]
+    [InlineData("Website for 1h30m")]
+    [InlineData("Website -- 1h30m")]
+    public void A_line_without_a_start_is_refused_on_a_day_with_nothing_to_continue(string line)
     {
-        var parse = EntryCommandParser.Parse("Website till 13:30", Today);
+        var parse = EntryCommandParser.Parse(line, Today);
 
         Assert.False(parse.Succeeded);
         Assert.Equal(
-            "\"till\" and \"for\" start where the last entry ended, and this day has none; write the start, e.g. 09:00 1h30m.",
+            "\"--\", \"till\" and \"for\" start where the last entry ended, and this day has none; write the start, e.g. 09:00 1h30m.",
             parse.Error);
     }
 
@@ -111,6 +118,7 @@ public sealed class EntryCommandParserTests
     [Theory]
     [InlineData("Website till 25:00", "'25:00' is not a time; write it like 09:00.")]
     [InlineData("Website for 0m", "'0m' is not a duration; write it like 3h30m, 90m or 2h.")]
+    [InlineData("Website -- 10:00", "10:00 is not after 10:00; a range must end on the same day.")]
     public void A_shorthand_still_reads_what_is_written_in_it(string line, string error)
     {
         var parse = EntryCommandParser.Parse(line, Today, _ => Stopped);
