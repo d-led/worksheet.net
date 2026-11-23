@@ -598,8 +598,10 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
             : day.ToString("dddd d MMMM", Dates.English);
 
     /// <summary>
-    /// A correction of one row. On success the entry rows are left alone — only the holes beside the
-    /// corrected block move — so the control that was being edited keeps focus.
+    /// A correction of one row. One that stays inside the hole it was given leaves the entry rows
+    /// alone — only the holes beside the corrected block move — so the control that was being edited
+    /// keeps focus. One that crosses another block takes its minutes the way a line does, so every
+    /// row is built again and the message says what gave way.
     /// </summary>
     private Entry? Revise(Entry after)
     {
@@ -616,9 +618,18 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
             return null;
         }
 
-        Report(null, isProblem: false);
+        if (result.Yielded.Count > 0)
+        {
+            Report(string.Join("; ", result.Yielded), isProblem: false);
+            RefreshRows();
+        }
+        else
+        {
+            Report(null, isProblem: false);
+            RefreshGaps();
+        }
+
         UpdateTotals();
-        RefreshGaps();
         _shown = Signature();
 
         return result.Entry;

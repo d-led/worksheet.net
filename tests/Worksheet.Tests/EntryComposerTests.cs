@@ -223,17 +223,63 @@ public sealed class EntryComposerTests
     }
 
     [Fact]
-    public void A_correction_over_another_entry_is_refused_by_name()
+    public void A_correction_that_lands_inside_another_block_splits_it_around_itself()
     {
         var ledger = NewLedger(out _);
         Compose(ledger, "Website 09:00-10:00");
         Compose(ledger, "Mobile 11:00-12:00");
         var mobile = ledger.State.EntriesOn(Day).Last();
 
-        var result = new EntryComposer(ledger).Revise(mobile, mobile with { Start = Clocks.At("09:30") });
+        var result = new EntryComposer(ledger).Revise(
+            mobile,
+            mobile with { Start = Clocks.At("09:30"), Duration = TimeSpan.FromMinutes(15) });
 
-        Assert.False(result.Created);
-        Assert.Equal("intersects Website 09:00-10:00", Assert.Single(result.Problems));
+        Assert.True(result.Created, string.Join(" ", result.Problems));
+        Assert.Equal(["splits Website 09:00-10:00 into 09:00-09:30 and 09:45-10:00"], result.Yielded);
+        Assert.Equal(
+            ["09:00-09:30 Website", "09:30-09:45 Mobile", "09:45-10:00 Website"],
+            OnTheDay(ledger));
+    }
+
+    /// <summary>The whole of one decision goes back on one undo, and comes forward again on one redo.</summary>
+    private static void UndoAndRedo(Ledger ledger, IReadOnlyList<Entry> was, IReadOnlyList<Entry> now)
+    {
+        Assert.True(ledger.TryUndo(out var undoReason), undoReason);
+        Assert.Equal(was, ledger.State.EntriesOn(Day));
+
+        Assert.True(ledger.TryRedo(out var redoReason), redoReason);
+        Assert.Equal(now, ledger.State.EntriesOn(Day));
+    }
+
+    [Fact]
+    public void One_undo_takes_an_interruption_and_the_split_it_made_back_together()
+    {
+        var ledger = NewLedger(out var journal);
+        Compose(ledger, "Outage 08:00 15m");
+        Compose(ledger, "Client portal 09:00-12:00");
+        var was = ledger.State.EntriesOn(Day).ToArray();
+        var version = journal.Version;
+
+        Compose(ledger, "Outage 11:00 30m");
+
+        Assert.Equal(version + 1, journal.Version);
+        UndoAndRedo(ledger, was, ledger.State.EntriesOn(Day).ToArray());
+    }
+
+    [Fact]
+    public void One_undo_takes_a_correction_and_the_work_it_moved_back_together()
+    {
+        var ledger = NewLedger(out var journal);
+        Compose(ledger, "Website 09:00-10:00");
+        Compose(ledger, "Mobile 11:00-12:00");
+        var was = ledger.State.EntriesOn(Day).ToArray();
+        var version = journal.Version;
+
+        var corrected = new EntryComposer(ledger).Revise(was[^1], was[^1] with { Start = Clocks.At("09:30") });
+
+        Assert.True(corrected.Created, string.Join(" ", corrected.Problems));
+        Assert.Equal(version + 1, journal.Version);
+        UndoAndRedo(ledger, was, ledger.State.EntriesOn(Day).ToArray());
     }
 
     [Fact]

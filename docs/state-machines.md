@@ -142,7 +142,9 @@ refreshed with the rows; a row's own accepted change is not drawn twice.
 being typed — the boxes are bound `UpdateSourceTrigger=LostFocus`, so a field is taken when it is
 left or Enter is pressed; a partial or impossible description (`9:` as a clock, an end before the
 start) is a refusal, and a refusal writes nothing; a hole row is only ever between the two blocks
-that leave it.
+that leave it. A correction that crosses another block takes its minutes the way a line does, so the
+day builds every row again rather than only the holes, the row being edited is replaced as its field
+is left, and one undo takes the correction and the split it made back together.
 
 The rebuild after a refusal is not an optimisation left undone: a two-way box keeps the text it
 was refused, and only a row built from the journal shows what is stored instead (see

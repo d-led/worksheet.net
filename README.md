@@ -110,7 +110,8 @@ Under the line, a `next:` hint names the part still missing, and, once the line 
 second line says what it will do to the day — `splits Website 09:00-12:00 into 09:00-11:00 and
 11:30-12:00` — so an interruption over work already planned is seen before Enter rather than after
 it. The interruption takes its minutes; the work keeps the rest, trimmed or split around it, and an
-entry it covers whole comes off the day.
+entry it covers whole comes off the day. A cell corrected over another block does the same, and one
+undo takes the whole of either back.
 
 The interface is English, and so are the dates: a weekday or a month is worded in English and read
 day first (`Thursday 5 November`), whatever language the machine is set to, so a report made on one

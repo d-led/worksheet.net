@@ -33,13 +33,45 @@ public sealed class EntryComposer(Ledger ledger)
             return new ComposeResult(null, plan.Problems);
         }
 
-        ledger.Commit(plan.Changes, ChangeOrigin.User);
+        Write(plan.Names, plan.Ranges);
 
         return new ComposeResult(entry, []) { Yielded = plan.Yielded };
     }
 
+    /// <summary>
+    /// Writes what one decision made. The names it opened go in first and on their own, because a
+    /// name has no inverse and cannot ride in a batch undo takes back; the ranges travel as one
+    /// change — a batch when the decision wrote several — so one undo takes the whole of a line or a
+    /// correction back, split parts and all.
+    /// </summary>
+    private void Write(IReadOnlyList<LedgerEvent> names, IReadOnlyList<LedgerEvent> ranges)
+    {
+        if (names.Count == 0 && ranges.Count == 0)
+        {
+            return;
+        }
+
+        List<LedgerEvent> changes = [.. names, .. AsOneDecision(ranges)];
+
+        ledger.Commit(changes, ChangeOrigin.User);
+    }
+
+    /// <summary>The ranges one decision wrote, as one change: itself when there is one, a batch when several.</summary>
+    private static IReadOnlyList<LedgerEvent> AsOneDecision(IReadOnlyList<LedgerEvent> ranges) =>
+        ranges.Count switch
+        {
+            0 => [],
+            1 => ranges,
+            _ => [new Batch([.. ranges])],
+        };
+
     /// <summary>What composing a line would write, or why it cannot be written at all.</summary>
-    private sealed record Plan(Entry? Entry, List<LedgerEvent> Changes, List<string> Problems, IReadOnlyList<string> Yielded);
+    private sealed record Plan(
+        Entry? Entry,
+        List<LedgerEvent> Names,
+        List<LedgerEvent> Ranges,
+        List<string> Problems,
+        IReadOnlyList<string> Yielded);
 
     /// <summary>The project and topic a line names, opened where they are new.</summary>
     private sealed record Named(Guid ProjectId, Guid? TopicId);
@@ -51,36 +83,34 @@ public sealed class EntryComposer(Ledger ledger)
     /// </summary>
     private Plan PlanOf(EntryCommand command)
     {
-        var changes = new List<LedgerEvent>();
+        var names = new List<LedgerEvent>();
         var problems = new List<string>();
 
         if (DayRefusal(command.Date) is { } refusal)
         {
-            return new Plan(null, changes, [refusal], []);
+            return new Plan(null, names, [], [refusal], []);
         }
 
-        if (NamesOf(command.Project, command.Topic, BreakTopic.Refused, changes, problems) is not { } names)
+        if (NamesOf(command.Project, command.Topic, BreakTopic.Refused, names, problems) is not { } named)
         {
-            return new Plan(null, changes, problems, []);
+            return new Plan(null, names, [], problems, []);
         }
 
-        var entry = EntryOf(command, names.ProjectId, names.TopicId);
+        var entry = EntryOf(command, named.ProjectId, named.TopicId);
         var refusals = ShapeRefusals(entry).ToList();
 
         if (refusals.Count > 0)
         {
-            return new Plan(null, changes, refusals, []);
+            return new Plan(null, names, [], refusals, []);
         }
 
         // The day gives way to the line before the line joins it, so that the work it crosses never
         // shares a minute with it and undoing the entry first leaves the day as it now reads.
         var taken = DaySlot.Of(entry);
         var crossed = Crossed(entry.Date, taken).ToList();
+        List<LedgerEvent> ranges = [.. Yielding(crossed, taken), new EntryLogged(entry)];
 
-        changes.AddRange(Yielding(crossed, taken));
-        changes.Add(new EntryLogged(entry));
-
-        return new Plan(entry, changes, problems, [.. crossed.Select(other => GivingWay(other, taken))]);
+        return new Plan(entry, names, ranges, problems, [.. crossed.Select(other => GivingWay(other, taken))]);
     }
 
     /// <summary>What a break does with a topic: a line refuses it, because the brackets were typed.</summary>
@@ -187,9 +217,9 @@ public sealed class EntryComposer(Ledger ledger)
     }
 
     /// <summary>The entries already on the day that share a minute with the range a line writes.</summary>
-    private IEnumerable<Entry> Crossed(DateOnly day, DaySlot taken) =>
+    private IEnumerable<Entry> Crossed(DateOnly day, DaySlot taken, EntryId? ignore = null) =>
         ledger.State.EntriesOn(day)
-            .Where(other => other.Duration > TimeSpan.Zero && DaySlot.Of(other).Overlaps(taken));
+            .Where(other => other.Id != ignore && other.Duration > TimeSpan.Zero && DaySlot.Of(other).Overlaps(taken));
 
     /// <summary>
     /// What the day writes instead of crossing work: an entry keeps the minutes the line does not
@@ -263,13 +293,14 @@ public sealed class EntryComposer(Ledger ledger)
             return ComposeResult.Refused(refusal);
         }
 
-        ledger.Commit([new EntryRetracted(entry)]);
+        Write([], [new EntryRetracted(entry)]);
 
         return new ComposeResult(entry, []);
     }
 
     /// <summary>
-    /// Replaces an entry with a corrected version. The journal keeps both sides, so this is undoable
+    /// Replaces an entry with a corrected version. A correction takes the minutes it crosses the way a
+    /// line does, so what it runs over gives way; the journal keeps both sides, so this is undoable
     /// and the history says what the correction was rather than silently overwriting it.
     /// </summary>
     public ComposeResult Revise(Entry before, Entry after)
@@ -285,11 +316,6 @@ public sealed class EntryComposer(Ledger ledger)
             problems = [refusal, .. problems];
         }
 
-        if (problems.Count == 0)
-        {
-            problems = Conflicts(corrected, ignore: corrected.Id);
-        }
-
         if (problems.Count > 0)
         {
             return new ComposeResult(null, problems);
@@ -300,9 +326,15 @@ public sealed class EntryComposer(Ledger ledger)
             return new ComposeResult(before, []);
         }
 
-        ledger.Commit([new EntryRevised(before, corrected)]);
+        // The revision is the last change of the batch, so undoing it first puts the row back where
+        // it was while the work it crossed is still carved.
+        var taken = DaySlot.Of(corrected);
+        var crossed = Crossed(corrected.Date, taken, ignore: corrected.Id).ToList();
+        List<LedgerEvent> ranges = [.. Yielding(crossed, taken), new EntryRevised(before, corrected)];
 
-        return new ComposeResult(corrected, []);
+        Write([], ranges);
+
+        return new ComposeResult(corrected, []) { Yielded = [.. crossed.Select(other => GivingWay(other, taken))] };
     }
 
     /// <summary>Everything the ledger refuses about a correction, in the order a person would read it.</summary>
@@ -355,13 +387,12 @@ public sealed class EntryComposer(Ledger ledger)
         if (after == entry)
         {
             // The row already points where it should; a revival the name asked for is still written.
-            ledger.Commit(changes, ChangeOrigin.User);
+            Write(changes, []);
 
             return new ComposeResult(entry, []);
         }
 
-        changes.Add(new EntryRevised(entry, after));
-        ledger.Commit(changes, ChangeOrigin.User);
+        Write(changes, [new EntryRevised(entry, after)]);
 
         return new ComposeResult(after, []);
     }
@@ -483,34 +514,4 @@ public sealed class EntryComposer(Ledger ledger)
         ledger.State.TakesEntries(day)
             ? null
             : $"{day:ddd d MMMM} is marked {DayKinds.LabelOf(ledger.State.KindOf(day))}; set the day to Working day first.";
-
-    /// <summary>
-    /// Why a correction cannot be written: a range corrected over another is refused, because a row
-    /// says what one stretch is, and minutes are taken from another block by logging an interruption.
-    /// Each conflict names the entry that is already there, because "overlaps something" is not
-    /// something a person can act on.
-    /// </summary>
-    private List<string> Conflicts(Entry entry, EntryId? ignore = null)
-    {
-        if (entry.Duration == TimeSpan.Zero)
-        {
-            return [];
-        }
-
-        return
-        [
-            .. ledger.State.EntriesOn(entry.Date)
-                .Where(other => IsDifferentAndOverlapping(other, entry, ignore))
-                .Select(DescribeConflict),
-        ];
-    }
-
-    private static bool IsDifferentAndOverlapping(Entry other, Entry entry, EntryId? ignore) =>
-        other.Duration != TimeSpan.Zero && other.Id != ignore && Overlaps(other, entry);
-
-    private string DescribeConflict(Entry other) => $"intersects {Labelled(other)}";
-
-    private static bool Overlaps(Entry left, Entry right) =>
-        left.Start.ToTimeSpan() < right.Start.ToTimeSpan() + right.Duration
-        && right.Start.ToTimeSpan() < left.Start.ToTimeSpan() + left.Duration;
 }

@@ -313,11 +313,15 @@ Some choices in the window look like omissions and are not:
   it and `RememberCloseNotice()` writes it, and `Store` keeps the flag while writing the knobs. A
   notice that repeats itself is one nobody reads.
 
-- **A merge is one journal change.** Renaming a project or a topic onto a name already in use
-  rewrites entries and re-homes or retires topics, which is several changes; they travel as one
-  `Batch`, so the journal records one decision and one undo takes the whole of it back. The
-  alternative — one event per rewritten entry — would have made undo step through a merge an entry
-  at a time, which is not what a person means by taking it back.
+- **A decision is one journal change.** Renaming a project or a topic onto a name already in use
+  rewrites entries and re-homes or retires topics; a line that crosses another block trims or splits
+  it; a corrected range does the same. Those changes travel as one `Batch`, so the journal records
+  one decision and one undo takes the whole of it back. The alternative — one event per rewritten
+  entry — would have made undo step through a merge, or through an interruption, an entry at a time,
+  which is not what a person means by taking it back. The names a line opens cannot ride in that
+  batch: `ProjectOpened` and `TopicAdded` have no inverse, so `UndoPlanner.Reverse` answers nothing
+  for a batch holding one — a name is appended first, on its own, and undo leaves the empty project
+  behind.
 - **The projects and topics panel has no second step.** A name is a field in its own row: `Enter`
   or leaving it settles the name, `Esc` puts the old one back, and a sentence above the message line
   says what `Enter` would do — including what a merge would move — while the name is still being

@@ -333,6 +333,29 @@ public sealed class DayTableTests : UiTestBase
     }
 
     [AvaloniaFact]
+    public void Correcting_a_block_over_another_splits_it_and_one_undo_puts_it_back()
+    {
+        var table = Table("Website 09:00-10:00", "Mobile 11:00-12:00");
+        var day = (DayViewModel)table.DataContext!;
+        var mobile = EntryRows(table)[1];
+
+        var startBox = Cell(mobile, "start-input");
+        startBox.Focus();
+        startBox.Text = "09:30";
+        Cell(mobile, "note-input").Focus();
+        Settle();
+
+        Assert.Equal(["09:00", "09:30"], EntryRows(table).Select(row => Cell(row, "start-input").Text));
+        Assert.Equal("3h", day.Total);
+
+        day.UndoCommand.Execute(null);
+        Settle();
+
+        Assert.Equal(["09:00", "11:00"], EntryRows(table).Select(row => Cell(row, "start-input").Text));
+        Assert.Equal("2h", day.Total);
+    }
+
+    [AvaloniaFact]
     public void Pressing_enter_in_a_clock_field_takes_the_time_typed()
     {
         var day = NewDay();

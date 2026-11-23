@@ -479,16 +479,21 @@ public sealed class DayViewModelTests : IDisposable
     }
 
     [Fact]
-    public void A_correction_that_would_intersect_another_entry_is_refused()
+    public void A_correction_over_another_block_takes_its_minutes_and_one_undo_takes_it_back()
     {
         var day = DayWith("Website 09:00-10:00", "Mobile 11:00-12:00");
         var mobile = (EntryRowViewModel)day.Rows[^1];
 
         mobile.StartText = "09:30";
 
-        Assert.True(day.MessageIsProblem);
-        Assert.Equal("11:00", mobile.StartText);
-        Assert.Equal("12:00", mobile.EndText);
+        Assert.False(day.MessageIsProblem);
+        Assert.Contains("trims Website 09:00-10:00 to 09:00-09:30", day.Message);
+        Assert.Equal(["09:00", "09:30"], day.Rows.OfType<EntryRowViewModel>().Select(row => row.StartText));
+        Assert.Equal("3h", day.Total);
+
+        day.UndoCommand.Execute(null);
+
+        Assert.Equal(["09:00", "11:00"], day.Rows.OfType<EntryRowViewModel>().Select(row => row.StartText));
         Assert.Equal("2h", day.Total);
     }
 

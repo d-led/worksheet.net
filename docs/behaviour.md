@@ -93,9 +93,10 @@ and records decisions; it is not a description of any other program's source.
   news — takes those minutes: the work it crosses is trimmed, split around the
   line when the line lands in its middle, or taken off the day when it is covered
   whole. The preview under the entry box says what will give way before Enter is
-  pressed, and a tool call's answer says what did. A correction is not that: a
-  range corrected over another is refused, and the refusal names the entry it
-  would run into. The same project may be used as often as the day needs.
+  pressed, and a tool call's answer says what did. A correction takes minutes the
+  same way, from the row it is typed in: the block it runs over gives way, every
+  row is built again, and the message says what it took. The same project may be
+  used as often as the day needs.
 - The day is always shown in start order, whatever order the entries were
   logged in.
 - Time that no entry covers is shown as a gap between two entries, with its
@@ -115,7 +116,10 @@ and records decisions; it is not a description of any other program's source.
   gives is not stored at all.
 - Undo restores the prior state exactly: it appends the inverse of the last
   journal change, so replaying the journal after undo produces the same state as
-  before the change. On a ledger with no snapshot, this is verifiable by
+  before the change. One decision is one change: a line that split a block, and a
+  correction that took minutes from a neighbour, are each one row of the journal
+  and one undo takes the whole of them back. A name a line opened has no inverse
+  and is not part of that change, so undo leaves an empty project behind. On a ledger with no snapshot, this is verifiable by
   construction; the tests do exactly that.
 - Retiring a project or a topic takes the name out of what is offered and leaves
   every entry exactly as it was: the journal is append-only, so hours keep the
