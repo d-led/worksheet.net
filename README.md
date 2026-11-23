@@ -189,10 +189,8 @@ only. *Connect an agent…* in the tray menu shows the two snippets a client nee
 }
 ```
 
-An agent can log a line, say what it is working on at the moment of the call — `log_now` with a length
-(`for: 2h`) or an end (`till: 17:00`) — read a day back, ask for totals per project, list the
-catalogue, rename or remove a project or a topic, and undo. Answers are sentences, refusals included.
-Each change it makes
+An agent can log a line, read a day back, ask for totals per project, list the catalogue, rename or
+remove a project or a topic, and undo. Answers are sentences, refusals included. Each change it makes
 is one step in the window's undo. The port comes from *Settings…* or `WORKSHEET_MCP_PORT`; `0` turns
 the server off.
 
