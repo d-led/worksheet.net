@@ -22,16 +22,21 @@ public sealed class WorksheetTools : IToolkit
     /// <summary>What each tool name reaches. One line per name, so the list reads as the tool set.</summary>
     private readonly Dictionary<string, Func<ToolCall, ToolOutcome>> _handlers;
 
-    public WorksheetTools(Ledger ledger)
+    /// <summary>The clock a call that says "now" is read at; the system's own unless a caller moves it.</summary>
+    private readonly Func<DateTimeOffset> _now;
+
+    public WorksheetTools(Ledger ledger, Func<DateTimeOffset>? now = null)
     {
         ArgumentNullException.ThrowIfNull(ledger);
 
         _ledger = ledger;
+        _now = now ?? (() => DateTimeOffset.Now);
         _composer = new EntryComposer(ledger);
         _catalogue = new Catalogue(ledger);
         _handlers = new Dictionary<string, Func<ToolCall, ToolOutcome>>(StringComparer.Ordinal)
         {
             ["log_entry"] = LogEntry,
+            ["log_now"] = LogNow,
             ["day"] = Day,
             ["totals"] = Totals,
             ["list_projects"] = _ => ToolOutcome.Said(Reports.Projects(_ledger.State)),
@@ -94,6 +99,59 @@ public sealed class WorksheetTools : IToolkit
         return composed.Created
             ? ToolOutcome.Said($"Noted {Reports.Describe(_ledger.State, composed.Entry!)}, {Reports.ShortDate(day)}.")
             : ToolOutcome.Refused([.. composed.Problems]);
+    }
+
+    /// <summary>
+    /// "What I am working on now": the range begins at the clock the call arrives on rather than at a
+    /// clock the caller writes, and runs for the length or up to the end it gave. The call becomes an
+    /// ordinary line, so the day, the catalogue and every refusal about the range are the same.
+    /// </summary>
+    private ToolOutcome LogNow(ToolCall call)
+    {
+        var project = Names.Trimmed(call.Text("project"));
+
+        if (project.Length == 0)
+        {
+            return ToolOutcome.Refused("log_now needs the project being worked on, such as 'Client portal (login)'.");
+        }
+
+        var now = _now();
+        var (span, error) = SpanAt(now, call);
+
+        if (error is not null)
+        {
+            return ToolOutcome.Refused(error);
+        }
+
+        var note = Names.Trimmed(call.Text("note"));
+
+        return Log(NowLine(project, span, note), DateOnly.FromDateTime(now.DateTime));
+    }
+
+    /// <summary>
+    /// The line a "now" call means: the whole name closed with "-" — the call knows where it ends —
+    /// the span, and the note behind the mark, so that anything a caller writes stays a note.
+    /// </summary>
+    private static string NowLine(string project, string span, string note) =>
+        note.Length == 0 ? $"{project}- {span}" : $"{project}- {span} # {note}";
+
+    /// <summary>
+    /// The span a "now" call writes: the clock it arrives at, then a length or an end — the two
+    /// shapes a line reads — so exactly one of "for" and "till" is needed.
+    /// </summary>
+    private static (string Span, string? Error) SpanAt(DateTimeOffset at, ToolCall call)
+    {
+        var length = Names.Trimmed(call.Text("for"));
+        var end = Names.Trimmed(call.Text("till"));
+        var start = ClockText.Format(TimeOnly.FromDateTime(at.DateTime));
+
+        return (length.Length > 0, end.Length > 0) switch
+        {
+            (true, false) => ($"{start} {length}", null),
+            (false, true) => ($"{start}-{end}", null),
+            (false, false) => (string.Empty, "A range has to end somewhere: give 'for' a length, e.g. 2h, or 'till' a clock, e.g. 17:00."),
+            _ => (string.Empty, "Give one of 'for' and 'till', not both."),
+        };
     }
 
     private ToolOutcome Day(ToolCall call) =>
@@ -211,9 +269,9 @@ public sealed class WorksheetTools : IToolkit
             .FirstOrDefault(project => !project.Archived && string.Equals(project.Name.Trim(), name, StringComparison.OrdinalIgnoreCase))
             ?.Name ?? name;
 
-    /// <summary>The day a call speaks about: the one it named, or today.</summary>
-    private static DateOnly? DayOf(ToolCall call) =>
-        call.Text("date") is { } text ? Moment(text) : DateOnly.FromDateTime(DateTime.Today);
+    /// <summary>The day a call speaks about: the one it named, or the day the call arrives on.</summary>
+    private DateOnly? DayOf(ToolCall call) =>
+        call.Text("date") is { } text ? Moment(text) : DateOnly.FromDateTime(_now().DateTime);
 
     /// <summary>A date as a caller writes it, <c>2026-11-03</c>, or nothing when it does not read as one.</summary>
     private static DateOnly? Moment(string? text) =>
@@ -240,6 +298,21 @@ public sealed class WorksheetTools : IToolkit
                 ("line", ToolProperty.Text("The entry line to record, in the application's own syntax.")),
                 ("date", ToolProperty.Text("The day the line belongs to, 2026-11-03. Defaults to today.", required: false))),
             Title: "Log a time range",
+            Annotations: ToolAnnotations.Writes),
+        new(
+            "log_now",
+            "Record what is being worked on at the moment of the call: the range starts at the clock the "
+            + "call arrives on, and runs for a length or up to an end. Give exactly one of 'for' (a length: "
+            + "2h, 90m, 1h30m) and 'till' (a clock: 17:00). The project is written as the entry line writes "
+            + "it, with its topic in brackets — 'Client portal (login)' — and the call becomes the line "
+            + "'Client portal (login)- 14:07 2h'. A range that cannot be recorded is refused with the same "
+            + "sentence log_entry would give.",
+            ToolSchema.Of(
+                ("project", ToolProperty.Text("The project being worked on, with its topic in brackets.")),
+                ("for", ToolProperty.Text("How long the work takes: 2h, 90m, 1h30m.", required: false)),
+                ("till", ToolProperty.Text("The clock the work ends at: 17:00.", required: false)),
+                ("note", ToolProperty.Text("A note to keep with the range; anything may be written here.", required: false))),
+            Title: "Log what is worked on now",
             Annotations: ToolAnnotations.Writes),
         new(
             "day",

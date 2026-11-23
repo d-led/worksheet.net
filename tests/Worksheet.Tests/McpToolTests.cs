@@ -18,6 +18,9 @@ public sealed class McpToolTests
 {
     private static readonly DateOnly Tuesday = new(2026, 11, 3);
 
+    /// <summary>The moment a call that says "now" arrives at.</summary>
+    private static readonly DateTimeOffset At0945 = new(2026, 11, 3, 9, 45, 0, TimeSpan.Zero);
+
     private readonly Ledger _ledger = Core.Ledger.Open(new InMemoryJournal());
     private readonly WorksheetTools _tools;
 
@@ -28,6 +31,14 @@ public sealed class McpToolTests
         using var document = JsonDocument.Parse(arguments);
 
         return _tools.Run(new ToolCall(name, document.RootElement.Clone()));
+    }
+
+    /// <summary>The same ledger, with the clock a call that says "now" is read at.</summary>
+    private ToolOutcome CallAt(DateTimeOffset when, string name, string arguments)
+    {
+        using var document = JsonDocument.Parse(arguments);
+
+        return new WorksheetTools(_ledger, () => when).Run(new ToolCall(name, document.RootElement.Clone()));
     }
 
     private ToolOutcome LogEntry(string line, DateOnly? on = null) =>
@@ -43,6 +54,7 @@ public sealed class McpToolTests
         Assert.Equal(ToolAnnotations.Readings, Definition("day").Annotations);
         Assert.Equal(ToolAnnotations.Readings, Definition("totals").Annotations);
         Assert.Equal(ToolAnnotations.Writes, Definition("log_entry").Annotations);
+        Assert.Equal(ToolAnnotations.Writes, Definition("log_now").Annotations);
         Assert.Equal(ToolAnnotations.Removes, Definition("remove_project").Annotations);
     }
 
@@ -115,6 +127,71 @@ public sealed class McpToolTests
         var outcome = Call("log_entry", """{"line":"Website 09:00 1h","date":"the third"}""");
 
         Assert.Equal("'the third' is not a date; write it as 2026-11-03.", outcome.Text);
+    }
+
+    [Fact]
+    public void A_call_that_says_what_is_worked_on_now_logs_it_from_the_clock()
+    {
+        var outcome = CallAt(At0945, "log_now", """{"project":"Client portal (login)","for":"2h"}""");
+
+        Assert.Equal("Logged 09:45-11:45 Client portal (login) 2h on Tue 3 Nov 2026.", outcome.Text);
+        Assert.False(outcome.IsError);
+    }
+
+    [Fact]
+    public void A_now_call_that_names_an_end_stops_there()
+    {
+        var outcome = CallAt(At0945, "log_now", """{"project":"Mobile","till":"17:00"}""");
+
+        Assert.Equal("Logged 09:45-17:00 Mobile 7h15m on Tue 3 Nov 2026.", outcome.Text);
+    }
+
+    [Fact]
+    public void A_note_given_with_a_now_call_is_kept_with_the_range()
+    {
+        CallAt(At0945, "log_now", """{"project":"Reading","for":"45m","note":"the LiteDB paper, 2h of it"}""");
+
+        Assert.Equal("the LiteDB paper, 2h of it", Assert.Single(_ledger.State.Entries).Value.Note);
+    }
+
+    [Fact]
+    public void The_project_of_a_now_call_is_taken_whole_even_when_it_ends_in_a_span_word()
+    {
+        CallAt(At0945, "log_now", """{"project":"Work for","for":"1h"}""");
+
+        Assert.Contains("09:45-10:45 Work for 1h", Call("day", """{"date":"2026-11-03"}""").Text);
+    }
+
+    [Fact]
+    public void A_now_call_that_runs_into_the_day_says_what_it_hits()
+    {
+        LogEntry("Client portal 09:00 2h", Tuesday);
+
+        var outcome = CallAt(At0945, "log_now", """{"project":"Mobile","for":"1h"}""");
+
+        Assert.Equal("intersects Client portal 09:00-11:00", outcome.Text);
+    }
+
+    [Theory]
+    [InlineData(
+        """{"project":"Mobile"}""",
+        "A range has to end somewhere: give 'for' a length, e.g. 2h, or 'till' a clock, e.g. 17:00.")]
+    [InlineData("""{"project":"Mobile","for":"2h","till":"17:00"}""", "Give one of 'for' and 'till', not both.")]
+    public void A_now_call_needs_exactly_one_end(string arguments, string refusal)
+    {
+        var outcome = CallAt(At0945, "log_now", arguments);
+
+        Assert.True(outcome.IsError);
+        Assert.Equal(refusal, outcome.Text);
+    }
+
+    [Fact]
+    public void A_now_call_about_no_project_is_refused_in_words()
+    {
+        var outcome = CallAt(At0945, "log_now", """{"for":"2h"}""");
+
+        Assert.True(outcome.IsError);
+        Assert.Equal("log_now needs the project being worked on, such as 'Client portal (login)'.", outcome.Text);
     }
 
     [Fact]
@@ -295,7 +372,7 @@ public sealed class McpToolTests
     }
 
     [Fact]
-    public void The_tools_are_the_ten_an_agent_is_told_about()
+    public void The_tools_are_the_eleven_an_agent_is_told_about()
     {
         Assert.Equal(
             [
@@ -303,6 +380,7 @@ public sealed class McpToolTests
                 "list_projects",
                 "list_topics",
                 "log_entry",
+                "log_now",
                 "remove_project",
                 "remove_topic",
                 "rename_project",
