@@ -44,7 +44,7 @@ public sealed class McpServerTests
 
     private string? Answer(string body) => new McpServer(_toolkit).Answer(body);
 
-    private JsonElement Asked(string body) => JsonDocument.Parse(Answer(body)!).RootElement;
+    private JsonElement Asked(string body) => JsonElement.Parse(Answer(body)!);
 
     [Fact]
     public void Initialize_answers_with_the_tool_capability_and_a_name()

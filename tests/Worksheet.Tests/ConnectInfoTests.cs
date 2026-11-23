@@ -17,7 +17,7 @@ public sealed class ConnectInfoTests
     private static readonly McpSettings Settings = new(5317);
 
     private static JsonElement Server(string snippet, string key) =>
-        JsonDocument.Parse(snippet).RootElement.GetProperty(key).GetProperty(ConnectInfo.ServerKey);
+        JsonElement.Parse(snippet).GetProperty(key).GetProperty(ConnectInfo.ServerKey);
 
     [Fact]
     public void The_vscode_snippet_names_an_http_server_at_the_endpoint()
