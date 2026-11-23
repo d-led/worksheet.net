@@ -4,12 +4,10 @@
   The bundle the application is copied into /Applications as. `scripts/package.sh` writes
   @VERSION@ in from the build and adds AppIcon.icns next to it.
 
-  LSUIElement is deliberately true: this is a menu-bar application, so it belongs in the menu bar
-  and not in the Dock. It also matches what the application asks for at start-up
-  (MacOSPlatformOptions.ShowInDock = false): a Dock icon it can never hear a click on would only
-  take a place in the Dock and answer nothing, and closing the window would leave a minimised
-  thumbnail there as well. The way back to the window is the menu's *Show window*, or starting the
-  application again.
+  There is deliberately no LSUIElement: this application lives in the menu bar *and* in the Dock,
+  so it is in Cmd+Tab and a click on its Dock icon brings the window back. macOS can hide a
+  menu-bar item without telling the application, so the window must not depend on it. This matches
+  what the application asks for at start-up (MacOSPlatformOptions.ShowInDock = true).
 -->
 <plist version="1.0">
 <dict>
@@ -31,8 +29,6 @@
   <string>@VERSION@</string>
   <key>LSMinimumSystemVersion</key>
   <string>11.0</string>
-  <key>LSUIElement</key>
-  <true/>
   <key>NSHighResolutionCapable</key>
   <true/>
 </dict>

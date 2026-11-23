@@ -40,6 +40,7 @@ public sealed class App : Application
     private ResolvedSettings? _resolved;
     private WeeklyBackups? _backups;
     private DispatcherTimer? _backupPoll;
+    private TrayHost? _tray;
     private string? _mcpProblem;
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
@@ -105,10 +106,11 @@ public sealed class App : Application
             ShowCloseNotice);
         desktop.MainWindow = _window;
 
-        TrayHost.Attach(
+        _tray = TrayHost.Attach(
             this,
             new TrayActions(ShowWindow, ShowConnect, ShowSettings, ShowManage, ShowAudit, OpenDataFolder, () => Quit(desktop)));
 
+        ListenForSummons(_window);
         StartMcp(day, _local);
         StartWeeklyBackups(_local);
 
@@ -118,6 +120,28 @@ public sealed class App : Application
     }
 
     private DayViewModel? CurrentDay => _window?.DataContext as DayViewModel;
+
+    /// <summary>
+    /// Answers the platform's own summons — the Dock icon with no window on screen, or the
+    /// application brought back to the front — because the menu-bar icon must not be the only way
+    /// in. Only the macOS backend has such a lifetime, so every other platform simply has nobody
+    /// to listen to.
+    /// </summary>
+    private void ListenForSummons(Window window)
+    {
+        if (TryGetFeature(typeof(IActivatableLifetime)) is not IActivatableLifetime lifetime)
+        {
+            return;
+        }
+
+        var summons = new ApplicationSummons(
+            window,
+            () => CurrentDay?.ReviewToday(),
+            () => _tray?.Put());
+
+        // The activation is raised on a native callback, not on the thread windows live on.
+        lifetime.Activated += (_, args) => Dispatcher.UIThread.Post(() => summons.Handle(args));
+    }
 
     /// <summary>
     /// Copies the journal once for every week that closed, keeping four. The week is noticed by a poll

@@ -238,10 +238,11 @@ back. The first close says so once — that the day keeps counting, and where th
 offers leaving instead; tick *Don't tell me again* to make it the last time it says it.
 
 A click on the tray icon raises the window, and a right click opens the menu. On macOS the icon
-is in the menu bar and the application has no Dock icon at all: the platform gives an application
-no click of its own for an icon that carries a menu, so a Dock icon could only take a place and
-answer nothing. Starting the application again raises the window of the copy already running, on
-any platform, instead of starting a second one.
+is in the menu bar beside a Dock icon: the Dock puts the application in Cmd+Tab, and a click on it
+— or switching back to the application — brings the window out of the tray. macOS can take a
+menu-bar item away without telling the application, so the icon is put back whenever the window is
+brought back that way. Starting the application again raises the window of the copy already
+running, on any platform, instead of starting a second one.
 
 The menu holds *Show window*, *Connect an agent…*, *Projects and topics…*, *Settings…*, *Open data
 folder*, *The journal…* and *Quit*.

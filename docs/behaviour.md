@@ -53,10 +53,11 @@ and records decisions; it is not a description of any other program's source.
    system's own Quit — Cmd+Q, and the Quit in the application menu — is answered
    the way closing the window is, because only *Quit* ends the process, the one
    in the menu-bar icon. A shutdown the machine itself is carrying out is not
-   stood in the way of. On macOS the application has no Dock icon at all: it is a
-   menu-bar application, and a Dock icon it could never hear a click on would
-   only take a place and answer nothing (see `development.md` for the measured
-   reasons). The tray and the window's heading both open the
+   stood in the way of. On macOS the application is in the Dock and in Cmd+Tab as
+   well as the menu bar: a click on the Dock icon, or bringing the application
+   back to the front, puts the window on screen again, and the menu-bar icon is
+   put back at that moment, because macOS may have taken it away without a word.
+   The tray and the window's heading both open the
    other five screens — settings, projects and topics, the journal, the agent
    connection, the data folder — so a platform without a tray icon loses only
    *Quit*. Each of those windows leaves on Escape; in the catalogue, a name that

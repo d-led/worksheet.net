@@ -11,10 +11,10 @@
                        WindowStartupLocation="CenterOwner">
 
   <!--
-    Said once, the first time the window is put aside: this is a menu-bar application, so closing
-    the window is not the same as leaving. Nothing here offers leaving — the tray's menu is where
-    that lives — so the one answer closes the window and keeps the day counting. Escape and Return
-    both take it.
+    Said once, the first time the window is put aside: this application keeps running in the tray,
+    so closing the window is not the same as leaving. Nothing here offers leaving — the tray's menu
+    is where that lives — so the one answer closes the window and keeps the day counting. Escape
+    and Return both take it.
   -->
   <Border Classes="page" Padding="20">
     <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10">

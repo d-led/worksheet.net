@@ -21,7 +21,7 @@ public sealed partial class CloseNoticeViewModel : ObservableObject
 
     public string Body { get; } =
         "The window closes and the day keeps counting. The icon in the tray brings it back — its menu "
-        + "holds the rest, Quit among them — and so does starting Worksheet.net again.";
+        + "holds the rest, Quit among them — and on macOS the Dock icon and Cmd+Tab do too.";
 
     public string Quiet { get; } = "Don't tell me again.";
 }

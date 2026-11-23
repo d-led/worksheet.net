@@ -28,42 +28,71 @@ internal sealed record TrayActions(
 ///
 /// Undo and redo are deliberately *not* here. They change the day, and the day is not on screen:
 /// a compensating change taken blind is a change nobody can see the effect of.
+///
+/// The icon can be put again on request: Windows puts a tray icon back after its taskbar starts
+/// anew, and Linux follows the host it arranged the item with, but macOS takes a status item away —
+/// with the menu bar full, or when its own bar settings change — without a word.
 /// </summary>
-internal static class TrayHost
+internal sealed class TrayHost
 {
     private const string TrayIconUri = "avares://Worksheet.Desktop/Assets/tray.png";
 
-    public static void Attach(Application application, TrayActions actions)
+    private readonly Application _application;
+    private readonly TrayActions _actions;
+
+    private TrayHost(Application application, TrayActions actions)
+    {
+        _application = application;
+        _actions = actions;
+    }
+
+    /// <summary>Puts the icon in the menu bar and hands back what can put it there again.</summary>
+    public static TrayHost Attach(Application application, TrayActions actions)
     {
         ArgumentNullException.ThrowIfNull(application);
         ArgumentNullException.ThrowIfNull(actions);
 
+        var host = new TrayHost(application, actions);
+        host.Put();
+
+        return host;
+    }
+
+    /// <summary>
+    /// Puts the icon in the menu bar, replacing one that may no longer be there. Called again when
+    /// a window that was put aside comes back, which is the moment a person is looking for the way
+    /// in — and the only way to know whether macOS still shows the icon.
+    /// </summary>
+    public void Put()
+    {
         var tray = new TrayIcon
         {
             Icon = new WindowIcon(AssetLoader.Open(new Uri(TrayIconUri))),
             ToolTipText = "Worksheet.net",
             IsVisible = true,
+            Menu = Menu(_actions),
         };
 
-        tray.Clicked += (_, _) => actions.ShowWindow();
-        tray.Menu = new NativeMenu
-        {
-            Items =
-            {
-                MenuItem("Show window", actions.ShowWindow),
-                new NativeMenuItemSeparator(),
-                MenuItem("Connect an agent…", actions.Connect),
-                MenuItem("Projects and topics…", actions.Manage),
-                MenuItem("Settings…", actions.Settings),
-                MenuItem("Open data folder", actions.OpenDataFolder),
-                MenuItem("The journal…", actions.Audit),
-                new NativeMenuItemSeparator(),
-                MenuItem("Quit", actions.Quit),
-            },
-        };
+        tray.Clicked += (_, _) => _actions.ShowWindow();
 
-        TrayIcon.SetIcons(application, new TrayIcons { tray });
+        TrayIcon.SetIcons(_application, new TrayIcons { tray });
     }
+
+    private static NativeMenu Menu(TrayActions actions) => new()
+    {
+        Items =
+        {
+            MenuItem("Show window", actions.ShowWindow),
+            new NativeMenuItemSeparator(),
+            MenuItem("Connect an agent…", actions.Connect),
+            MenuItem("Projects and topics…", actions.Manage),
+            MenuItem("Settings…", actions.Settings),
+            MenuItem("Open data folder", actions.OpenDataFolder),
+            MenuItem("The journal…", actions.Audit),
+            new NativeMenuItemSeparator(),
+            MenuItem("Quit", actions.Quit),
+        },
+    };
 
     private static NativeMenuItem MenuItem(string header, Action action)
     {

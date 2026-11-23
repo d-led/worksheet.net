@@ -250,7 +250,8 @@ platform that will not give the pipe costs the second copy its ask, never the fi
 
 ## The window and the tray
 
-`MainWindow` (`src/Worksheet.Desktop/Views/MainWindow.axaml.cs`), `ClosingProcedure`, `TrayHost`.
+`MainWindow` (`src/Worksheet.Desktop/Views/MainWindow.axaml.cs`), `ClosingProcedure`, `TrayHost`,
+`ApplicationSummons`.
 
 **States:** `Visible`, `Hidden`, `Closing`. `AllowClose` is what tells the difference between
 "later" and "leaving".
@@ -259,6 +260,7 @@ platform that will not give the pipe costs the second copy its ask, never the fi
 | --- | --- | --- |
 | Visible | the close button, `Cmd+Q`, or the system's Quit | Hidden; the first time through a notice |
 | Visible, Hidden | the tray icon, or a second copy's ask | Visible, and today is read from the clock again |
+| Hidden | the Dock icon (`Reopen`, macOS), or the application brought to the front (`Background`) | Visible, and the tray icon is put again |
 | any | the system is shutting down | Closing, without a notice |
 | any | the tray's Quit | `AllowClose`, then Closing |
 

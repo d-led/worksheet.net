@@ -288,16 +288,17 @@ Some choices in the window look like omissions and are not:
   synchronization primitives only on Windows. The pipe's path carries the temporary folder and macOS
   caps a socket path at 104 characters, so the name is short and a pipe that cannot be had simply
   means no summons rather than a failure to start.
-- **On macOS there is no Dock icon, and closing says so once.** Avalonia's own documentation says
-  `TrayIcon.Clicked` is never raised on macOS, and an icon that carries a menu opens the menu
-  instead — so the menu-bar icon cannot raise the window. It cannot report a reopen either:
-  `ClassicDesktopStyleApplicationLifetime` is not an `IActivatableLifetime` in Avalonia 12.1.5
-  (measured, not assumed), so `Activated` never fires and a listener for it is dead code. An
-  earlier attempt kept a Dock icon and made closing minimise, relying on AppKit restoring minimised
-  windows when the application is activated; but the same measurement showed the Dock icon itself
-  answers no click, so it took a place and returned nothing. The application is now a menu-bar
-  application: `MacOSPlatformOptions.ShowInDock = false` in `Program.cs` and `LSUIElement` in the
-  bundle, and closing hides.
+- **On macOS the application is both a menu-bar and a Dock application.** A status item is the
+  quick way in, but `TrayIcon.Clicked` is never raised on macOS and an icon that carries a menu
+  opens the menu instead, and macOS may take a status item away — with the menu bar full, or when
+  its own bar settings change — without telling the application. So the Dock icon is kept
+  (`MacOSPlatformOptions.ShowInDock = true`, and no `LSUIElement` in the bundle): it puts the
+  application in Cmd+Tab, and the macOS backend raises `IActivatableLifetime.Activated` with
+  `Reopen` (a Dock click with no window on screen) or `Background` (the application brought to the
+  front). `ApplicationSummons` answers both on the UI thread: it re-reads the clock, restores a
+  minimised window, shows a hidden one, and asks `TrayHost.Put()` to make the status item again.
+  The older note here said a Dock icon could answer no click — that was measured with
+  `ShowInDock = false` and `LSUIElement`, which kept the application out of the Dock altogether.
 - **The close notice is our own window, not a system notification.** Avalonia has no API for
   system notifications; `Avalonia.Controls.Notifications` is the in-window card set, and macOS
   Notification Center would need a signed bundle and entitlements. So the first close opens a small
