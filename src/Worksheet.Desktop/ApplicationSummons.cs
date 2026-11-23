@@ -43,7 +43,9 @@ internal sealed class ApplicationSummons
     {
         ArgumentNullException.ThrowIfNull(args);
 
-        if (args.Kind is ActivationKind.Reopen or ActivationKind.Background && Raise())
+        var wantsTheWindow = args.Kind is ActivationKind.Reopen or ActivationKind.Background;
+
+        if (wantsTheWindow && Raise())
         {
             _whenReturned();
         }
