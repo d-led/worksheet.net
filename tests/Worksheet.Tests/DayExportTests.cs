@@ -112,6 +112,23 @@ public sealed class DayExportTests : IDisposable
         Assert.Equal(Saved("x.zip"), shown);
     }
 
+    /// <summary>
+    /// Showing the file is the last thing the notice has to say: it asked where the export went,
+    /// and the answer has just been put on screen.
+    /// </summary>
+    [Fact]
+    public async Task The_notice_is_put_away_once_the_file_has_been_shown()
+    {
+        var day = DayWith("Website 09:00 1h");
+        day.RevealFile = _ => { };
+        day.SaveExport = _ => Task.FromResult<string?>(Saved("x.zip"));
+
+        await day.ExportDayCommand.ExecuteAsync(null);
+        day.Exported!.RevealCommand.Execute(null);
+
+        Assert.False(day.HasExported);
+    }
+
     [Fact]
     public async Task A_window_that_cannot_show_a_file_offers_no_button_for_it()
     {

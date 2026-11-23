@@ -7,7 +7,8 @@
   <!--
     Where the last export went. A save dialog has already asked where the file should go, so this
     does not ask again: it names the file, tells the folder it is in, and offers the one thing worth
-    doing next — to be shown it — beside the one that puts the news away.
+    doing next — to be shown it, which is also the last thing the banner has to say — beside the
+    one that only puts the news away.
   -->
   <Border Classes="banner" IsVisible="{Binding HasExported}">
     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">

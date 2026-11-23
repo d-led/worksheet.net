@@ -86,6 +86,22 @@ public sealed class ExportBannerTests : UiTestBase
         Assert.Equal([Written], revealed);
     }
 
+    /// <summary>
+    /// The banner is news about where the export went, and showing the file has just answered it:
+    /// nothing is left for the banner to say.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task The_banner_goes_once_the_file_has_been_shown()
+    {
+        var (day, _) = await Exported();
+        var banner = Banner();
+
+        Click(Descendants<Button>(banner).Single(button => button.Name == "Reveal"));
+
+        Assert.False(banner.IsVisible);
+        Assert.False(day.HasExported);
+    }
+
     [AvaloniaFact]
     public async Task Dismissing_the_banner_puts_it_away()
     {
