@@ -6,10 +6,11 @@
 
   <!--
     One line, and under it an answer to "what now": the shape of a line in four parts with the
-    next one named, then anything wrong with what has been typed so far — including an
-    intersection, which is visible before Enter rather than after it. The hint wraps rather than
-    clips, because once the day has an end to continue from it offers two shorthands beside the
-    clock. Known names are chips below: the arrows walk them and Tab takes the one they are on.
+    next one named, then what the line will do to the day — the work it crosses and what is left of
+    it, so an interruption over planned work is visible before Enter rather than after it. The hint
+    wraps rather than clips, because once the day has an end to continue from it offers the start's
+    place kept open beside the clock. Known names are chips below: the arrows walk them and Tab
+    takes the one they are on.
   -->
   <StackPanel Spacing="5">
 
@@ -32,10 +33,10 @@
                  VerticalAlignment="Center" />
     </Grid>
 
-    <TextBlock x:Name="Validation"
-               Classes="meta problem"
-               Text="{Binding Validation}"
-               IsVisible="{Binding HasValidation}"
+    <TextBlock x:Name="Preview"
+               Classes="meta"
+               Text="{Binding Preview}"
+               IsVisible="{Binding HasPreview}"
                TextWrapping="Wrap" />
 
     <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasSuggestions}">

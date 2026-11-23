@@ -31,39 +31,41 @@ public sealed class EntryPreviewTests
         var ledger = NewLedger();
         Log(ledger, "Website 09:00 1h");
 
-        Assert.Empty(new EntryComposer(ledger).Preview(Command("11:00", 60)));
+        Assert.Empty(new EntryComposer(ledger).Yielded(Command("11:00", 60)));
     }
 
     [Fact]
-    public void An_intersecting_span_names_the_entry_it_hits_before_being_entered()
+    public void A_crossing_span_says_what_it_will_take_before_being_entered()
     {
         var ledger = NewLedger();
         Log(ledger, "Website (login) 09:00 2h");
 
-        var conflicts = new EntryComposer(ledger).Preview(Command("10:00", 60));
+        var taking = new EntryComposer(ledger).Yielded(Command("10:00", 30));
 
-        Assert.Equal("intersects Website (login) 09:00-11:00", Assert.Single(conflicts));
+        Assert.Equal(
+            "splits Website (login) 09:00-11:00 into 09:00-10:00 and 10:30-11:00",
+            Assert.Single(taking));
     }
 
     [Fact]
-    public void Previewing_writes_nothing()
+    public void Saying_what_a_line_takes_writes_nothing()
     {
         var ledger = NewLedger();
         Log(ledger, "Website 09:00 2h");
         var version = ledger.Version;
 
-        new EntryComposer(ledger).Preview(Command("10:00", 60));
+        new EntryComposer(ledger).Yielded(Command("10:00", 60));
 
         Assert.Equal(version, ledger.Version);
         Assert.Single(ledger.State.Entries);
     }
 
     [Fact]
-    public void A_span_with_no_length_cannot_intersect_anything()
+    public void A_span_with_no_length_takes_nothing()
     {
         var ledger = NewLedger();
         Log(ledger, "Website 09:00 2h");
 
-        Assert.Empty(new EntryComposer(ledger).Preview(Command("10:00", 0)));
+        Assert.Empty(new EntryComposer(ledger).Yielded(Command("10:00", 0)));
     }
 }

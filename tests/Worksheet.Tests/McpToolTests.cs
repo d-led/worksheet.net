@@ -91,14 +91,16 @@ public sealed class McpToolTests
     }
 
     [Fact]
-    public void A_line_that_does_not_fit_the_day_says_what_it_hits()
+    public void A_line_that_crosses_work_records_it_and_says_what_gave_way()
     {
         LogEntry("Client portal 08:30 2h", Tuesday);
 
-        var outcome = LogEntry("Mobile 09:00 1h", Tuesday);
+        var outcome = LogEntry("Outage 09:00 30m", Tuesday);
 
-        Assert.Equal("intersects Client portal 08:30-10:30", outcome.Text);
-        Assert.True(outcome.IsError);
+        Assert.Equal(
+            "Logged 09:00-09:30 Outage 30m on Tue 3 Nov 2026. Splits Client portal 08:30-10:30 into 08:30-09:00 and 09:30-10:30.",
+            outcome.Text);
+        Assert.False(outcome.IsError);
     }
 
     [Fact]

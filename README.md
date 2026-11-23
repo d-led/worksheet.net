@@ -59,6 +59,7 @@ One line records one time range. Type it, press Enter.
 | `Reading till 16:00` | an end only: it begins where the last block ended |
 | `Reading for 1h30m` | a length only, from the same start |
 | `Reading -- 1h30m` | the same length, with `--` keeping the place of the start |
+| `Outage 11:00 30m` | an interruption: it takes its minutes out of the block it crosses |
 
 A project name may contain spaces. Names you have used before are offered as you type: the projects
 first, then the topics of that project once its bracket is open. A name that would otherwise end in
@@ -105,8 +106,11 @@ entry line; `Break` records it directly as a `Break` entry with a note you can c
 
 ![A hole between two blocks, and the same day after pressing Break](docs/screenshots/break.png)
 
-Under the line, a `next:` hint names the part still missing, and an error — an intersection with
-another block, for instance — is shown while you type.
+Under the line, a `next:` hint names the part still missing, and, once the line reads as an entry, a
+second line says what it will do to the day — `splits Website 09:00-12:00 into 09:00-11:00 and
+11:30-12:00` — so an interruption over work already planned is seen before Enter rather than after
+it. The interruption takes its minutes; the work keeps the rest, trimmed or split around it, and an
+entry it covers whole comes off the day.
 
 The interface is English, and so are the dates: a weekday or a month is worded in English and read
 day first (`Thursday 5 November`), whatever language the machine is set to, so a report made on one

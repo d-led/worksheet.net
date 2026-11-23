@@ -5,16 +5,6 @@
 
 namespace Worksheet.Core;
 
-/// <summary>A stretch of the day with nothing on it, in minutes from midnight.</summary>
-public sealed record DaySlot(TimeSpan Start, TimeSpan End)
-{
-    public TimeSpan Duration => End - Start;
-
-    public TimeOnly StartsAt => TimeOnly.FromTimeSpan(Start);
-
-    public TimeOnly EndsAt => End >= TimeSpan.FromDays(1) ? TimeOnly.MinValue : TimeOnly.FromTimeSpan(End);
-}
-
 /// <summary>
 /// A day laid out: the entries in order, and the holes between them. The holes are what a person
 /// still has to account for, so they are computed here rather than guessed at in the view.

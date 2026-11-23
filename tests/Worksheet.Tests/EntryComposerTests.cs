@@ -4,6 +4,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Worksheet.Core;
+using Worksheet.TestSupport;
 
 namespace Worksheet.Tests;
 
@@ -24,6 +25,19 @@ public sealed class EntryComposerTests
         journal = new InMemoryJournal();
         return Core.Ledger.Open(journal);
     }
+
+    /// <summary>The day as it reads: every range with the work it holds, in start order.</summary>
+    private static IReadOnlyList<string> OnTheDay(Ledger ledger) =>
+    [
+        .. ledger.State.EntriesOn(Day).Select(entry =>
+            $"{Clocks.Text(entry.Start)}-{Clocks.Text(entry.End)} {LabelOf(ledger, entry)}"),
+    ];
+
+    /// <summary>A range as a person names the work on it.</summary>
+    private static string LabelOf(Ledger ledger, Entry entry) =>
+        ledger.State.TopicName(entry.TopicId) is { } topic
+            ? $"{ledger.State.ProjectName(entry.ProjectId)} ({topic})"
+            : ledger.State.ProjectName(entry.ProjectId);
 
     [Fact]
     public void An_unknown_project_and_topic_are_opened_as_part_of_the_entry()
@@ -78,18 +92,85 @@ public sealed class EntryComposerTests
     }
 
     [Fact]
-    public void An_entry_that_intersects_another_is_refused()
+    public void An_interruption_splits_the_work_it_crosses_and_takes_its_minutes()
     {
-        var ledger = NewLedger(out var journal);
-        Compose(ledger, "Website 09:00 2h");
-        var version = ledger.Version;
+        var ledger = NewLedger(out _);
+        Compose(ledger, "Client portal 09:00-12:00");
 
-        var result = Compose(ledger, "Website 10:00 1h");
+        var result = Compose(ledger, "Outage 11:00 30m");
 
-        Assert.False(result.Created);
-        Assert.Equal("intersects Website 09:00-11:00", Assert.Single(result.Problems));
-        Assert.Equal(TimeSpan.FromHours(2), ledger.State.TotalOn(Day));
-        Assert.Equal(version, journal.Version);
+        Assert.True(result.Created, string.Join(" ", result.Problems));
+        Assert.Equal(["splits Client portal 09:00-12:00 into 09:00-11:00 and 11:30-12:00"], result.Yielded);
+        Assert.Equal(
+            ["09:00-11:00 Client portal", "11:00-11:30 Outage", "11:30-12:00 Client portal"],
+            OnTheDay(ledger));
+    }
+
+    [Fact]
+    public void Both_pieces_of_a_split_keep_the_note_the_work_had()
+    {
+        var ledger = NewLedger(out _);
+        Compose(ledger, "Reading 09:00-12:00 # the paper");
+
+        Compose(ledger, "Outage 11:00 30m");
+
+        Assert.Equal(
+            ["the paper", "the paper"],
+            ledger.State.EntriesOn(Day).Where(entry => entry.Note is not null).Select(entry => entry.Note));
+    }
+
+    [Fact]
+    public void Work_the_interruption_only_shortens_is_trimmed_and_not_split()
+    {
+        var ledger = NewLedger(out _);
+        Compose(ledger, "Client portal 09:00-12:00");
+
+        var result = Compose(ledger, "Outage 11:00-13:00");
+
+        Assert.Equal(["trims Client portal 09:00-12:00 to 09:00-11:00"], result.Yielded);
+        Assert.Equal(["09:00-11:00 Client portal", "11:00-13:00 Outage"], OnTheDay(ledger));
+    }
+
+    [Fact]
+    public void Work_the_interruption_covers_whole_goes_off_the_day()
+    {
+        var ledger = NewLedger(out _);
+        Compose(ledger, "Client portal 09:00 1h");
+
+        var result = Compose(ledger, "Outage 08:00-12:00");
+
+        Assert.Equal(["covers Client portal 09:00-10:00"], result.Yielded);
+        Assert.Equal(["08:00-12:00 Outage"], OnTheDay(ledger));
+    }
+
+    [Fact]
+    public void An_interruption_takes_every_block_of_a_stretch_it_crosses()
+    {
+        var ledger = NewLedger(out _);
+        Compose(ledger, "Client portal 09:00 1h");
+        Compose(ledger, "Mobile 10:00 1h");
+
+        var result = Compose(ledger, "Outage 09:30 1h");
+
+        Assert.Equal(
+            ["trims Client portal 09:00-10:00 to 09:00-09:30", "trims Mobile 10:00-11:00 to 10:30-11:00"],
+            result.Yielded);
+        Assert.Equal(
+            ["09:00-09:30 Client portal", "09:30-10:30 Outage", "10:30-11:00 Mobile"],
+            OnTheDay(ledger));
+    }
+
+    [Fact]
+    public void Work_the_line_does_not_cross_is_left_as_it_is()
+    {
+        var ledger = NewLedger(out _);
+        Compose(ledger, "Client portal 09:00 1h");
+        var untouched = Assert.Single(ledger.State.EntriesOn(Day));
+
+        var result = Compose(ledger, "Mobile 11:00 1h");
+
+        Assert.Empty(result.Yielded);
+        Assert.Equal(untouched, ledger.State.EntriesOn(Day).First());
     }
 
     [Fact]
@@ -99,6 +180,71 @@ public sealed class EntryComposerTests
         Compose(ledger, "Website 09:00-11:00");
 
         var result = Compose(ledger, "Mobile 11:00-12:00");
+
+        Assert.True(result.Created, string.Join(" ", result.Problems));
+        Assert.Empty(result.Yielded);
+        Assert.Equal(TimeSpan.FromHours(3), ledger.State.TotalOn(Day));
+    }
+
+    [Fact]
+    public void An_entry_that_ends_where_another_starts_takes_nothing_from_it()
+    {
+        var ledger = NewLedger(out _);
+        Compose(ledger, "Mobile 11:00-12:00");
+
+        var result = Compose(ledger, "Website 09:00-11:00");
+
+        Assert.Empty(result.Yielded);
+        Assert.Equal(["09:00-11:00 Website", "11:00-12:00 Mobile"], OnTheDay(ledger));
+    }
+
+    [Fact]
+    public void A_start_with_no_length_yet_is_not_taken_by_a_line_that_runs_past_it()
+    {
+        var ledger = NewLedger(out _);
+        Compose(ledger, "Website 10:00");
+
+        var result = Compose(ledger, "Outage 09:00-11:00");
+
+        Assert.Empty(result.Yielded);
+        Assert.Equal(["09:00-11:00 Outage", "10:00-10:00 Website"], OnTheDay(ledger));
+    }
+
+    [Fact]
+    public void A_note_lands_on_the_stretch_that_ends_last()
+    {
+        var ledger = NewLedger(out _);
+        Compose(ledger, "Client portal 09:00 1h");
+        Compose(ledger, "Mobile 10:00 5h");
+
+        Assert.True(new EntryComposer(ledger).Note(Day, "the paper").Created);
+
+        Assert.Equal(Clocks.At("10:00"), ledger.State.EntriesOn(Day).Single(entry => entry.Note is not null).Start);
+    }
+
+    [Fact]
+    public void A_correction_over_another_entry_is_refused_by_name()
+    {
+        var ledger = NewLedger(out _);
+        Compose(ledger, "Website 09:00-10:00");
+        Compose(ledger, "Mobile 11:00-12:00");
+        var mobile = ledger.State.EntriesOn(Day).Last();
+
+        var result = new EntryComposer(ledger).Revise(mobile, mobile with { Start = Clocks.At("09:30") });
+
+        Assert.False(result.Created);
+        Assert.Equal("intersects Website 09:00-10:00", Assert.Single(result.Problems));
+    }
+
+    [Fact]
+    public void A_correction_that_butts_up_against_the_next_entry_is_taken()
+    {
+        var ledger = NewLedger(out _);
+        Compose(ledger, "Website 09:00-10:00");
+        Compose(ledger, "Mobile 11:00-12:00");
+        var website = ledger.State.EntriesOn(Day).First();
+
+        var result = new EntryComposer(ledger).Revise(website, website with { Duration = TimeSpan.FromHours(2) });
 
         Assert.True(result.Created, string.Join(" ", result.Problems));
         Assert.Equal(TimeSpan.FromHours(3), ledger.State.TotalOn(Day));

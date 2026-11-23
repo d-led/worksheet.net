@@ -359,14 +359,14 @@ public sealed class DayViewModelTests : IDisposable
     }
 
     [Fact]
-    public void An_intersection_is_reported_while_typing_not_after_enter()
+    public void A_line_that_crosses_work_says_what_it_will_split_while_typing()
     {
         var day = DayWith("Website 09:00 2h");
 
-        day.EntryText = "Mobile 10:00 1h";
+        day.EntryText = "Mobile 10:00 30m";
 
-        Assert.True(day.HasValidation);
-        Assert.Equal("intersects Website 09:00-11:00", day.Validation);
+        Assert.True(day.HasPreview);
+        Assert.Equal("splits Website 09:00-11:00 into 09:00-10:00 and 10:30-11:00", day.Preview);
     }
 
     [Fact]
@@ -376,8 +376,22 @@ public sealed class DayViewModelTests : IDisposable
 
         day.EntryText = "Mobile 11:00 1h";
 
-        Assert.False(day.HasValidation);
-        Assert.Null(day.Validation);
+        Assert.False(day.HasPreview);
+        Assert.Null(day.Preview);
+    }
+
+    [Fact]
+    public void Logging_an_interruption_leaves_the_work_it_crosses_split_around_it()
+    {
+        var day = DayWith("Client portal 09:00-12:00");
+
+        day.EntryText = "Outage 11:00 30m";
+        day.LogCommand.Execute(null);
+
+        Assert.Equal(
+            ["09:00", "11:00", "11:30"],
+            day.Rows.OfType<EntryRowViewModel>().Select(row => row.StartText));
+        Assert.False(day.MessageIsProblem);
     }
 
     [Fact]
@@ -387,7 +401,7 @@ public sealed class DayViewModelTests : IDisposable
 
         day.EntryText = "Mob";
 
-        Assert.False(day.HasValidation);
+        Assert.False(day.HasPreview);
     }
 
     [Fact]

@@ -62,9 +62,9 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string _nextStep = string.Empty;
 
-    /// <summary>Why the line as typed would be refused, checked before Enter is pressed.</summary>
+    /// <summary>What the line as typed will take from the day, said before Enter is pressed.</summary>
     [ObservableProperty]
-    private string? _validation;
+    private string? _preview;
 
     /// <summary>True while the day takes no entries: its rows are then shown but not editable.</summary>
     [ObservableProperty]
@@ -117,7 +117,7 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
 
     public bool HasSuggestions => Suggestions.Count > 0;
 
-    public bool HasValidation => !string.IsNullOrEmpty(Validation);
+    public bool HasPreview => !string.IsNullOrEmpty(Preview);
 
     /// <summary>What the clock says the day is now, asked every time it is needed.</summary>
     private DateOnly Today => DateOnly.FromDateTime(_clock().LocalDateTime);
@@ -163,7 +163,7 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
         UpdateGuide();
     }
 
-    partial void OnValidationChanged(string? value) => OnPropertyChanged(nameof(HasValidation));
+    partial void OnPreviewChanged(string? value) => OnPropertyChanged(nameof(HasPreview));
 
     partial void OnMessageChanged(string? value) => OnPropertyChanged(nameof(HasMessage));
 
@@ -756,9 +756,9 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
             new SuggestionViewModel(name, index == _chosen, new RelayCommand(() => Take(name))));
 
     /// <summary>
-    /// Says what to write next, and complains as soon as the line is complete enough to be wrong —
-    /// an intersection is visible before Enter, not after it. A line that is already whole is told
-    /// what it can still take: the note, which is the last thing a line carries.
+    /// Says what it will do to the day: the work the line crosses and what is left of it, so an
+    /// interruption over planned work is visible before Enter rather than after it. A line that is
+    /// already whole is told what it can still take: the note, which is the last thing a line carries.
     /// </summary>
     private void UpdateGuide()
     {
@@ -770,8 +770,8 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
             : $"next: {EntryGuide.Label(step, EntryText, lastEnd)}";
 
         var parse = EntryCommandParser.Parse(EntryText, Day, _local.Ledger.State.EndOfLast);
-        Validation = parse.Succeeded && _composer.Preview(parse.Command!) is { Count: > 0 } conflicts
-            ? string.Join("; ", conflicts)
+        Preview = parse.Succeeded && _composer.Yielded(parse.Command!) is { Count: > 0 } taking
+            ? string.Join("; ", taking)
             : null;
     }
 

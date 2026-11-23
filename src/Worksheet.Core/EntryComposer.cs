@@ -10,6 +10,9 @@ public sealed record ComposeResult(Entry? Entry, IReadOnlyList<string> Problems)
 {
     public bool Created => Entry is not null;
 
+    /// <summary>What the day gave up for the entry: the work it crossed and what is left of it.</summary>
+    public IReadOnlyList<string> Yielded { get; init; } = [];
+
     public static ComposeResult Refused(params string[] problems) => new(null, problems);
 }
 
@@ -32,11 +35,11 @@ public sealed class EntryComposer(Ledger ledger)
 
         ledger.Commit(plan.Changes, ChangeOrigin.User);
 
-        return new ComposeResult(entry, []);
+        return new ComposeResult(entry, []) { Yielded = plan.Yielded };
     }
 
     /// <summary>What composing a line would write, or why it cannot be written at all.</summary>
-    private sealed record Plan(Entry? Entry, List<LedgerEvent> Changes, List<string> Problems);
+    private sealed record Plan(Entry? Entry, List<LedgerEvent> Changes, List<string> Problems, IReadOnlyList<string> Yielded);
 
     /// <summary>The project and topic a line names, opened where they are new.</summary>
     private sealed record Named(Guid ProjectId, Guid? TopicId);
@@ -53,25 +56,31 @@ public sealed class EntryComposer(Ledger ledger)
 
         if (DayRefusal(command.Date) is { } refusal)
         {
-            return new Plan(null, changes, [refusal]);
+            return new Plan(null, changes, [refusal], []);
         }
 
         if (NamesOf(command.Project, command.Topic, BreakTopic.Refused, changes, problems) is not { } names)
         {
-            return new Plan(null, changes, problems);
+            return new Plan(null, changes, problems, []);
         }
 
         var entry = EntryOf(command, names.ProjectId, names.TopicId);
-        var refusals = Refusals(entry);
+        var refusals = ShapeRefusals(entry).ToList();
 
         if (refusals.Count > 0)
         {
-            return new Plan(null, changes, refusals);
+            return new Plan(null, changes, refusals, []);
         }
 
+        // The day gives way to the line before the line joins it, so that the work it crosses never
+        // shares a minute with it and undoing the entry first leaves the day as it now reads.
+        var taken = DaySlot.Of(entry);
+        var crossed = Crossed(entry.Date, taken).ToList();
+
+        changes.AddRange(Yielding(crossed, taken));
         changes.Add(new EntryLogged(entry));
 
-        return new Plan(entry, changes, problems);
+        return new Plan(entry, changes, problems, [.. crossed.Select(other => GivingWay(other, taken))]);
     }
 
     /// <summary>What a break does with a topic: a line refuses it, because the brackets were typed.</summary>
@@ -144,9 +153,7 @@ public sealed class EntryComposer(Ledger ledger)
             Note = command.Note,
         };
 
-    /// <summary>Why the ledger cannot hold this entry: its shape, then the day it has to fit into.</summary>
-    private List<string> Refusals(Entry entry) => [.. ShapeRefusals(entry), .. Conflicts(entry)];
-
+    /// <summary>Why the ledger cannot hold this entry: its own shape, and nothing else.</summary>
     private static IEnumerable<string> ShapeRefusals(Entry entry)
     {
         if (entry.Duration < TimeSpan.Zero)
@@ -161,10 +168,11 @@ public sealed class EntryComposer(Ledger ledger)
     }
 
     /// <summary>
-    /// Whether a line would be refused for intersecting the day, without writing anything. The
-    /// window uses it to complain while the line is being typed rather than after Enter.
+    /// What a line would take away from the day, in the words a person reads: the work it crosses
+    /// and what is left of it. Nothing is written, so the window can say it while the line is still
+    /// being typed.
     /// </summary>
-    public IReadOnlyList<string> Preview(EntryCommand command)
+    public IReadOnlyList<string> Yielded(EntryCommand command)
     {
         ArgumentNullException.ThrowIfNull(command);
 
@@ -173,17 +181,74 @@ public sealed class EntryComposer(Ledger ledger)
             return [];
         }
 
-        var probe = new Entry
+        var taken = new DaySlot(command.Start.ToTimeSpan(), command.Start.ToTimeSpan() + command.Duration);
+
+        return [.. Crossed(command.Date, taken).Select(other => GivingWay(other, taken))];
+    }
+
+    /// <summary>The entries already on the day that share a minute with the range a line writes.</summary>
+    private IEnumerable<Entry> Crossed(DateOnly day, DaySlot taken) =>
+        ledger.State.EntriesOn(day)
+            .Where(other => other.Duration > TimeSpan.Zero && DaySlot.Of(other).Overlaps(taken));
+
+    /// <summary>
+    /// What the day writes instead of crossing work: an entry keeps the minutes the line does not
+    /// take, and one the line covers whole goes off the day. Every change commits with the entry.
+    /// </summary>
+    private static IEnumerable<LedgerEvent> Yielding(IEnumerable<Entry> crossed, DaySlot taken)
+    {
+        foreach (var other in crossed)
         {
-            Id = EntryId.Create(),
-            ProjectId = Guid.Empty,
-            Date = command.Date,
-            Start = command.Start,
-            Duration = command.Duration,
+            var pieces = DaySlot.Of(other).Minus(taken);
+
+            if (pieces.Count == 0)
+            {
+                yield return new EntryRetracted(other);
+                continue;
+            }
+
+            yield return new EntryRevised(other, Piece(other, pieces[0]));
+
+            foreach (var piece in pieces.Skip(1))
+            {
+                yield return new EntryLogged(Piece(other with { Id = EntryId.Create() }, piece));
+            }
+        }
+    }
+
+    /// <summary>An entry as one of the pieces left of it: the same work on a shorter stretch.</summary>
+    private static Entry Piece(Entry entry, DaySlot piece) =>
+        entry with
+        {
+            Start = piece.StartsAt,
+            Duration = piece.Duration,
         };
 
-        return Conflicts(probe);
+    /// <summary>What one crossed entry becomes, in the words the hint and a tool answer use.</summary>
+    private string GivingWay(Entry other, DaySlot taken)
+    {
+        var pieces = DaySlot.Of(other).Minus(taken);
+
+        return pieces.Count switch
+        {
+            0 => $"covers {Labelled(other)}",
+            1 => $"trims {Labelled(other)} to {Span(pieces[0])}",
+            _ => $"splits {Labelled(other)} into {Span(pieces[0])} and {Span(pieces[1])}",
+        };
     }
+
+    /// <summary>A stretch of the day as a line writes it.</summary>
+    private static string Span(DaySlot piece) => $"{ClockText.Format(piece.StartsAt)}-{ClockText.Format(piece.EndsAt)}";
+
+    /// <summary>An entry named as a sentence names it: the work, then the clocks it covers.</summary>
+    private string Labelled(Entry entry) =>
+        $"{LabelOf(entry)} {ClockText.Format(entry.Start)}-{ClockText.Format(entry.End)}";
+
+    /// <summary>The work an entry holds, as a row or a page names it: the project, and its topic.</summary>
+    private string LabelOf(Entry entry) =>
+        ledger.State.TopicName(entry.TopicId) is { } topic
+            ? $"{ledger.State.ProjectName(entry.ProjectId)} ({topic})"
+            : ledger.State.ProjectName(entry.ProjectId);
 
     /// <summary>Retracts an entry, keeping its whole content in the journal so that undo can restore it.</summary>
     public ComposeResult Retract(EntryId id)
@@ -420,8 +485,10 @@ public sealed class EntryComposer(Ledger ledger)
             : $"{day:ddd d MMMM} is marked {DayKinds.LabelOf(ledger.State.KindOf(day))}; set the day to Working day first.";
 
     /// <summary>
-    /// The day is a sequence, so two entries may not share a minute. Each conflict names the entry
-    /// that is already there, because "overlaps something" is not something a person can act on.
+    /// Why a correction cannot be written: a range corrected over another is refused, because a row
+    /// says what one stretch is, and minutes are taken from another block by logging an interruption.
+    /// Each conflict names the entry that is already there, because "overlaps something" is not
+    /// something a person can act on.
     /// </summary>
     private List<string> Conflicts(Entry entry, EntryId? ignore = null)
     {
@@ -441,14 +508,7 @@ public sealed class EntryComposer(Ledger ledger)
     private static bool IsDifferentAndOverlapping(Entry other, Entry entry, EntryId? ignore) =>
         other.Duration != TimeSpan.Zero && other.Id != ignore && Overlaps(other, entry);
 
-    private string DescribeConflict(Entry other)
-    {
-        var project = ledger.State.ProjectName(other.ProjectId);
-        var topic = ledger.State.TopicName(other.TopicId);
-        var label = topic is null ? project : $"{project} ({topic})";
-
-        return $"intersects {label} {other.Start:HH:mm}-{other.End:HH:mm}";
-    }
+    private string DescribeConflict(Entry other) => $"intersects {Labelled(other)}";
 
     private static bool Overlaps(Entry left, Entry right) =>
         left.Start.ToTimeSpan() < right.Start.ToTimeSpan() + right.Duration

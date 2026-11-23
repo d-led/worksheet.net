@@ -88,10 +88,14 @@ and records decisions; it is not a description of any other program's source.
 ## Rules the application enforces
 
 - An entry is entirely within one day. A range that crosses midnight is refused.
-- A day is a sequence: no two entries may share a minute. An entry that would
-  intersect another is refused, and the refusal names the entry it would run
-  into, so the person can see what is already there. The same project may be
-  used as often as the day needs, as long as the ranges do not intersect.
+- A day is a sequence: no two entries share a minute. A line that crosses work
+  already on the day — an interruption is the same minutes described by newer
+  news — takes those minutes: the work it crosses is trimmed, split around the
+  line when the line lands in its middle, or taken off the day when it is covered
+  whole. The preview under the entry box says what will give way before Enter is
+  pressed, and a tool call's answer says what did. A correction is not that: a
+  range corrected over another is refused, and the refusal names the entry it
+  would run into. The same project may be used as often as the day needs.
 - The day is always shown in start order, whatever order the entries were
   logged in.
 - Time that no entry covers is shown as a gap between two entries, with its

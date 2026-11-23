@@ -79,10 +79,19 @@ public sealed class WorksheetTools : IToolkit
     {
         var composed = _composer.Compose(command);
 
-        return composed.Created
-            ? ToolOutcome.Said($"Logged {Reports.Describe(_ledger.State, composed.Entry!)} on {Reports.ShortDate(composed.Entry!.Date)}.")
-            : ToolOutcome.Refused([.. composed.Problems]);
+        if (!composed.Created)
+        {
+            return ToolOutcome.Refused([.. composed.Problems]);
+        }
+
+        var logged = $"Logged {Reports.Describe(_ledger.State, composed.Entry!)} on {Reports.ShortDate(composed.Entry!.Date)}.";
+
+        return ToolOutcome.Said(
+            composed.Yielded.Count == 0 ? logged : $"{logged} {string.Join(" ", composed.Yielded.Select(Sentence))}");
     }
+
+    /// <summary>What a line took from the day, as a sentence that follows the answer.</summary>
+    private static string Sentence(string statement) => $"{char.ToUpperInvariant(statement[0])}{statement[1..]}.";
 
     /// <summary>A line that is only a note belongs to the range the day ended with, as it does in the window.</summary>
     private ToolOutcome Note(NoteParse note, DateOnly day)
@@ -231,6 +240,9 @@ public sealed class WorksheetTools : IToolkit
             + "A line may leave its start out — 'Client portal till 16:00', 'Client portal for 1h30m' — "
             + "or keep its place with '--', as in 'Client portal -- 1h30m', "
             + "and then begins where the last range of that day ended. "
+            + "A line that crosses work already on the day is how an interruption is entered: it takes "
+            + "those minutes, and the work keeps what it does not take — trimmed, split around the line, "
+            + "or taken off the day — and the answer says what gave way. "
             + "One call records one range: a day of four ranges is four calls. "
             + "A line may name its own day ('3.11. Reading 14:00 45m'); otherwise date is the day it belongs to. "
             + "A note is written after the range, with or without a '#': 'Reading 14:00 45m # the LiteDB paper'. "
