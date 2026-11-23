@@ -1,36 +1,51 @@
 name: publish-choco
 
-# Resubmits an already-released version to community.chocolatey.org, without cutting a new release.
-# Needed when moderation asks for a packaging change (a different icon URL, say) and the same
-# version has to go in again: the released executable, its URL and its checksum stay untouched,
-# and only the templates in packaging/chocolatey/ are re-applied from the current branch.
+# Publishes a packaging fix of an already-released version to community.chocolatey.org, without
+# cutting a new release: the released folder build, its URL and its checksum stay untouched, and
+# only the templates in packaging/chocolatey/ are re-applied from the current branch.
+#
+# The package carries Chocolatey's package fix notation — the version it installs, then the day
+# the package was fixed (0.2.3.20261123 installs 0.2.3). It has to: community.chocolatey.org
+# refuses a version it already holds, so a packaging change (moderation asking for a different
+# icon, say) cannot go in under the release's own version.
+#
+# The release has to carry worksheet-win-x64.zip — the folder build the package installs — which
+# releases from 0.2.3 on do.
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: Released version to resubmit, without the v prefix (e.g. 0.1.0)
+        description: Released version whose package is being fixed, without the v prefix (e.g. 0.2.3)
         required: true
+      fix:
+        description: Day of this fix, YYYYMMDD. The package becomes <version>.<day>. Today (UTC) when empty.
+        required: false
 
 permissions:
   contents: read
 
 jobs:
   publish-choco:
-    name: Resubmit the Chocolatey package
+    name: Publish the Chocolatey package fix
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Take the released executable
+      - name: Take the released folder build
         shell: bash
         run: |
           set -euo pipefail
           version="${{ inputs.version }}"
-          url="https://github.com/d-led/worksheet.net/releases/download/v${version}/worksheet-win-x64.exe"
+          day="${{ inputs.fix }}"
+          if [ -z "$day" ]; then day="$(date -u +%Y%m%d)"; fi
+          url="https://github.com/d-led/worksheet.net/releases/download/v${version}/worksheet-win-x64.zip"
           mkdir -p artifacts
-          curl -fsSL -o artifacts/worksheet-win-x64.exe "$url"
-          echo "url=${url}" >> "$GITHUB_ENV"
-          echo "sha256=$(sha256sum artifacts/worksheet-win-x64.exe | awk '{print $1}')" >> "$GITHUB_ENV"
+          curl -fsSL -o artifacts/worksheet-win-x64.zip "$url"
+          {
+            echo "url=${url}"
+            echo "sha256=$(sha256sum artifacts/worksheet-win-x64.zip | awk '{print $1}')"
+            echo "package_version=${version}.${day}"
+          } >> "$GITHUB_ENV"
 
       - name: Pack and push
         env:
@@ -43,7 +58,7 @@ jobs:
             exit 1
           fi
           version="${{ inputs.version }}"
-          VERSION="${version}" URL="${url}" SHA256="${sha256}" \
+          VERSION="${version}" PACKAGE_VERSION="${package_version}" URL="${url}" SHA256="${sha256}" \
             bash scripts/generate-chocolatey-package.sh
-          choco push "dist/choco/worksheet.net.${version}.nupkg" \
+          choco push "dist/choco/worksheet.net.${package_version}.nupkg" \
             --source https://push.chocolatey.org/ --api-key "${CHOCOLATEY_API_KEY}"

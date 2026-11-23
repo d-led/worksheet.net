@@ -42,6 +42,11 @@ Unzip and run it: `chmod +x worksheet-*` on macOS and Linux, a double-click on W
 a downloaded binary until the quarantine flag is off; the installer clears it, and
 `xattr -d com.apple.quarantine worksheet-osx-arm64` does the same by hand.
 
+On a release, Windows x64 also carries the same application as a folder of files,
+`worksheet-win-x64.zip` — that is what the Chocolatey package installs, and it is the one to take
+if a virus scanner makes trouble over the single file with the runtime appended. It unzips to
+`worksheet.exe` beside the rest, and starts the same way.
+
 ## Log a day
 
 One line records one time range. Type it, press Enter.

@@ -158,7 +158,8 @@ A tag is what makes a version. `build.yml` builds every platform, the `release` 
 six binaries to the tag, and two more jobs turn those immutable assets into packages — a URL that
 never changes, beside the sha256 of exactly the file behind it, is all a package manager asks for.
 The tag is also the version the binaries carry: the package job passes it as `-p:Version`, so what
-Chocolatey installs and what the application reports over MCP cannot disagree.
+Chocolatey installs and what the application reports over MCP cannot disagree. The package's own
+version may add a fourth part for a packaging fix, which the application never sees.
 
 The whole of it starts with one command — `scripts/release.sh patch` (or `minor`, `major`,
 `set 1.2.3`), which refuses a dirty tree, runs the tests, writes the version into
@@ -175,14 +176,20 @@ would do; `--yes` skips the confirmation. Pushing the tag is the release.
   packs `worksheet.net.<version>.nupkg`; the job pushes it to community.chocolatey.org with
   `CHOCOLATEY_API_KEY`. Without the key the job is skipped, so a fork, or a checkout with no
   secret, still releases. `choco` exists only on Windows, which is why that job runs on
-  `windows-latest`. The install script downloads the single executable into the package's tools
-  folder and lets Chocolatey shim it; the `worksheet.exe.gui` file beside it says the shim must not
-  wait for a window. The iconURL comes from jsDelivr rather than raw.githubusercontent.com, which
-  the community repository rejects. A new package is moderated before anyone can install it.
+  `windows-latest`. The install script unpacks the release's folder build into the package's tools
+  folder and lets Chocolatey shim the executable it finds there; the `worksheet.exe.gui` file
+  beside it says the shim must not wait for a window. The iconURL comes from jsDelivr rather than
+  raw.githubusercontent.com, which the community repository rejects. A new package is moderated
+  before anyone can install it.
 
-Re-submitting the same version with a packaging fix — moderation asking for a different icon, say
-— is `.github/workflows/publish-choco.yml`, run by hand with the released version: it takes the
-already-released executable, so the tag and its checksums stay untouched.
+A packaging fix of a version that is already out goes in as `.github/workflows/publish-choco.yml`,
+run by hand with the released version: it takes the release's folder build, so the tag and its
+checksums stay untouched. The package cannot go in under the same version — community.chocolatey.org
+refuses a version it already holds — so it carries Chocolatey's
+[package fix notation](https://guides.inedo.com/chocolatey-enterprise/versioning/): the version it
+installs, then the day it was fixed, `0.2.3.20261123`. The fourth part is never normalized away
+only because it is not zero, which a date cannot be. The package's description says the same thing
+in words, so nobody has to work out what the fourth part means.
 
 ## Packaging into a screenshot
 
@@ -223,7 +230,10 @@ layout moved.
 - **test** — `ubuntu-latest`, `windows-latest`, `macos-latest`, `dotnet test Worksheet.slnx`,
   and the frames the UI tests drew, kept as an artefact per platform
 - **package** — one job per RID, each published on its own operating system, then asserted to
-  contain exactly one file, renamed to `worksheet-<rid>[.exe]` so all five can share a release
+  contain exactly one file, renamed to `worksheet-<rid>[.exe]` so all five can share a release;
+  Windows x64 also builds the same application as a folder of files, zipped as
+  `worksheet-win-x64.zip`, because a folder is the shape Chocolatey installs and a bundle with the
+  runtime appended is the shape a scanner flags
 - **release** — on a `v*` tag, downloads every artifact and attaches it with `gh release create`
 
 Packaging waits for both `test` and `quality`, so nothing is published from a tree that fails
