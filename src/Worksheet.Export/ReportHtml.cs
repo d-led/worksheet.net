@@ -502,18 +502,19 @@ public static class ReportHtml
             : string.Empty;
 
     /// <summary>
-    /// The table of days, striped so a row is followed across its projects without losing the line:
-    /// the columns are narrow and the names are at the far end, so a plain table of days is a grid to
-    /// the eye. Bootstrap's own stripe is a shade of the ink rather than a colour, so the table still
-    /// reads in a dark browser without a second stylesheet. A range that holds nothing says so rather
-    /// than listing every day of it as a day off.
+    /// The table of days, striped so a row is followed across its projects without losing the line,
+    /// and no wider than what it holds: a table stretched to the card would leave the day at one
+    /// edge and the last project at the other, and a row read across would be a journey. Bootstrap's
+    /// own stripe is a shade of the ink rather than a colour, so the table still reads in a dark
+    /// browser without a second stylesheet. A range that holds nothing says so rather than listing
+    /// every day of it as a day off.
     /// </summary>
     private static string DaysByProject(RangeReport report) =>
         report.Days.Count == 0
             ? NothingLogged
             : $"""
                <div class="table-responsive">
-                 <table class="table table-sm table-striped align-middle mb-0">
+                 <table class="table table-sm table-striped align-middle mb-0 w-auto">
                    <thead><tr><th scope="col">Day</th>{string.Concat(report.Projects.Select(project => $"<th scope=\"col\" class=\"text-end\">{Esc(project.Project)}</th>"))}<th scope="col" class="text-end">Working time</th></tr></thead>
                    <tbody>
                {Rows(report.EveryDay.Select(day => DayRow(report, day)))}  </tbody>
