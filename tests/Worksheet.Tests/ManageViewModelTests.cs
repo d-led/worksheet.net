@@ -93,35 +93,38 @@ public sealed class ManageViewModelTests
     }
 
     [Fact]
-    public void The_row_being_typed_says_what_enter_would_do_and_that_nothing_is_saved_yet()
-    {
-        var panel = Opened();
-        var website = Row(panel, "Website");
-
-        Typed(website, "Client portal");
-
-        Assert.Equal("Not saved yet — Enter renames 'Website' to 'Client portal'.", website.Proposal);
-    }
-
-    [Fact]
-    public void Only_the_row_being_typed_carries_the_hint()
+    public void The_list_being_typed_under_says_what_enter_would_do_and_that_nothing_is_saved_yet()
     {
         var panel = Opened();
 
         Typed(Row(panel, "Website"), "Client portal");
 
-        Assert.Null(Row(panel, "Mobile").Proposal);
+        Assert.Equal("Not saved yet — Enter renames 'Website' to 'Client portal'.", panel.ProjectNote);
+        Assert.Null(panel.TopicNote);
     }
 
     [Fact]
-    public void An_empty_name_is_refused_in_the_hint_rather_than_at_enter()
+    public void A_note_belongs_to_the_list_of_the_name_being_typed()
     {
         var panel = Opened();
-        var website = Row(panel, "Website");
+        panel.SelectedProject = Row(panel, "Website");
 
-        Typed(website, "  ");
+        Typed(panel.Topics.Single(topic => topic.Name == "login"), "sign-in");
 
-        Assert.Equal("Not saved yet — Enter will refuse it: a project needs a name.", website.Proposal);
+        Assert.Null(panel.ProjectNote);
+        Assert.Equal("Not saved yet — Enter renames 'login' to 'sign-in'.", panel.TopicNote);
+    }
+
+    [Fact]
+    public void An_empty_name_is_refused_in_the_note_rather_than_at_enter()
+    {
+        var panel = Opened();
+
+        Typed(Row(panel, "Website"), "  ");
+
+        Assert.Equal(
+            "Not saved yet — Enter will refuse it: a project needs a name.",
+            panel.ProjectNote);
     }
 
     [Fact]
@@ -145,24 +148,23 @@ public sealed class ManageViewModelTests
     public void A_name_that_is_already_there_is_announced_as_a_merge()
     {
         var panel = Opened();
-        var website = Row(panel, "Website");
 
-        Typed(website, "mobile");
+        Typed(Row(panel, "Website"), "mobile");
 
         Assert.Equal(
             "Not saved yet — Enter merges 'Website' into 'Mobile'; its 2 entries · 1h30m move there.",
-            website.Proposal);
+            panel.ProjectNote);
     }
 
     [Fact]
     public void A_row_left_as_it_was_says_nothing()
     {
         var panel = Opened();
-        var website = Row(panel, "Website");
 
-        Typed(website, "Website");
+        Typed(Row(panel, "Website"), "Website");
 
-        Assert.Null(website.Proposal);
+        Assert.Null(panel.ProjectNote);
+        Assert.False(panel.HasProjectNote);
     }
 
     [Fact]
@@ -178,6 +180,7 @@ public sealed class ManageViewModelTests
         Assert.Equal("Website", website.Draft);
         Assert.Equal(before, _ledger.Version);
         Assert.Null(panel.Message);
+        Assert.Null(panel.ProjectNote);
     }
 
     [Fact]
@@ -231,24 +234,12 @@ public sealed class ManageViewModelTests
         Typed(login, "Reports");
         Assert.Equal(
             "Not saved yet — Enter merges 'login' into 'reports'; its 1 entry · 1h move there.",
-            login.Proposal);
+            panel.TopicNote);
 
         login.CommitCommand.Execute(null);
 
         Assert.Equal(["reports"], Names(panel.Topics));
         Assert.Equal("'login' merged into 'reports'; its 1 entry · 1h moved there.", panel.Message);
-    }
-
-    [Fact]
-    public void A_topic_row_says_it_would_rename_a_topic()
-    {
-        var panel = Opened();
-        panel.SelectedProject = Row(panel, "Website");
-        var login = panel.Topics.Single(topic => topic.Name == "login");
-
-        Typed(login, "sign-in");
-
-        Assert.Equal("Not saved yet — Enter renames 'login' to 'sign-in'.", login.Proposal);
     }
 
     [Fact]

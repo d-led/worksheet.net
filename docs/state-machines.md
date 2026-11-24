@@ -160,10 +160,10 @@ was taken on this row). **States of the whole panel:** `Quiet` (no message), `Re
 
 | From | Event | To |
 | --- | --- | --- |
-| Unchanged | `Draft` changes | Changed; the row says beside the name what Enter would do, and that nothing is written yet |
+| Unchanged | `Draft` changes | Changed; the panel says in a note under that list what Enter would do, and that nothing is written yet |
 | Changed | Enter or leaving the field | Settled, if the panel took the name |
 | Changed | Enter or leaving the field, refused | Still able to take another name |
-| Changed | Escape | Unchanged: the journal's name comes back, and the note beside it goes |
+| Changed | Escape | Unchanged: the journal's name comes back, and the note goes |
 | Done | the panel refreshes | fresh rows, all Unchanged |
 
 **Invariants:** a name is written by one decision (`Catalogue`), never by the row; the panel

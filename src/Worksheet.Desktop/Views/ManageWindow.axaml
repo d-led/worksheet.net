@@ -13,36 +13,29 @@
 
   <!--
     Every row carries its own name, so renaming is typing into the row and pressing Enter: no second
-    box, no dialog and no confirmation step. The note under the name says what Enter will do while the
-    name is still being typed — and that nothing is written until then — which is what makes a merge,
-    the same keystroke with one name fewer, something a person chooses rather than something that
-    happens to them.
+    box, no dialog and no confirmation step. A bubble at the foot of the list says what Enter will do
+    while the name is still being typed — and that nothing is written until then — which is what makes
+    a merge, the same keystroke with one name fewer, something a person chooses rather than something
+    that happens to them.
   -->
   <local:SecondaryWindow.Resources>
     <!--
-      One row, one template: the name in a field of its own, with the sentence about what Enter would
-      do in a note right beside it — nothing is written until the key is pressed — then what the row
-      holds and the word that takes it out of the catalogue. "Archive" on a project, "Remove" on a
-      topic: the same decision, named for what a person is looking at.
+      One row, one template: the name in a field of its own, then what the row holds and the word
+      that takes it out of the catalogue. "Archive" on a project, "Remove" on a topic: the same
+      decision, named for what a person is looking at.
     -->
     <DataTemplate x:Key="NameRow" x:DataType="vm:CatalogueRow">
       <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,2">
-        <StackPanel Grid.Column="0" Spacing="4">
-          <TextBox x:Name="NameField"
-                   Classes="cell"
-                   Text="{Binding Draft}"
-                   GotFocus="Row_Focused"
-                   LostFocus="Row_Left">
-            <TextBox.KeyBindings>
-              <KeyBinding Gesture="Enter" Command="{Binding CommitCommand}" />
-            </TextBox.KeyBindings>
-          </TextBox>
-          <Border Classes="bubble"
-                  IsVisible="{Binding HasProposal}"
-                  HorizontalAlignment="Left">
-            <TextBlock Classes="quiet" Text="{Binding Proposal}" TextWrapping="Wrap" />
-          </Border>
-        </StackPanel>
+        <TextBox Grid.Column="0"
+                 x:Name="NameField"
+                 Classes="cell"
+                 Text="{Binding Draft}"
+                 GotFocus="Row_Focused"
+                 LostFocus="Row_Left">
+          <TextBox.KeyBindings>
+            <KeyBinding Gesture="Enter" Command="{Binding CommitCommand}" />
+          </TextBox.KeyBindings>
+        </TextBox>
         <TextBlock Grid.Column="1"
                    Classes="quiet"
                    Text="{Binding Holds}"
@@ -58,7 +51,7 @@
   </local:SecondaryWindow.Resources>
 
   <Border Classes="page" Padding="20">
-    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,*,Auto" RowSpacing="8">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*,Auto" RowSpacing="8">
 
       <TextBlock Grid.Row="0" Classes="title" Text="Projects and topics" />
 
@@ -74,21 +67,46 @@
                ItemsSource="{Binding Projects}"
                SelectedItem="{Binding SelectedProject}"
                ItemTemplate="{StaticResource NameRow}"
+               MaxHeight="220"
                Background="Transparent"
                BorderThickness="0"
                ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
 
-      <TextBlock Grid.Row="4" Classes="caption" Text="TOPICS OF THE CHOSEN PROJECT" />
+      <!--
+        What Enter would do with the name being typed, in a bubble at the foot of the list it is in:
+        a name is settled where it stands, so the sentence that makes a rename or a merge visible
+        before the key is pressed has to stand where the typing is.
+      -->
+      <Border x:Name="ProjectNote"
+              Grid.Row="4"
+              Classes="bubble"
+              IsVisible="{Binding HasProjectNote}"
+              HorizontalAlignment="Left"
+              MaxWidth="560">
+        <TextBlock Classes="quiet" Text="{Binding ProjectNote}" TextWrapping="Wrap" />
+      </Border>
+
+      <TextBlock Grid.Row="5" Classes="caption" Text="TOPICS OF THE CHOSEN PROJECT" />
 
       <ListBox x:Name="TopicList"
-               Grid.Row="5"
+               Grid.Row="6"
                ItemsSource="{Binding Topics}"
                ItemTemplate="{StaticResource NameRow}"
+               MaxHeight="180"
                Background="Transparent"
                BorderThickness="0"
                ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
 
-      <Grid Grid.Row="6" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+      <Border x:Name="TopicNote"
+              Grid.Row="7"
+              Classes="bubble"
+              IsVisible="{Binding HasTopicNote}"
+              HorizontalAlignment="Left"
+              MaxWidth="560">
+        <TextBlock Classes="quiet" Text="{Binding TopicNote}" TextWrapping="Wrap" />
+      </Border>
+
+      <Grid Grid.Row="9" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
         <TextBlock x:Name="Message"
                    Grid.Column="0"
                    Classes="meta"

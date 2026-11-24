@@ -5,6 +5,7 @@
 
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
@@ -57,17 +58,13 @@ public sealed class ManageWindowTests
             .OfType<TextBox>()
             .Single(field => field.DataContext is CatalogueRow row && row.Name == name);
 
-    /// <summary>The hint beside one row's name, found the way a person sees it: next to the field.</summary>
-    private static Border Bubble(Window window, string list, string name) =>
-        window.FindControl<ListBox>(list)!
-            .GetVisualDescendants()
-            .OfType<Border>()
-            .Single(border => border.Classes.Contains("bubble")
-                && border.DataContext is CatalogueRow row && row.Name == name);
+    /// <summary>The bubble at the foot of a list, where what Enter would do is said.</summary>
+    private static Border Note(Window window, string name) =>
+        window.FindControl<Border>(name)!;
 
-    /// <summary>What the hint beside a row says, or nothing while it says nothing.</summary>
-    private static string? Hint(Window window, string list, string name) =>
-        Bubble(window, list, name).GetVisualDescendants().OfType<TextBlock>().Single().Text;
+    /// <summary>What that bubble says, or nothing while it says nothing.</summary>
+    private static string? Hint(Window window, string name) =>
+        Note(window, name).Child is TextBlock note ? note.Text : null;
 
     private static IEnumerable<T> Descendants<T>(Visual root) => root.GetVisualDescendants().OfType<T>();
 
@@ -133,17 +130,24 @@ public sealed class ManageWindowTests
         using var temp = new TempDirectory("worksheet-manage-window");
 
         var window = Opened(temp, out var local);
-        var bubble = Bubble(window, "ProjectList", "Mobile");
 
-        Assert.False(bubble.IsVisible);
+        Assert.False(Note(window, "ProjectNote").IsVisible);
 
         Type(window, Field(window, "ProjectList", "Mobile"), "website");
 
-        Assert.True(bubble.IsVisible);
+        Assert.True(Note(window, "ProjectNote").IsVisible);
         Assert.Equal(
             "Not saved yet — Enter merges 'Mobile' into 'Website'; its 1 entry · 1h move there.",
-            Hint(window, "ProjectList", "Mobile"));
+            Hint(window, "ProjectNote"));
+        Assert.False(Note(window, "TopicNote").IsVisible);
         Assert.Equal(["Mobile", "Website"], Names(window, "ProjectList"));
+
+        // The bubble is read through the glass too: a control that only says it has text is not drawn.
+        using var shot = Frame.Of(window, Screens.PathFor(GetType().Name, "merge-bubble"));
+        var at = Note(window, "ProjectNote").TranslatePoint(new Point(0, 0), window)!.Value;
+        var note = Note(window, "ProjectNote");
+        var area = new PixelRect((int)at.X, (int)at.Y, (int)note.Bounds.Width, (int)note.Bounds.Height);
+        Assert.True(shot.InkExtent(area) > 100, $"the note drew {shot.InkExtent(area)} wide of {area}");
 
         local.Dispose();
     }
@@ -157,7 +161,16 @@ public sealed class ManageWindowTests
         var field = Field(window, "TopicList", "login");
 
         Type(window, field, "sign-in");
-        Assert.Equal("Not saved yet — Enter renames 'login' to 'sign-in'.", Hint(window, "TopicList", "login"));
+        Assert.Equal("Not saved yet — Enter renames 'login' to 'sign-in'.", Hint(window, "TopicNote"));
+        Assert.False(Note(window, "ProjectNote").IsVisible);
+
+        using (var shot = Frame.Of(window, Screens.PathFor(GetType().Name, "topic-note")))
+        {
+            var at = Note(window, "TopicNote").TranslatePoint(new Point(0, 0), window)!.Value;
+            var note = Note(window, "TopicNote");
+            var area = new PixelRect((int)at.X, (int)at.Y, (int)note.Bounds.Width, (int)note.Bounds.Height);
+            Assert.True(shot.InkExtent(area) > 100, $"the note drew {shot.InkExtent(area)} wide of {area}");
+        }
 
         window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
         Dispatcher.UIThread.RunJobs();
@@ -181,7 +194,7 @@ public sealed class ManageWindowTests
         Dispatcher.UIThread.RunJobs();
 
         Assert.Equal(["Mobile", "Website"], Names(window, "ProjectList"));
-        Assert.False(Bubble(window, "ProjectList", "Website").IsVisible);
+        Assert.False(Note(window, "ProjectNote").IsVisible);
         Assert.True(window.IsVisible);
 
         window.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);

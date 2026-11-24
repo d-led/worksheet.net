@@ -28,6 +28,17 @@ public sealed partial class ManageViewModel : ObservableObject, ICataloguePanel,
     [ObservableProperty]
     private string? _message;
 
+    /// <summary>
+    /// What pressing Enter would do with the project name being typed, said in a note under the
+    /// project list — where the typing is, and where nothing has been written yet.
+    /// </summary>
+    [ObservableProperty]
+    private string? _projectNote;
+
+    /// <summary>The same for a topic name, said under the topics list.</summary>
+    [ObservableProperty]
+    private string? _topicNote;
+
     [ObservableProperty]
     private bool _messageIsProblem;
 
@@ -53,9 +64,17 @@ public sealed partial class ManageViewModel : ObservableObject, ICataloguePanel,
 
     public bool HasMessage => !string.IsNullOrEmpty(Message);
 
+    public bool HasProjectNote => !string.IsNullOrEmpty(ProjectNote);
+
+    public bool HasTopicNote => !string.IsNullOrEmpty(TopicNote);
+
     public bool CanUndo => _ledger.CanUndo;
 
     partial void OnMessageChanged(string? value) => OnPropertyChanged(nameof(HasMessage));
+
+    partial void OnProjectNoteChanged(string? value) => OnPropertyChanged(nameof(HasProjectNote));
+
+    partial void OnTopicNoteChanged(string? value) => OnPropertyChanged(nameof(HasTopicNote));
 
     partial void OnSelectedProjectChanged(CatalogueRow? value) => RefreshTopics();
 
@@ -88,18 +107,21 @@ public sealed partial class ManageViewModel : ObservableObject, ICataloguePanel,
     }
 
     /// <summary>
-    /// The sentence shown beside the name being typed, so Enter holds no surprise: what the key would
-    /// do, said where the typing is and with the fact that nothing has been written yet.
+    /// The sentence shown under the list of the name being typed, so Enter holds no surprise: what
+    /// the key would do, said where the typing is and with the fact that nothing is written yet.
     /// </summary>
     public void Drafting(CatalogueRow row)
     {
         ArgumentNullException.ThrowIfNull(row);
 
-        row.Proposal = !row.IsChanged
+        var note = !row.IsChanged
             ? null
             : string.IsNullOrWhiteSpace(row.Draft)
                 ? $"Not saved yet — Enter will refuse it: a {Word(row)} needs a name."
                 : ForTyping(row, Twin(row, row.Draft));
+
+        ProjectNote = row.IsProject ? note : null;
+        TopicNote = row.IsProject ? null : note;
     }
 
     [RelayCommand]
@@ -182,6 +204,9 @@ public sealed partial class ManageViewModel : ObservableObject, ICataloguePanel,
         // The topics are re-read here as well: dropping a topic leaves its project's count unchanged,
         // so the choice above would not move and the list would keep the row that just went.
         RefreshTopics();
+
+        ProjectNote = null;
+        TopicNote = null;
 
         OnPropertyChanged(nameof(CanUndo));
     }

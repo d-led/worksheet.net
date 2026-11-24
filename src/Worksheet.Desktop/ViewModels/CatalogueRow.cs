@@ -52,13 +52,6 @@ public sealed partial class CatalogueRow : ObservableObject
     [ObservableProperty]
     private string _draft;
 
-    /// <summary>
-    /// What pressing Enter would do with the name being typed, said right beside that name — so a
-    /// rename is visibly a thing that has not happened yet until the key is pressed.
-    /// </summary>
-    [ObservableProperty]
-    private string? _proposal;
-
     public CatalogueRow(
         ICataloguePanel panel,
         CatalogueKind kind,
@@ -104,8 +97,6 @@ public sealed partial class CatalogueRow : ObservableObject
     /// <summary>Whether the field says something other than what the journal holds.</summary>
     public bool IsChanged => !string.Equals(Draft.Trim(), Name.Trim(), StringComparison.OrdinalIgnoreCase);
 
-    public bool HasProposal => !string.IsNullOrEmpty(Proposal);
-
     /// <summary>The word on the button that takes this row out of the catalogue.</summary>
     public string ActionWord => IsProject ? "Archive" : "Remove";
 
@@ -113,8 +104,6 @@ public sealed partial class CatalogueRow : ObservableObject
     public string ActionTip => IsProject
         ? "Stop offering this name; every entry keeps it"
         : "Stop offering this topic; every entry keeps it";
-
-    partial void OnProposalChanged(string? value) => OnPropertyChanged(nameof(HasProposal));
 
     /// <summary>Enter: the typed name becomes the row's, or joins the row that already has it.</summary>
     [RelayCommand]
