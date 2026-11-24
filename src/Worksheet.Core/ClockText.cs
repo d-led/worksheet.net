@@ -10,8 +10,9 @@ namespace Worksheet.Core;
 /// <summary>
 /// One clock reading: <c>9:05</c>, <c>09:05</c>, <c>9:05pm</c> — and the lazy spellings a person
 /// actually types, <c>12:0</c> and <c>4:30</c>. A single digit after the colon is padded, so
-/// <c>12:5</c> is five past twelve rather than ten to one. The framework does the parsing, so the
-/// rules about what a time is (and is not) are the framework's, not ours.
+/// <c>12:5</c> is five past twelve rather than ten to one. The shapes are the framework's; the
+/// hour is checked here, because runtimes disagree about what <c>24:00</c> is and the language
+/// has one answer: not a time.
 /// </summary>
 public static class ClockText
 {
@@ -22,17 +23,27 @@ public static class ClockText
     {
         time = default;
 
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            return false;
-        }
+        var written = UpperDesignator((text ?? string.Empty).Trim());
 
-        return TimeOnly.TryParseExact(
-            UpperDesignator(text.Trim()),
+        return HourTheDayHas(written) && TimeOnly.TryParseExact(
+            written,
             Shapes,
             CultureInfo.InvariantCulture,
             DateTimeStyles.None,
             out time);
+    }
+
+    /// <summary>
+    /// The hour in front of the colon must be one a day has. Some runtimes read <c>24:00</c> as
+    /// midnight instead of refusing it, so the rule is kept rather than borrowed.
+    /// </summary>
+    private static bool HourTheDayHas(string written)
+    {
+        var colon = written.IndexOf(':');
+
+        return colon > 0
+            && int.TryParse(written.AsSpan(0, colon), NumberStyles.None, CultureInfo.InvariantCulture, out var hour)
+            && hour <= 23;
     }
 
     /// <summary>A clock as the entry language writes it.</summary>
