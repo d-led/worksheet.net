@@ -147,6 +147,28 @@ public static partial class EntryGuide
             ? ClockText.Format(TimeOnly.FromTimeSpan(from.ToTimeSpan() + ExampleLength))
             : null;
 
+    /// <summary>
+    /// Something to say instead of the next step, for a line with its two halves the wrong way
+    /// round: a clock written in front of a name is read as the beginning of the name, so a line
+    /// that opens with one is told while it is being written rather than when Enter refuses it.
+    /// A line the grammar already accepts is left alone — a project name may begin with a clock.
+    /// </summary>
+    public static string? Warning(string? text, TimeOnly? continuesFrom = null)
+    {
+        var typed = (text ?? string.Empty).Trim();
+
+        return ClockAtStart().IsMatch(typed) && Written(typed, continuesFrom) != EntryStep.Complete
+            ? MisplacedClock
+            : null;
+    }
+
+    /// <summary>What the warning says: the order the line is written in, shown rather than described.</summary>
+    private const string MisplacedClock = "the project comes first: Website (login) 09:00 1h30m";
+
+    /// <summary>A line that opens with a clock, which the grammar would read as part of the name.</summary>
+    [GeneratedRegex(@"^\d+:", RegexOptions.CultureInvariant)]
+    private static partial Regex ClockAtStart();
+
     [GeneratedRegex(@"\d{1,2}:\d{1,2}", RegexOptions.CultureInvariant)]
     private static partial Regex Clock();
 }

@@ -28,6 +28,7 @@
       <TextBlock x:Name="NextStep"
                  Grid.Column="1"
                  Classes="hint"
+                 Classes.warn="{Binding NextStepIsWarning}"
                  Text="{Binding NextStep}"
                  TextWrapping="Wrap"
                  VerticalAlignment="Center" />

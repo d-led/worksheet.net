@@ -62,6 +62,10 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string _nextStep = string.Empty;
 
+    /// <summary>True while the hint is a warning about the line's order rather than the next step.</summary>
+    [ObservableProperty]
+    private bool _nextStepIsWarning;
+
     /// <summary>What the line as typed will take from the day, said before Enter is pressed.</summary>
     [ObservableProperty]
     private string? _preview;
@@ -775,10 +779,12 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     {
         var lastEnd = _local.Ledger.State.EndOfLast(Day);
         var step = EntryGuide.Next(EntryText, lastEnd);
+        var warning = EntryGuide.Warning(EntryText, lastEnd);
 
-        NextStep = step == EntryStep.Complete
+        NextStepIsWarning = warning is not null;
+        NextStep = warning ?? (step == EntryStep.Complete
             ? EntryGuide.Label(EntryStep.Complete)
-            : $"next: {EntryGuide.Label(step, EntryText, lastEnd)}";
+            : $"next: {EntryGuide.Label(step, EntryText, lastEnd)}");
 
         var parse = EntryCommandParser.Parse(EntryText, Day, _local.Ledger.State.EndOfLast);
         Preview = parse.Succeeded && _composer.Yielded(parse.Command!) is { Count: > 0 } taking

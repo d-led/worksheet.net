@@ -47,6 +47,13 @@ bracket — and is trimmed away: `Website- 09:00 1h`, `Work for- 09:00 1h`,
 in something the line reads as a span. Without it such a name is refused: nothing
 is swallowed into a project name by accident.
 
+A clock in front of the name reads as the beginning of the name, so a line that
+opens with one has its two halves the wrong way round and cannot become an entry.
+The hint under the box says so while the line is still being written, in orange,
+instead of leaving it to Enter: `09:00 Website` is told the project comes first.
+The warning goes as soon as the line reads whole — a project that really begins
+with a clock, `09:00 standup 10:00 1h`, is an entry like any other.
+
 A project with no topic is written without brackets: `Website 09:00 1h30m`. Empty
 brackets — `Website () 09:00 1h30m` — mean the same, so a half-typed topic left behind
 is not a project called `Website ()`.

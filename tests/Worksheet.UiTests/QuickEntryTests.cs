@@ -162,6 +162,38 @@ public sealed class QuickEntryTests : UiTestBase
     }
 
     [AvaloniaFact]
+    public void A_line_that_opens_with_a_clock_is_warned_about_before_enter()
+    {
+        var day = NewDay();
+        var entry = Show<QuickEntry>(day);
+        var box = entry.FindControl<TextBox>("EntryBox")!;
+        var hint = entry.FindControl<TextBlock>("NextStep")!;
+
+        box.Focus();
+        Window.KeyTextInput("09:00");
+        Settle();
+
+        Assert.Equal("the project comes first: Website (login) 09:00 1h30m", hint.Text);
+        Assert.Contains("warn", hint.Classes);
+    }
+
+    [AvaloniaFact]
+    public void The_warning_goes_once_the_project_is_written_in_front_of_the_clock()
+    {
+        var day = NewDay();
+        var entry = Show<QuickEntry>(day);
+        var box = entry.FindControl<TextBox>("EntryBox")!;
+        var hint = entry.FindControl<TextBlock>("NextStep")!;
+
+        box.Focus();
+        Window.KeyTextInput("Website 09:00 1h");
+        Settle();
+
+        Assert.Equal("press Enter, or \"#\" and a note", hint.Text);
+        Assert.DoesNotContain("warn", hint.Classes);
+    }
+
+    [AvaloniaFact]
     public void A_note_of_its_own_notes_the_range_the_day_ended_with()
     {
         var day = NewDay();

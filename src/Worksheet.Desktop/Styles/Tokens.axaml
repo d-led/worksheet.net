@@ -85,6 +85,26 @@
     <Setter Property="Foreground" Value="{DynamicResource MutedInkBrush}" />
   </Style>
 
+  <!--
+    The hint turns to a warning when the line has its two halves the wrong way round — a clock
+    before the project. It is the one place an orange is used: a caution, not a failure.
+  -->
+  <Style Selector="TextBlock.hint.warn">
+    <Setter Property="Foreground" Value="{DynamicResource WarnBrush}" />
+  </Style>
+
+  <!--
+    A note beside a name the person is typing: close to the field it is about, so what Enter would do
+    is read where the typing is rather than at the foot of the window.
+  -->
+  <Style Selector="Border.bubble">
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Padding" Value="8,3" />
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
   <Style Selector="TextBlock.gap-span">
     <Setter Property="FontSize" Value="14" />
     <Setter Property="Foreground" Value="{DynamicResource MutedInkBrush}" />

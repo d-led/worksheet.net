@@ -146,5 +146,28 @@ public sealed class EntryGuideTests
     [InlineData("web --", "a length, e.g. 1h30m, or an end, e.g. 13:30")]
     public void An_end_example_with_no_day_to_build_one_from_is_a_plain_clock(string typed, string expected) =>
         Assert.Equal(expected, EntryGuide.Label(EntryStep.Span, typed));
+
+    [Theory]
+    [InlineData("09:00")]
+    [InlineData("9:")]
+    [InlineData("9:00 Website")]
+    [InlineData("  12:0-13:00  ")]
+    [InlineData("09:00 1h")]
+    public void A_line_that_opens_with_a_clock_is_told_the_project_comes_first(string typed) =>
+        Assert.Equal(
+            "the project comes first: Website (login) 09:00 1h30m",
+            EntryGuide.Warning(typed));
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("web")]
+    [InlineData("web 09:00 1h")]
+    // A project name may begin with a clock; a line the grammar reads whole is left alone.
+    [InlineData("09:00 Website 10:00 1h")]
+    [InlineData("3.11. Reading 14:00 45m")]
+    [InlineData("# review 09:00")]
+    public void A_line_in_the_order_the_grammar_asks_for_is_not_warned_about(string? typed) =>
+        Assert.Null(EntryGuide.Warning(typed));
 }
 
