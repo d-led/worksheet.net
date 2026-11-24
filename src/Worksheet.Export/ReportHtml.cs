@@ -169,7 +169,7 @@ public static class ReportHtml
         Table(
             ["Project"],
             Rows(LargestFirst(report.Projects).Select(project => BarRow(report, [project.Project], project.Minutes, project.Project))),
-            $"""<tr class="table-light fw-semibold"><td>Total</td><td class="text-end">{Esc(Shares.Hours(report.TotalMinutes))}</td><td></td><td class="text-end">100.0 %</td></tr>""");
+            $"""<tr class="table-light fw-semibold"><td>Total</td><td class="text-end">{Esc(Shares.Hours(report.TotalMinutes))}</td><td class="text-end">100.0 %</td><td></td></tr>""");
 
     private static string TopicCard(RangeReport report) =>
         $"""
@@ -206,18 +206,23 @@ public static class ReportHtml
         entries.OrderByDescending(entry => entry.Minutes).ThenBy(entry => entry.Start);
 
     /// <summary>
-    /// A table of bars: the cells that name a row, the time it stands for, the bar of that length and
-    /// its share. Every heading but the bar sorts, and the rows come largest first until one is
-    /// pressed, which is why the time heading says it is sorted down. The footer is the table's own
-    /// total, so it stays where it is while the rows move.
+    /// A table of bars: the cells that name a row, the time it stands for, its share and the bar of
+    /// that length. The two numbers stand together and the bar comes last, so a row is read as "this
+    /// much, this part of the range" before the length it is drawn at. The table is no wider than
+    /// what it holds — a stretched one would put the name at one edge of the card and the share at
+    /// the other — and the bar keeps the width it is given. Every heading but the bar sorts, and the
+    /// rows come largest first until one is pressed, which is why the time heading says it is sorted
+    /// down. The footer is the table's own total, so it stays where it is while the rows move.
     /// </summary>
     private static string Table(string[] headings, string rows, string footer = "") =>
         $"""
-         <table class="table table-sm align-middle mb-0" data-sortable>
-           <thead><tr>{string.Concat(headings.Select(heading => Column(heading, "text", string.Empty)))}{Column("Time", "number", "text-end", "descending")}<th scope="col" style="width:45%"></th>{Column("Share", "number", "text-end")}</tr></thead>
-           <tbody>
-         {rows}  </tbody>
-         {(footer.Length == 0 ? string.Empty : $"<tfoot>\n{footer}\n</tfoot>\n")}</table>
+         <div class="table-responsive">
+           <table class="table table-sm align-middle mb-0 w-auto" data-sortable>
+             <thead><tr>{string.Concat(headings.Select(heading => Column(heading, "text", string.Empty)))}{Column("Time", "number", "text-end", "descending")}{Column("Share", "number", "text-end")}<th scope="col" style="width:14rem"></th></tr></thead>
+             <tbody>
+         {rows}    </tbody>
+             {(footer.Length == 0 ? string.Empty : $"<tfoot>\n{footer}\n</tfoot>\n")}</table>
+         </div>
 
          """;
 
@@ -238,12 +243,12 @@ public static class ReportHtml
 
     /// <summary>
     /// A row in the project's own pastel: the wash behind it, and a bar in the tint itself — or, for
-    /// a break, the warm peach, which has no project to be tinted by. The time comes after the names
-    /// and before the bar, so a row is read as "this much, drawn this long" from left to right.
+    /// a break, the warm peach, which has no project to be tinted by. The share follows the time, so
+    /// the numbers of a row are read as one thing, and the bar of that length ends the row.
     /// </summary>
     private static string BarRow(RangeReport report, string[] cells, int minutes, string project) =>
         $"""
-         <tr style="--bs-table-bg:{Tints.Wash(report.Catalogue, project)}">{string.Concat(cells.Select(cell => $"<td>{Esc(cell)}</td>"))}<td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Hours(minutes))}</td><td><div class="progress" role="progressbar" aria-valuenow="{Esc(Shares.Percent(minutes, report.TotalMinutes))}" aria-valuemin="0" aria-valuemax="100" style="height:10px"><div class="progress-bar" style="width:{Shares.Width(minutes, report.TotalMinutes)};background:{Tints.Of(report.Catalogue, project) ?? BreakTint}"></div></div></td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Percent(minutes, report.TotalMinutes))}</td></tr>
+         <tr style="--bs-table-bg:{Tints.Wash(report.Catalogue, project)}">{string.Concat(cells.Select(cell => $"<td>{Esc(cell)}</td>"))}<td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Hours(minutes))}</td><td class="text-end text-nowrap" data-value="{minutes}">{Esc(Shares.Percent(minutes, report.TotalMinutes))}</td><td><div class="progress" role="progressbar" aria-valuenow="{Esc(Shares.Percent(minutes, report.TotalMinutes))}" aria-valuemin="0" aria-valuemax="100" style="height:10px"><div class="progress-bar" style="width:{Shares.Width(minutes, report.TotalMinutes)};background:{Tints.Of(report.Catalogue, project) ?? BreakTint}"></div></div></td></tr>
          """;
 
     private static string TimelineCard(RangeReport report) =>

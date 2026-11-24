@@ -452,7 +452,7 @@ public sealed class ExportTests
     }
 
     [Fact]
-    public void A_bar_row_reads_the_time_before_the_bar_and_the_share_after_it()
+    public void A_bar_row_puts_the_share_beside_the_time_and_the_bar_last()
     {
         Logged("Website 09:00 1h");
 
@@ -460,8 +460,20 @@ public sealed class ExportTests
         var wash = Tints.Wash(report.Catalogue, "Website");
 
         Assert.Contains(
-            $"<tr style=\"--bs-table-bg:{wash}\"><td>Website</td><td class=\"text-end text-nowrap\" data-value=\"60\">1h</td><td><div class=\"progress\"",
+            $"<tr style=\"--bs-table-bg:{wash}\"><td>Website</td><td class=\"text-end text-nowrap\" data-value=\"60\">1h</td><td class=\"text-end text-nowrap\" data-value=\"60\">100.0 %</td><td><div class=\"progress\"",
             Html(report));
+    }
+
+    [Fact]
+    public void The_tables_of_time_hug_their_columns_so_each_number_sits_beside_its_name()
+    {
+        Logged("Website 09:00 1h");
+        Logged("Website (login) 10:00 30m");
+
+        var page = Html(Report(ExportPeriod.Day));
+
+        Assert.Contains("<table class=\"table table-sm align-middle mb-0 w-auto\" data-sortable>", Card(page, "Where the time went"));
+        Assert.Contains("<table class=\"table table-sm align-middle mb-0 w-auto\" data-sortable>", Card(page, "By project and topic"));
     }
 
     /// <summary>The From–to of every range the page lists, in the order it lists them.</summary>
