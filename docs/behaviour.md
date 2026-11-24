@@ -88,7 +88,9 @@ and records decisions; it is not a description of any other program's source.
 ## Rules the application enforces
 
 - An entry is entirely within one day. A range that crosses midnight is refused.
-- A day is a sequence: no two entries share a minute. A line that crosses work
+- A day is a sequence: no two entries share a minute. An entry with no length
+  marks a clock rather than occupying it, so it takes nothing from the work around
+  it. A line that crosses work
   already on the day — an interruption is the same minutes described by newer
   news — takes those minutes: the work it crosses is trimmed, split around the
   line when the line lands in its middle, or taken off the day when it is covered

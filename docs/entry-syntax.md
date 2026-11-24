@@ -82,7 +82,9 @@ to one. Without `am` or `pm` a time is in 24-hour form: `4:30` is 04:30, not 16:
 2. **Same day.** A range must end after it starts; `23:00-01:00` is rejected
    rather than guessed at. Splitting work at midnight is the user's decision.
 3. **Zero length is allowed** for the `clock` and `clock duration` forms only
-   when written as a bare `clock`; a written duration of `0m` is an error.
+   when written as a bare `clock`; a written duration of `0m` is an error. An
+   entry with no minutes marks a clock rather than occupying it: it takes no
+   minutes from anything, so the work it sits in stays whole.
 4. **`till`, `for` and `--` continue the day.** `--` keeps the place of the start;
    otherwise the start is the clock written in front of the word, or failing that
    the end of the last entry on the day the line names; that end must come before

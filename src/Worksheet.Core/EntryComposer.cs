@@ -206,20 +206,26 @@ public sealed class EntryComposer(Ledger ledger)
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        if (command.Duration <= TimeSpan.Zero)
-        {
-            return [];
-        }
-
         var taken = new DaySlot(command.Start.ToTimeSpan(), command.Start.ToTimeSpan() + command.Duration);
 
         return [.. Crossed(command.Date, taken).Select(other => GivingWay(other, taken))];
     }
 
-    /// <summary>The entries already on the day that share a minute with the range a line writes.</summary>
-    private IEnumerable<Entry> Crossed(DateOnly day, DaySlot taken, EntryId? ignore = null) =>
-        ledger.State.EntriesOn(day)
+    /// <summary>
+    /// The entries already on the day that share a minute with the range a line or a correction
+    /// writes. A stretch with no minutes shares none, so it crosses nothing: an entry written as a
+    /// bare clock marks a place on the day, and the work it sits in stays whole.
+    /// </summary>
+    private IEnumerable<Entry> Crossed(DateOnly day, DaySlot taken, EntryId? ignore = null)
+    {
+        if (taken.Duration <= TimeSpan.Zero)
+        {
+            return [];
+        }
+
+        return ledger.State.EntriesOn(day)
             .Where(other => other.Id != ignore && other.Duration > TimeSpan.Zero && DaySlot.Of(other).Overlaps(taken));
+    }
 
     /// <summary>
     /// What the day writes instead of crossing work: an entry keeps the minutes the line does not

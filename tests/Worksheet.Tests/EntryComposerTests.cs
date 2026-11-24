@@ -120,6 +120,19 @@ public sealed class EntryComposerTests
     }
 
     [Fact]
+    public void A_line_with_no_length_takes_no_minutes_from_the_work_it_sits_in()
+    {
+        var ledger = NewLedger(out _);
+        Compose(ledger, "Client portal 09:00-12:00");
+
+        var result = Compose(ledger, "Outage 11:00");
+
+        Assert.True(result.Created, string.Join(" ", result.Problems));
+        Assert.Empty(result.Yielded);
+        Assert.Equal(["09:00-12:00 Client portal", "11:00-11:00 Outage"], OnTheDay(ledger));
+    }
+
+    [Fact]
     public void Work_the_interruption_only_shortens_is_trimmed_and_not_split()
     {
         var ledger = NewLedger(out _);

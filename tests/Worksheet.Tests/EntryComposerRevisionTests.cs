@@ -4,6 +4,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 using Worksheet.Core;
+using Worksheet.TestSupport;
 
 namespace Worksheet.Tests;
 
@@ -67,6 +68,24 @@ public sealed class EntryComposerRevisionTests
         var result = new EntryComposer(ledger).Revise(before, before with { Duration = TimeSpan.FromMinutes(-1) });
 
         Assert.Equal("A duration cannot be negative.", Assert.Single(result.Problems));
+    }
+
+    [Fact]
+    public void A_correction_with_no_length_takes_no_minutes_from_the_work_it_is_typed_over()
+    {
+        var ledger = NewLedger();
+        Log(ledger, "Client portal 09:00-12:00");
+        var reading = Log(ledger, "Reading 08:00-09:30");
+
+        var result = new EntryComposer(ledger).Revise(
+            reading,
+            reading with { Start = Clocks.At("10:00"), Duration = TimeSpan.Zero });
+
+        Assert.True(result.Created, string.Join(" ", result.Problems));
+        Assert.Empty(result.Yielded);
+        Assert.Equal(
+            ["09:30-12:00", "10:00-10:00"],
+            ledger.State.EntriesOn(Day).Select(entry => $"{Clocks.Text(entry.Start)}-{Clocks.Text(entry.End)}"));
     }
 
     [Fact]
