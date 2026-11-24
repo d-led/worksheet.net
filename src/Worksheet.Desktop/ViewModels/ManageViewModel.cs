@@ -26,9 +26,6 @@ public sealed partial class ManageViewModel : ObservableObject, ICataloguePanel,
     private CatalogueRow? _selectedProject;
 
     [ObservableProperty]
-    private string? _proposal;
-
-    [ObservableProperty]
     private string? _message;
 
     [ObservableProperty]
@@ -54,15 +51,11 @@ public sealed partial class ManageViewModel : ObservableObject, ICataloguePanel,
     /// <summary>The topics of the chosen project.</summary>
     public ObservableCollection<CatalogueRow> Topics { get; } = [];
 
-    public bool HasProposal => !string.IsNullOrEmpty(Proposal);
-
     public bool HasMessage => !string.IsNullOrEmpty(Message);
 
     public bool CanUndo => _ledger.CanUndo;
 
     partial void OnMessageChanged(string? value) => OnPropertyChanged(nameof(HasMessage));
-
-    partial void OnProposalChanged(string? value) => OnPropertyChanged(nameof(HasProposal));
 
     partial void OnSelectedProjectChanged(CatalogueRow? value) => RefreshTopics();
 
@@ -94,15 +87,18 @@ public sealed partial class ManageViewModel : ObservableObject, ICataloguePanel,
                 : $"'{row.Name}' is out of {row.Project}; its entries stay as they are.");
     }
 
-    /// <summary>The sentence the panel shows while a name is being typed, so Enter holds no surprise.</summary>
+    /// <summary>
+    /// The sentence shown beside the name being typed, so Enter holds no surprise: what the key would
+    /// do, said where the typing is and with the fact that nothing has been written yet.
+    /// </summary>
     public void Drafting(CatalogueRow row)
     {
         ArgumentNullException.ThrowIfNull(row);
 
-        Proposal = !row.IsChanged
+        row.Proposal = !row.IsChanged
             ? null
             : string.IsNullOrWhiteSpace(row.Draft)
-                ? $"A {Word(row)} needs a name."
+                ? $"Not saved yet — Enter will refuse it: a {Word(row)} needs a name."
                 : ForTyping(row, Twin(row, row.Draft));
     }
 
@@ -121,8 +117,8 @@ public sealed partial class ManageViewModel : ObservableObject, ICataloguePanel,
     /// <summary>What Enter would do to this row, in one sentence.</summary>
     private static string ForTyping(CatalogueRow row, CatalogueRow? twin) =>
         twin is null
-            ? $"Enter renames '{row.Name}' to '{row.Draft.Trim()}'."
-            : $"Enter merges '{row.Name}' into '{twin.Name}' — {Moving(row)}.";
+            ? $"Not saved yet — Enter renames '{row.Name}' to '{row.Draft.Trim()}'."
+            : $"Not saved yet — Enter merges '{row.Name}' into '{twin.Name}'; {Moving(row)}.";
 
     private static string Renamed(CatalogueRow row, string name) =>
         $"The {Word(row)} is called '{Names.Trimmed(name)}' now.";
@@ -186,8 +182,6 @@ public sealed partial class ManageViewModel : ObservableObject, ICataloguePanel,
         // The topics are re-read here as well: dropping a topic leaves its project's count unchanged,
         // so the choice above would not move and the list would keep the row that just went.
         RefreshTopics();
-
-        Proposal = null;
 
         OnPropertyChanged(nameof(CanUndo));
     }

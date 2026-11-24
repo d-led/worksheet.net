@@ -93,15 +93,35 @@ public sealed class ManageViewModelTests
     }
 
     [Fact]
-    public void The_panel_says_what_enter_would_do_before_it_is_pressed()
+    public void The_row_being_typed_says_what_enter_would_do_and_that_nothing_is_saved_yet()
+    {
+        var panel = Opened();
+        var website = Row(panel, "Website");
+
+        Typed(website, "Client portal");
+
+        Assert.Equal("Not saved yet — Enter renames 'Website' to 'Client portal'.", website.Proposal);
+    }
+
+    [Fact]
+    public void Only_the_row_being_typed_carries_the_hint()
     {
         var panel = Opened();
 
         Typed(Row(panel, "Website"), "Client portal");
-        Assert.Equal("Enter renames 'Website' to 'Client portal'.", panel.Proposal);
 
-        Typed(Row(panel, "Website"), "  ");
-        Assert.Equal("A project needs a name.", panel.Proposal);
+        Assert.Null(Row(panel, "Mobile").Proposal);
+    }
+
+    [Fact]
+    public void An_empty_name_is_refused_in_the_hint_rather_than_at_enter()
+    {
+        var panel = Opened();
+        var website = Row(panel, "Website");
+
+        Typed(website, "  ");
+
+        Assert.Equal("Not saved yet — Enter will refuse it: a project needs a name.", website.Proposal);
     }
 
     [Fact]
@@ -125,21 +145,24 @@ public sealed class ManageViewModelTests
     public void A_name_that_is_already_there_is_announced_as_a_merge()
     {
         var panel = Opened();
+        var website = Row(panel, "Website");
 
-        Typed(Row(panel, "Website"), "mobile");
+        Typed(website, "mobile");
 
-        Assert.Equal("Enter merges 'Website' into 'Mobile' — its 2 entries · 1h30m move there.", panel.Proposal);
+        Assert.Equal(
+            "Not saved yet — Enter merges 'Website' into 'Mobile'; its 2 entries · 1h30m move there.",
+            website.Proposal);
     }
 
     [Fact]
     public void A_row_left_as_it_was_says_nothing()
     {
         var panel = Opened();
+        var website = Row(panel, "Website");
 
-        Typed(Row(panel, "Website"), "Website");
+        Typed(website, "Website");
 
-        Assert.Null(panel.Proposal);
-        Assert.False(panel.HasProposal);
+        Assert.Null(website.Proposal);
     }
 
     [Fact]
@@ -206,12 +229,55 @@ public sealed class ManageViewModelTests
         var login = panel.Topics.Single(topic => topic.Name == "login");
 
         Typed(login, "Reports");
-        Assert.Equal("Enter merges 'login' into 'reports' — its 1 entry · 1h move there.", panel.Proposal);
+        Assert.Equal(
+            "Not saved yet — Enter merges 'login' into 'reports'; its 1 entry · 1h move there.",
+            login.Proposal);
 
         login.CommitCommand.Execute(null);
 
         Assert.Equal(["reports"], Names(panel.Topics));
         Assert.Equal("'login' merged into 'reports'; its 1 entry · 1h moved there.", panel.Message);
+    }
+
+    [Fact]
+    public void A_topic_row_says_it_would_rename_a_topic()
+    {
+        var panel = Opened();
+        panel.SelectedProject = Row(panel, "Website");
+        var login = panel.Topics.Single(topic => topic.Name == "login");
+
+        Typed(login, "sign-in");
+
+        Assert.Equal("Not saved yet — Enter renames 'login' to 'sign-in'.", login.Proposal);
+    }
+
+    [Fact]
+    public void A_renamed_topic_keeps_its_entries()
+    {
+        var panel = Opened();
+        panel.SelectedProject = Row(panel, "Website");
+        var login = panel.Topics.Single(topic => topic.Name == "login");
+        var held = _ledger.State.Entries.Values.Single(entry => _ledger.State.TopicName(entry.TopicId) == "login");
+
+        Typed(login, "sign-in");
+        login.CommitCommand.Execute(null);
+
+        Assert.Equal("sign-in", _ledger.State.TopicName(held.TopicId));
+        Assert.Equal("1 entry · 1h", panel.Topics.Single(topic => topic.Name == "sign-in").Holds);
+    }
+
+    [Fact]
+    public void A_rename_is_one_step_back()
+    {
+        var panel = Opened();
+        var website = Row(panel, "Website");
+
+        Typed(website, "Client portal");
+        website.CommitCommand.Execute(null);
+        panel.UndoCommand.Execute(null);
+
+        Assert.Equal(["Mobile", "Website"], Names(panel.Projects));
+        Assert.Equal("Undone.", panel.Message);
     }
 
     [Fact]

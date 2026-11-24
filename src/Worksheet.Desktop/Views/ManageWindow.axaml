@@ -13,12 +13,52 @@
 
   <!--
     Every row carries its own name, so renaming is typing into the row and pressing Enter: no second
-    box, no dialog and no confirmation step. The line above the message says what Enter will do while
-    the name is still being typed, which is what makes a merge — the same keystroke, one name fewer —
-    something a person chooses rather than something that happens to them.
+    box, no dialog and no confirmation step. The note under the name says what Enter will do while the
+    name is still being typed — and that nothing is written until then — which is what makes a merge,
+    the same keystroke with one name fewer, something a person chooses rather than something that
+    happens to them.
   -->
+  <local:SecondaryWindow.Resources>
+    <!--
+      One row, one template: the name in a field of its own, with the sentence about what Enter would
+      do in a note right beside it — nothing is written until the key is pressed — then what the row
+      holds and the word that takes it out of the catalogue. "Archive" on a project, "Remove" on a
+      topic: the same decision, named for what a person is looking at.
+    -->
+    <DataTemplate x:Key="NameRow" x:DataType="vm:CatalogueRow">
+      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,2">
+        <StackPanel Grid.Column="0" Spacing="4">
+          <TextBox x:Name="NameField"
+                   Classes="cell"
+                   Text="{Binding Draft}"
+                   GotFocus="Row_Focused"
+                   LostFocus="Row_Left">
+            <TextBox.KeyBindings>
+              <KeyBinding Gesture="Enter" Command="{Binding CommitCommand}" />
+            </TextBox.KeyBindings>
+          </TextBox>
+          <Border Classes="bubble"
+                  IsVisible="{Binding HasProposal}"
+                  HorizontalAlignment="Left">
+            <TextBlock Classes="quiet" Text="{Binding Proposal}" TextWrapping="Wrap" />
+          </Border>
+        </StackPanel>
+        <TextBlock Grid.Column="1"
+                   Classes="quiet"
+                   Text="{Binding Holds}"
+                   MinWidth="130"
+                   VerticalAlignment="Center" />
+        <Button Grid.Column="2"
+                Classes="row-word"
+                Content="{Binding ActionWord}"
+                Command="{Binding ArchiveCommand}"
+                ToolTip.Tip="{Binding ActionTip}" />
+      </Grid>
+    </DataTemplate>
+  </local:SecondaryWindow.Resources>
+
   <Border Classes="page" Padding="20">
-    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,*,Auto,Auto" RowSpacing="8">
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,*,Auto" RowSpacing="8">
 
       <TextBlock Grid.Row="0" Classes="title" Text="Projects and topics" />
 
@@ -33,79 +73,22 @@
                Grid.Row="3"
                ItemsSource="{Binding Projects}"
                SelectedItem="{Binding SelectedProject}"
+               ItemTemplate="{StaticResource NameRow}"
                Background="Transparent"
                BorderThickness="0"
-               ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-        <ListBox.ItemTemplate>
-          <DataTemplate x:DataType="vm:CatalogueRow">
-            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,2">
-              <TextBox x:Name="ProjectName"
-                       Classes="cell"
-                       Text="{Binding Draft}"
-                       GotFocus="Row_Focused"
-                       LostFocus="Row_Left">
-                <TextBox.KeyBindings>
-                  <KeyBinding Gesture="Enter" Command="{Binding CommitCommand}" />
-                </TextBox.KeyBindings>
-              </TextBox>
-              <TextBlock Grid.Column="1"
-                         Classes="quiet"
-                         Text="{Binding Holds}"
-                         MinWidth="130"
-                         VerticalAlignment="Center" />
-              <Button Grid.Column="2"
-                      Classes="row-word"
-                      Content="Archive"
-                      Command="{Binding ArchiveCommand}"
-                      ToolTip.Tip="Stop offering this name; every entry keeps it" />
-            </Grid>
-          </DataTemplate>
-        </ListBox.ItemTemplate>
-      </ListBox>
+               ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
 
       <TextBlock Grid.Row="4" Classes="caption" Text="TOPICS OF THE CHOSEN PROJECT" />
 
       <ListBox x:Name="TopicList"
                Grid.Row="5"
                ItemsSource="{Binding Topics}"
+               ItemTemplate="{StaticResource NameRow}"
                Background="Transparent"
                BorderThickness="0"
-               ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-        <ListBox.ItemTemplate>
-          <DataTemplate x:DataType="vm:CatalogueRow">
-            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,2">
-              <TextBox x:Name="TopicName"
-                       Classes="cell"
-                       Text="{Binding Draft}"
-                       GotFocus="Row_Focused"
-                       LostFocus="Row_Left">
-                <TextBox.KeyBindings>
-                  <KeyBinding Gesture="Enter" Command="{Binding CommitCommand}" />
-                </TextBox.KeyBindings>
-              </TextBox>
-              <TextBlock Grid.Column="1"
-                         Classes="quiet"
-                         Text="{Binding Holds}"
-                         MinWidth="130"
-                         VerticalAlignment="Center" />
-              <Button Grid.Column="2"
-                      Classes="row-word"
-                      Content="Remove"
-                      Command="{Binding ArchiveCommand}"
-                      ToolTip.Tip="Stop offering this topic; every entry keeps it" />
-            </Grid>
-          </DataTemplate>
-        </ListBox.ItemTemplate>
-      </ListBox>
+               ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
 
-      <TextBlock x:Name="Proposal"
-                 Grid.Row="6"
-                 Classes="hint"
-                 Text="{Binding Proposal}"
-                 IsVisible="{Binding HasProposal}"
-                 TextWrapping="Wrap" />
-
-      <Grid Grid.Row="7" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+      <Grid Grid.Row="6" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
         <TextBlock x:Name="Message"
                    Grid.Column="0"
                    Classes="meta"

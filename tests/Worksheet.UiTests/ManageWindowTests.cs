@@ -3,6 +3,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
@@ -55,6 +56,20 @@ public sealed class ManageWindowTests
             .GetVisualDescendants()
             .OfType<TextBox>()
             .Single(field => field.DataContext is CatalogueRow row && row.Name == name);
+
+    /// <summary>The hint beside one row's name, found the way a person sees it: next to the field.</summary>
+    private static Border Bubble(Window window, string list, string name) =>
+        window.FindControl<ListBox>(list)!
+            .GetVisualDescendants()
+            .OfType<Border>()
+            .Single(border => border.Classes.Contains("bubble")
+                && border.DataContext is CatalogueRow row && row.Name == name);
+
+    /// <summary>What the hint beside a row says, or nothing while it says nothing.</summary>
+    private static string? Hint(Window window, string list, string name) =>
+        Bubble(window, list, name).GetVisualDescendants().OfType<TextBlock>().Single().Text;
+
+    private static IEnumerable<T> Descendants<T>(Visual root) => root.GetVisualDescendants().OfType<T>();
 
     private static void Type(Window window, TextBox field, string text)
     {
@@ -113,19 +128,122 @@ public sealed class ManageWindowTests
     }
 
     [AvaloniaFact]
-    public void The_window_says_what_enter_would_do_while_the_name_is_being_typed()
+    public void The_hint_sits_beside_the_name_being_typed_and_says_nothing_is_saved_yet()
     {
         using var temp = new TempDirectory("worksheet-manage-window");
 
         var window = Opened(temp, out var local);
-        var proposal = window.FindControl<TextBlock>("Proposal")!;
+        var bubble = Bubble(window, "ProjectList", "Mobile");
 
-        Assert.False(proposal.IsVisible);
+        Assert.False(bubble.IsVisible);
 
         Type(window, Field(window, "ProjectList", "Mobile"), "website");
 
-        Assert.True(proposal.IsVisible);
-        Assert.Equal("Enter merges 'Mobile' into 'Website' — its 1 entry · 1h move there.", proposal.Text);
+        Assert.True(bubble.IsVisible);
+        Assert.Equal(
+            "Not saved yet — Enter merges 'Mobile' into 'Website'; its 1 entry · 1h move there.",
+            Hint(window, "ProjectList", "Mobile"));
+        Assert.Equal(["Mobile", "Website"], Names(window, "ProjectList"));
+
+        local.Dispose();
+    }
+
+    [AvaloniaFact]
+    public void A_topic_is_renamed_in_its_own_row_and_the_hint_beside_it_says_so()
+    {
+        using var temp = new TempDirectory("worksheet-manage-window");
+
+        var window = Opened(temp, out var local);
+        var field = Field(window, "TopicList", "login");
+
+        Type(window, field, "sign-in");
+        Assert.Equal("Not saved yet — Enter renames 'login' to 'sign-in'.", Hint(window, "TopicList", "login"));
+
+        window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(["sign-in"], Names(window, "TopicList"));
+        Assert.Equal("The topic is called 'sign-in' now.", window.FindControl<TextBlock>("Message")!.Text);
+
+        local.Dispose();
+    }
+
+    [AvaloniaFact]
+    public void Escape_puts_the_name_back_and_the_next_escape_leaves_the_window()
+    {
+        using var temp = new TempDirectory("worksheet-manage-window");
+
+        var window = Opened(temp, out var local);
+
+        Type(window, Field(window, "ProjectList", "Website"), "Client portal");
+
+        window.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(["Mobile", "Website"], Names(window, "ProjectList"));
+        Assert.False(Bubble(window, "ProjectList", "Website").IsVisible);
+        Assert.True(window.IsVisible);
+
+        window.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.False(window.IsVisible);
+
+        local.Dispose();
+    }
+
+    [AvaloniaFact]
+    public void Leaving_the_name_field_settles_what_was_typed()
+    {
+        using var temp = new TempDirectory("worksheet-manage-window");
+
+        var window = Opened(temp, out var local);
+
+        Type(window, Field(window, "ProjectList", "Website"), "Client portal");
+
+        Field(window, "ProjectList", "Mobile").Focus();
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(["Client portal", "Mobile"], Names(window, "ProjectList"));
+
+        local.Dispose();
+    }
+
+    [AvaloniaFact]
+    public void A_project_is_taken_out_of_the_list_by_the_word_beside_it()
+    {
+        using var temp = new TempDirectory("worksheet-manage-window");
+
+        var window = Opened(temp, out var local);
+        var archive = Descendants<Button>(window.FindControl<ListBox>("ProjectList")!)
+            .Single(button => button.Classes.Contains("row-word")
+                && button.DataContext is CatalogueRow { Name: "Website" });
+
+        Mouse.Click(window, archive);
+
+        Assert.Equal(["Mobile"], Names(window, "ProjectList"));
+        Assert.Equal("'Website' is out of the catalogue; its entries stay as they are.", window.FindControl<TextBlock>("Message")!.Text);
+
+        local.Dispose();
+    }
+
+    [AvaloniaFact]
+    public void Undo_in_the_window_takes_a_merge_back()
+    {
+        using var temp = new TempDirectory("worksheet-manage-window");
+
+        var window = Opened(temp, out var local);
+
+        Type(window, Field(window, "ProjectList", "Mobile"), "Website");
+        window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(["Website"], Names(window, "ProjectList"));
+
+        Mouse.Click(window, window.FindControl<Button>("Undo")!);
+
+        Assert.Equal(["Mobile", "Website"], Names(window, "ProjectList"));
+        Assert.Equal("Undone.", window.FindControl<TextBlock>("Message")!.Text);
 
         local.Dispose();
     }

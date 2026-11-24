@@ -134,8 +134,9 @@ and records decisions; it is not a description of any other program's source.
   under it, and a topic it already has absorbs the entries of the one that came.
   A name retired earlier comes back when something is merged into it. The whole
   merge is one journal change, so one undo takes it back — a merge is a decision,
-  not a sequence of side effects. The panel says in one sentence what pressing
-  Enter would do, with what would move, before it is pressed.
+  not a sequence of side effects. The row says in a note right beside the name
+  being typed what pressing Enter would do, with what would move, and that
+  nothing is written until the key is pressed.
 
 ## Deliberately not included
 
