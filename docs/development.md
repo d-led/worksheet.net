@@ -192,6 +192,16 @@ installs, then the day it was fixed, as in `0.2.3.20261123`. NuGet drops a fourt
 so the day has to be a real one — which a date is. The package's description says the same thing in
 words, so nobody has to work out what the fourth part means.
 
+**A package fix is for the package, never for the application.** It installs the same release build,
+so a bug in the program needs a new tag; a package fix of the old version would keep shipping the bug
+under a newer number. **Superseding is simply being the newest approved version**: `choco install`
+and `choco upgrade` take the highest approved version, and nothing has to be configured for one
+version to replace another. Two consequences worth knowing: an uploaded version is never deleted, and
+an unapproved one is invisible to the repository's OData feed — the feed answered with 0.1.0 alone
+while 0.2.0–0.2.4 waited — so users stay on the last approved version until a moderator signs the
+newest one off. The only lever for a queue of stale submissions is the moderation thread on the
+package page: ask for the newest to be approved and the older ones discarded.
+
 ## Packaging into a screenshot
 
 `tools/Worksheet.Screenshot` renders the real window offscreen with headless Skia and writes a PNG:
