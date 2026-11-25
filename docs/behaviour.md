@@ -15,7 +15,9 @@ and records decisions; it is not a description of any other program's source.
 
 1. Shows one day at a time: the entries of that day in start order, and the time
    worked on it — a break is on the day without being work, so the heading leaves
-   it out, while the exported page and the agent's answers give the total the
+   it out, and under the day that same time is split project by project, largest
+   first, so a day of several projects is read by where its hours went; the
+   exported page and the agent's answers give the total the
    journal holds with the working time beside it. The left and right arrows
    move to the day before and after,
    unless the caret is in a text field, which then keeps them for itself. A field
@@ -82,7 +84,8 @@ and records decisions; it is not a description of any other program's source.
    journal keeps it — and a working day nobody logged on says nothing was logged.
    What was written is announced under the
    heading: the file, the folder it went to, and one action that selects it in the
-   platform's file manager. A dismissed dialog writes nothing and says so; the
+   platform's file manager. A dismissed dialog writes nothing and says so — the
+   word stands a moment and then goes, so the window is not left wearing it; the
    notice is put away without touching the file, and the next export replaces it.
 
 ## Rules the application enforces

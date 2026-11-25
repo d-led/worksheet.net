@@ -1,0 +1,30 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Worksheet.Desktop.ViewModels"
+             x:Class="Worksheet.Desktop.Components.ProjectTotals"
+             x:DataType="vm:DayViewModel">
+
+  <!--
+    The day's work, project by project: the heading's one figure with its shares spelled out, so a
+    day of several projects reads at a glance which one the time went to. Largest first. A break is
+    on the day but is not a share of the work, so it has no chip here.
+  -->
+  <ItemsControl x:Name="Totals" ItemsSource="{Binding ProjectTotals}" IsVisible="{Binding HasProjectTotals}">
+    <ItemsControl.ItemsPanel>
+      <ItemsPanelTemplate>
+        <WrapPanel Orientation="Horizontal" />
+      </ItemsPanelTemplate>
+    </ItemsControl.ItemsPanel>
+    <ItemsControl.ItemTemplate>
+      <DataTemplate DataType="vm:ProjectTotalViewModel">
+        <Border Classes="share" Margin="0,0,6,0">
+          <Grid ColumnDefinitions="4,Auto,Auto" ColumnSpacing="7">
+            <Border Classes="tint" Background="{Binding Tint}" />
+            <TextBlock Grid.Column="1" Classes="caption" Text="{Binding Project}" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="2" Classes="numeric" Text="{Binding Length}" VerticalAlignment="Center" />
+          </Grid>
+        </Border>
+      </DataTemplate>
+    </ItemsControl.ItemTemplate>
+  </ItemsControl>
+</UserControl>

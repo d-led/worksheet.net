@@ -47,6 +47,16 @@ public sealed class DayHeaderExportTests : UiTestBase
     }
 
     [AvaloniaFact]
+    public void The_header_is_what_waits_for_a_word_to_be_taken_back()
+    {
+        var day = NewDay();
+
+        Show<DayHeader>(day);
+
+        Assert.NotNull(day.Later);
+    }
+
+    [AvaloniaFact]
     public async Task The_button_asks_where_to_save_and_a_dismissed_dialog_writes_nothing()
     {
         var day = NewDay();

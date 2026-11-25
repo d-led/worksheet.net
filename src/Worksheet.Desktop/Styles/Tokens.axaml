@@ -266,6 +266,18 @@
   </Style>
 
   <!--
+    One project's share of the day: the pastel its rows carry down the left edge, its name and its
+    hours. Framed like a row so the strip under the table reads in the same alphabet as the rows.
+  -->
+  <Style Selector="Border.share">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="7,3" />
+  </Style>
+
+  <!--
     The same pastel laid behind the row at a low opacity: the hue a project is read by, quiet enough
     that the fields stay the loudest thing on it. Opacity rather than a second palette keeps it
     honest in both themes — the tint blends with whatever surface the theme has put there.

@@ -206,6 +206,42 @@ public sealed class DayExportTests : IDisposable
     }
 
     [Fact]
+    public async Task A_cancelled_export_is_said_and_then_taken_back_a_while_later()
+    {
+        var day = DayWith("Website 09:00 1h");
+        day.SaveExport = _ => Task.FromResult<string?>(null);
+        var waiting = new List<(TimeSpan After, Action Do)>();
+        day.Later = (after, takeBack) => waiting.Add((after, takeBack));
+
+        await day.ExportDayCommand.ExecuteAsync(null);
+
+        Assert.Equal("Export cancelled.", day.Message);
+
+        var (after, takeBack) = Assert.Single(waiting);
+        Assert.Equal(TimeSpan.FromSeconds(15), after);
+
+        takeBack();
+
+        Assert.False(day.HasMessage);
+    }
+
+    [Fact]
+    public async Task An_old_cancellation_does_not_take_back_the_next_word()
+    {
+        var day = DayWith("Website 09:00 1h");
+        day.SaveExport = _ => Task.FromResult<string?>(null);
+        Action? takeBack = null;
+        day.Later = (_, doLater) => takeBack = doLater;
+
+        await day.ExportDayCommand.ExecuteAsync(null);
+        day.UndoCommand.Execute(null);
+
+        takeBack!();
+
+        Assert.Equal("Undone.", day.Message);
+    }
+
+    [Fact]
     public async Task An_export_with_nowhere_to_go_is_refused()
     {
         var day = DayWith("Website 09:00 1h");

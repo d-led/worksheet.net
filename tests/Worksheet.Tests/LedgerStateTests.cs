@@ -93,6 +93,37 @@ public sealed class LedgerStateTests
     }
 
     [Fact]
+    public void A_days_work_is_split_by_project_largest_first_with_the_break_left_out()
+    {
+        var state = Ledger();
+        state.Apply(new ProjectOpened(Pause, Break.Project));
+        state.Apply(new EntryLogged(EntryAt(Day, "11:00", 30, Webshop)));
+        state.Apply(new EntryLogged(EntryAt(Day, "11:30", 60, Pause)));
+
+        var shares = state.ProjectTotalsOn(Day);
+
+        Assert.Equal(
+            [new ProjectTotal("Website", TimeSpan.FromMinutes(120)), new ProjectTotal("Webshop", TimeSpan.FromMinutes(30))],
+            shares);
+    }
+
+    [Fact]
+    public void Two_projects_of_the_same_length_are_read_in_name_order()
+    {
+        var state = LedgerState.Create();
+        state.Apply(new ProjectOpened(Webshop, "Zeta"));
+        state.Apply(new ProjectOpened(Website, "Alpha"));
+        state.Apply(new EntryLogged(EntryAt(Day, "09:00", 60, Webshop)));
+        state.Apply(new EntryLogged(EntryAt(Day, "10:00", 60, Website)));
+
+        Assert.Equal(["Alpha", "Zeta"], state.ProjectTotalsOn(Day).Select(total => total.Project));
+    }
+
+    [Fact]
+    public void A_day_with_nothing_on_it_has_no_shares() =>
+        Assert.Empty(Ledger().ProjectTotalsOn(new DateOnly(2026, 11, 5)));
+
+    [Fact]
     public void A_day_stops_where_its_last_entry_ends() =>
         Assert.Equal(Clocks.At("11:00"), Ledger().EndOfLast(Day));
 

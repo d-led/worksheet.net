@@ -5,6 +5,7 @@
 
 using System.Collections.ObjectModel;
 using System.Globalization;
+using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -26,6 +27,9 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     private readonly DayCalendar _calendar;
     private readonly Func<DateTimeOffset> _clock;
     private readonly IDisposable _untilTheLedgerChanges;
+
+    /// <summary>How long a word worth a glance stays: long enough to be read, not to become furniture.</summary>
+    private static readonly TimeSpan AWhile = TimeSpan.FromSeconds(15);
 
     /// <summary>
     /// The day the person picked, or nothing while the window follows the calendar. Today is not
@@ -114,6 +118,14 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     public ObservableCollection<string> Projects { get; } = [];
 
     public ObservableCollection<SuggestionViewModel> Suggestions { get; } = [];
+
+    /// <summary>
+    /// The day's work, project by project: the heading's one figure with its shares written out,
+    /// so a day of several projects reads at a glance which one the time went to.
+    /// </summary>
+    public ObservableCollection<ProjectTotalViewModel> ProjectTotals { get; } = [];
+
+    public bool HasProjectTotals => ProjectTotals.Count > 0;
 
     public bool HasMessage => !string.IsNullOrEmpty(Message);
 
@@ -272,6 +284,13 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     /// </summary>
     public Action<string>? RevealFile { get; set; }
 
+    /// <summary>
+    /// Does something after a while. The window supplies it, since waiting needs the dispatcher the
+    /// window runs on; a test says when the wait is over, and nothing is taken back when nobody
+    /// supplied it.
+    /// </summary>
+    public Action<TimeSpan, Action>? Later { get; set; }
+
     /// <summary>The last export, while it is worth saying so; nothing after it is dismissed.</summary>
     [ObservableProperty]
     private ExportNoticeViewModel? _exported;
@@ -331,12 +350,29 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
 
         if (path is null)
         {
-            Report("Export cancelled.", isProblem: false);
+            SayForAWhile("Export cancelled.");
             return;
         }
 
         Exported = new ExportNoticeViewModel(path, RevealFile, DismissExport);
         Report(null, isProblem: false);
+    }
+
+    /// <summary>
+    /// Says something that is worth a glance and then not worth the room it takes: the word is
+    /// taken back after <see cref="AWhile"/>, unless something else has been said in the meantime —
+    /// the message on the glass is then the newer one, and it is not this wait's to take back.
+    /// </summary>
+    private void SayForAWhile(string message)
+    {
+        Report(message, isProblem: false);
+        Later?.Invoke(AWhile, () =>
+        {
+            if (Message == message)
+            {
+                Report(null, isProblem: false);
+            }
+        });
     }
 
     /// <summary>Puts the notice away; the export itself is written and stays where it went.</summary>
@@ -694,8 +730,30 @@ public sealed partial class DayViewModel : ObservableObject, IDisposable
     private void UpdateTotals()
     {
         Total = Durations.Format(_local.Ledger.State.WorkedOn(Day));
+        RefreshProjectTotals();
         CanUndo = _local.Ledger.CanUndo;
         CanRedo = _local.Ledger.CanRedo;
+    }
+
+    /// <summary>
+    /// Says the day's hours again project by project, with each project's pastel so the strip reads
+    /// in the same alphabet as the rows above it. A break is not a share of the work and is not here.
+    /// </summary>
+    private void RefreshProjectTotals()
+    {
+        var state = _local.Ledger.State;
+
+        ProjectTotals.Clear();
+
+        foreach (var total in state.ProjectTotalsOn(Day))
+        {
+            ProjectTotals.Add(new ProjectTotalViewModel(
+                total.Project,
+                Durations.Format(total.Length),
+                Tints.Of(state.Catalogue, total.Project) is { } tint ? new SolidColorBrush(Color.Parse(tint)) : null));
+        }
+
+        OnPropertyChanged(nameof(HasProjectTotals));
     }
 
     /// <summary>

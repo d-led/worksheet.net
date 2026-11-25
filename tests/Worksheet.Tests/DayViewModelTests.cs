@@ -200,6 +200,36 @@ public sealed class DayViewModelTests : IDisposable
     }
 
     [Fact]
+    public void The_day_says_where_its_time_went_project_by_project()
+    {
+        var day = DayWith("Website 09:00 2h", "Mobile 11:00 30m", "Break 11:30 15m");
+
+        Assert.Equal(
+            [("Website", "2h"), ("Mobile", "30m")],
+            day.ProjectTotals.Select(total => (total.Project, total.Length)).ToArray());
+        Assert.True(day.HasProjectTotals);
+    }
+
+    [Fact]
+    public void A_day_with_nothing_on_it_has_no_shares_to_show()
+    {
+        var day = DayWith();
+
+        Assert.Empty(day.ProjectTotals);
+        Assert.False(day.HasProjectTotals);
+    }
+
+    [Fact]
+    public void Undoing_a_line_takes_its_share_of_the_day_with_it()
+    {
+        var day = DayWith("Website 09:00 2h", "Mobile 11:00 30m");
+
+        day.UndoCommand.Execute(null);
+
+        Assert.Equal(["Website"], day.ProjectTotals.Select(total => total.Project));
+    }
+
+    [Fact]
     public void A_day_shows_what_a_writer_outside_the_window_logged()
     {
         var day = DayWith("Website 09:00 1h");

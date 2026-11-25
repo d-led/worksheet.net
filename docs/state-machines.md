@@ -127,8 +127,11 @@ is drawn).
 | Frozen | `Declare` Working | Editable |
 
 **Invariants:** what is on screen is a function of the fold and the picked day, never a copy;
-today is read from the injected clock every time it is needed; the entry line and the totals are
-refreshed with the rows; a row's own accepted change is not drawn twice.
+today is read from the injected clock every time it is needed; the entry line, the heading's
+figure and the shares under the table (one per project, largest first, a break left out) are
+refreshed with the rows; a row's own accepted change is not drawn twice. A word that is only news
+— a cancelled export — is taken back after fifteen seconds (`Later`, which the heading supplies
+with a `DispatcherTimer`), and only while it is still the word on the glass.
 
 ## A row of the day
 

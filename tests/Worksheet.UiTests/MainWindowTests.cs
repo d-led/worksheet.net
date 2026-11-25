@@ -24,7 +24,7 @@ public sealed class MainWindowTests : UiTestBase
     }
 
     [AvaloniaFact]
-    public void The_window_is_the_four_components_and_nothing_else()
+    public void The_window_is_the_components_and_nothing_else()
     {
         var window = OpenWindow();
 
@@ -32,6 +32,20 @@ public sealed class MainWindowTests : UiTestBase
         Assert.NotNull(window.FindControl<QuickEntry>("Entry"));
         Assert.NotNull(window.FindControl<DayTable>("Table"));
         Assert.NotNull(window.FindControl<StatusLine>("Status"));
+
+        window.AllowClose = true;
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_shares_of_the_day_sit_in_the_row_above_the_buttons_and_the_message()
+    {
+        var window = OpenWindow();
+
+        var shares = window.FindControl<ProjectTotals>("Shares")!;
+        var status = window.FindControl<StatusLine>("Status")!;
+
+        Assert.Equal(Grid.GetRow(status) - 1, Grid.GetRow(shares));
 
         window.AllowClose = true;
         window.Close();

@@ -96,9 +96,26 @@ public partial class DayHeader : UserControl
         {
             day.SaveExport = SaveAsync;
             day.RevealFile = Reveal.Show;
+            day.Later = AfterAWhile;
             WireExportMenu(day);
             WireScreens();
         }
+    }
+
+    /// <summary>
+    /// Waits on the window's dispatcher, since the day keeps no timer of its own: a word that is
+    /// only worth a glance is taken back once the wait is over, and a window that has gone away
+    /// takes its waiting with it.
+    /// </summary>
+    private static void AfterAWhile(TimeSpan after, Action doLater)
+    {
+        var timer = new DispatcherTimer { Interval = after };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            doLater();
+        };
+        timer.Start();
     }
 
     /// <summary>

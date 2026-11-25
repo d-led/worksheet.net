@@ -170,6 +170,19 @@ public sealed class LedgerState
     public TimeSpan WorkedOn(DateOnly day) =>
         Summed(EntriesOn(day).Where(entry => !IsBreak(entry)));
 
+    /// <summary>
+    /// What the day's work is made of: its stretches added up project by project, largest first
+    /// and ties in name order. A break is on the day but is not spent on a project, so it is left
+    /// out, exactly as <see cref="WorkedOn"/> leaves it out.
+    /// </summary>
+    public IReadOnlyList<ProjectTotal> ProjectTotalsOn(DateOnly day) =>
+        [.. EntriesOn(day)
+            .Where(entry => !IsBreak(entry))
+            .GroupBy(entry => entry.ProjectId)
+            .Select(entries => new ProjectTotal(ProjectName(entries.Key), Summed(entries)))
+            .OrderByDescending(total => total.Length)
+            .ThenBy(total => total.Project, Dates.Names)];
+
     /// <summary>Whether the entry is a pause: the one project whose time is not worked time.</summary>
     public bool IsBreak(Entry entry) => Break.IsBreak(ProjectName(entry.ProjectId));
 
